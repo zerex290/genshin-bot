@@ -113,8 +113,6 @@ class Booru:
 
 
 class UserCommands:
-    """комы (get), аддком (add), делком (delete), send"""
-
     def __init__(self):
         self.commands = {}
 
