@@ -99,10 +99,16 @@ class HoYoLAB:
             return f"🚇Подземелья: {s['stats']['unlocked_domains']}"
 
         def teapot():
-            return f"🏡Чайник: Ур. {s['teapot']['level']} 🧸Комфорт: {s['teapot']['comfort']}"
+            if s.get('teapot'):
+                return f"🏡Чайник: Ур. {s['teapot']['level']} 🧸Комфорт: {s['teapot']['comfort']}"
+            else:
+                return '🏡Чайник: еще не открыт!'
 
         def characters():
-            response_ = []
+            friendship = [ch['friendship'] for ch in s['characters'] if ch['friendship'] == 10]
+            response_ = [
+                '👥Персонажи:', f"📝всего -- {s['stats']['characters']}", f"💌с 10 ур. дружбы -- {len(friendship)}"
+            ]
 
             for i, character in enumerate(s['characters']):
                 response_.append(
