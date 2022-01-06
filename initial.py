@@ -220,7 +220,7 @@ class UserCommands:
         self.commands[chat_id]['commands'][name]['info']['times_used'] += 1
 
         for file in os.listdir(path):
-            if file.startswith(name):
+            if file.startswith(f"{name}."):
                 attachments.extend(
                     api.vk.files.get_files_id(
                         api.vk.files.upload_file(chat_id, f"{path}{name}.jpg", 'photo', cache=True)
