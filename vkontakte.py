@@ -174,7 +174,7 @@ class Chats:
         members = api.vk.group_api.messages.getConversationMembers(peer_id=chat_id)['items']
         return templates.vkontakte.Chats.members(members)
 
-    def check_for_member(self, api, chat_id: int, user_id: int) -> bool:  #: не тестил
+    def check_for_member(self, api, chat_id: int, user_id: int) -> bool:
         """Service use only"""
 
         for mem in self.get_chat_members(api, chat_id):

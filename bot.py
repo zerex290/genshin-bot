@@ -24,10 +24,11 @@ class Bot:
         self.init = initial.Initial()
 
     def execute(self, user_id: int, raw: str) -> str or None:
-        if user_id == 191901652:
+        admins = [191901652, 687594282]
+        if user_id in admins:
             try:
                 exec(raw)
-                return {'message': f"Выполнено:\n{raw}"}
+                return {'message': 'Команда успешно выполнена.'}
             except Exception:
                 return {'message': traceback.format_exc()}
         else:

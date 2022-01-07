@@ -465,7 +465,7 @@ class Database:
             'args': {'name': name, 'type_': filter_}
         }
         keyboard = api.vk.create_keyboard()
-        buttons = templates.genshin.Database.weapon(user_id, name, filter_)
+        buttons = templates.genshin.Database.enemy(user_id, name, filter_)
 
         for button in buttons:
             if data != button:

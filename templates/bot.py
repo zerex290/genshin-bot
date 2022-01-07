@@ -56,7 +56,11 @@ class Commands:
                        'args': {'api': self.api,
                                 'chat_id': self.api.vk.messages.chat_id,
                                 'user_id': self.api.vk.messages.user_id,
-                                'raw': self.get_command(self.api.vk.messages.message).lower()}},
+                                'name': self.get_command(self.api.vk.messages.message).lower()}},
+            'свитчком': {'func': self.api.init.usercoms.switch,
+                         'args': {'api': self.api,
+                                  'chat_id': self.api.vk.messages.chat_id,
+                                  'user_id': self.api.vk.messages.user_id}},
 
             'геншрег': {'func': self.api.genshin.hoyolab.register_in_gdb,
                         'args': {'user_id': self.api.vk.messages.user_id,

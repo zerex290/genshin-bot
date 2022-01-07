@@ -116,41 +116,49 @@ class UserCommands:
     def __init__(self):
         self.commands = {}
 
-    def load(self):
+    def load(self) -> int:
         """Service use only"""
 
         with open('/home/Moldus/vkbot/genshin/user_commands/usercoms.pkl', 'rb') as commands:
             self.commands = pickle.load(commands)
             return 1
 
-    def dump(self):
+    def dump(self) -> int:
         """Service use only"""
 
         with open('/home/Moldus/vkbot/genshin/user_commands/usercoms.pkl', 'wb') as commands:
             pickle.dump(self.commands, commands)
         return 1
 
-    def get(self, chat_id: int) -> dict:
-        if chat_id < 2 * (10 ** 9):
-            return {'message': 'Данная функция недоступна для использования в личных сообщениях!'}
-        if chat_id not in self.commands or not self.commands.get(chat_id, {}).get('commands', {}):
-            return {'message': 'В этом чате не создано ни одной команды!'}
-        return {'message': 'Список пользовательских команд:\n' + '\n'.join(list(self.commands[chat_id]['commands']))}
-
-    def add(self, api, chat_id: int, user_id: int, raw: str, attachments: list) -> dict:
-        if chat_id < 2 * (10 ** 9):
-            return {'message': 'Данная функция недоступна для использования в личных сообщениях!'}
+    def _is_exists(self, chat_id: int) -> int:
         if chat_id not in self.commands:
             self.commands[chat_id] = {}
             self.commands[chat_id]['ffa'] = True
             self.commands[chat_id]['commands'] = {}
+        return 1
+
+    def get(self, chat_id: int) -> dict:
+        if chat_id < 2 * (10 ** 9):
+            return {'message': 'Данная функция недоступна для использования в личных сообщениях!'}
+        elif chat_id not in self.commands or not self.commands.get(chat_id, {}).get('commands'):
+            return {'message': 'В этом чате не создано ни одной команды!'}
+
+        return {'message': 'Список пользовательских команд:\n' + '\n'.join(list(self.commands[chat_id]['commands']))}
+
+    def add(self, api, chat_id: int, user_id: int, raw: str, attachments: list) -> dict:
+        general_commands = constants.Uncategorized.COMMANDS
+
+        if chat_id < 2 * (10 ** 9):
+            return {'message': 'Данная функция недоступна для использования в личных сообщениях!'}
         if not raw or (len(raw.split()) == 1 and not attachments):
             return {'message': 'Вы не можете добавить команду без названия и описания!'}
 
         name, message = (raw.split(maxsplit=1)[0], raw.split(maxsplit=1)[1]) if raw.find(' ') != -1 else (raw, '')
-        if name in self.commands[chat_id]['commands']:
+        self._is_exists(chat_id)
+
+        if name in self.commands[chat_id]['commands'] or name in general_commands:
             return {'message': 'Данная команда уже существует!'}
-        elif not self.commands[chat_id]['ffa'] and not api.vk.check_for_privileges(chat_id, user_id):
+        elif not self.commands[chat_id]['ffa'] and not api.vk.chats.check_for_privileges(api, chat_id, user_id):
             return {'message': 'У вас недостаточно прав для добавления данной команды!'}
 
         date = datetime.datetime.now()
@@ -166,9 +174,7 @@ class UserCommands:
         }
 
         for attachment in attachments:
-            if attachment['type'] == 'video' or attachment['type'] not in api.vk.files.attachment_types:
-                continue
-            elif attachment['type'] == 'audio':
+            if attachment['type'] == 'audio':
                 self.commands[chat_id]['commands'][name]['args']['attachments'].extend(
                     api.vk.files.get_files_id([attachment])
                 )
@@ -176,7 +182,7 @@ class UserCommands:
                 url = {s['height']: s['url'] for s in attachment['photo']['sizes']}
                 url = url[max(url)]
                 api.vk.files.download_file(url, 'photo',  'jpg', f"{path}{name}.jpg", cache=True)
-            else:
+            elif attachment['type'] == 'doc':
                 ext = attachment['doc']['ext']
                 url = attachment['doc']['url']
                 self.commands[chat_id]['commands'][name]['args']['attachments'].extend(
@@ -190,15 +196,14 @@ class UserCommands:
         self.dump()
         return {'message': f"Команда {name} успешно добавлена!"}
 
-    def delete(self, api, chat_id: int, user_id: int, raw: str) -> dict:
+    def delete(self, api, chat_id: int, user_id: int, name: str) -> dict:
         if chat_id < 2 * (10 ** 9):
             return {'message': 'Данная функция недоступна для использования в личных сообщениях!'}
-        if chat_id not in self.commands:
+        elif chat_id not in self.commands:
             return {'message': 'В этом чате не создано ни одной команды!'}
-        if not raw:
+        elif not name:
             return {'message': 'Вы не можете удалить команду без указания ее названия!'}
 
-        name = raw.split(maxsplit=1)[0] if raw.find(' ') != -1 else raw
         if name not in self.commands[chat_id]['commands']:
             return {'message': 'Вы не можете удалить несуществующую команду!'}
         elif not self.commands[chat_id]['ffa'] and not api.vk.check_for_privileges(chat_id, user_id):
@@ -206,7 +211,7 @@ class UserCommands:
 
         path = f"/home/Moldus/vkbot/genshin/user_commands/files/chat_{chat_id}/"
         for file in os.listdir(path):
-            os.remove(f"{path}{file}") if file.startswith(name) else None
+            os.remove(f"{path}{file}") if file.startswith(f"{name}.") else None
         del self.commands[chat_id]['commands'][name]
 
         self.dump()
@@ -229,6 +234,14 @@ class UserCommands:
 
         self.dump()
         return api.vk.messages.send_(chat_id, message, attachments)
+
+    def switch(self, api, chat_id: int, user_id: int) -> dict:
+        if api.vk.chats.check_for_privileges(api, chat_id, user_id):
+            self.commands[chat_id]['ffa'] = True if not self.commands[chat_id]['ffa'] else False
+            self.dump()
+            return {'message': 'Изменены права на изменение пользовательских команд в чате!'}
+        else:
+            return {'message': 'Для использования данной команды требуется быть администратором чата!'}
 
 
 class Initial(Main):
@@ -271,7 +284,9 @@ class Initial(Main):
             pic = {pic['favourites']: pic['id'] for pic in pics}
             pic = [picture for picture in pics if picture['id'] == pic[max(pic)]][0]
 
-            if pic['id'] in self.recently_posted['common']['ids']:
+            if not pic:
+                continue
+            elif pic['id'] in self.recently_posted['common']['ids']:
                 continue
             elif pic['id'] in self.recently_posted['donut']['ids']:
                 continue
