@@ -141,8 +141,8 @@ class Genshin:
         'Tohma': 'Тома',
         'Itto': 'Итто',
         'Gorou': 'Горо',
-        # 'Yunjin': 'Юнь Цзинь',
-        # 'Shenhe': 'Шэнь Хэ',
+        'Yunjin': 'Юнь Цзинь',
+        'Shenhe': 'Шэнь Хэ',
         # 'Yae': 'Яэ'
     }
 
