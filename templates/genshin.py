@@ -129,6 +129,7 @@ class HoYoLAB:
                                              f"Ур. {s['explorations'][r]['offerings'][0]['level']}",
                 'Ли Юэ': lambda r: f"Ур. репутации:  {s['explorations'][r]['level']}",
                 'Мондштадт': lambda r: f"Ур. репутации:  {s['explorations'][r]['level']}",
+                'Энканомия': lambda r: f""
             }
             response_ = []
 

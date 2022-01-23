@@ -218,6 +218,7 @@ class UserCommands:
         return {'message': f"Команда {name} успешно удалена!"}
 
     def send(self, api, chat_id: int, name: str) -> list:
+        type_ = constants.Extensions.EXT
         path = f"/home/Moldus/vkbot/genshin/user_commands/files/chat_{chat_id}/"
         attachments = []
         attachments.extend(self.commands[chat_id]['commands'][name]['args']['attachments'])
@@ -228,7 +229,7 @@ class UserCommands:
             if file.startswith(f"{name}."):
                 attachments.extend(
                     api.vk.files.get_files_id(
-                        api.vk.files.upload_file(chat_id, f"{path}{name}.jpg", 'photo', cache=True)
+                        api.vk.files.upload_file(chat_id, f"{path}{file}", type_[file.split('.')[-1]], cache=True)
                     )
                 )
 

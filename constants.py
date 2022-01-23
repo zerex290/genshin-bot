@@ -48,7 +48,8 @@ class Genshin:
         'итто': '/home/Moldus/vkbot/genshin/ascension/itto.png',
         'горо': '/home/Moldus/vkbot/genshin/ascension/gorou.png',
         'юньцзинь': '/home/Moldus/vkbot/genshin/ascension/yunjin.png',
-        'шэньхэ': '/home/Moldus/vkbot/genshin/ascension/shenhe.png'
+        'шэньхэ': '/home/Moldus/vkbot/genshin/ascension/shenhe.png',
+        'яэмико': '/home/Moldus/vkbot/genshin/ascension/yae.png'
     }
 
     ELEMENT = {
@@ -143,7 +144,7 @@ class Genshin:
         'Gorou': 'Горо',
         'Yunjin': 'Юнь Цзинь',
         'Shenhe': 'Шэнь Хэ',
-        # 'Yae': 'Яэ'
+        'Yae': 'Яэ'
     }
 
 
@@ -176,3 +177,8 @@ class Uncategorized:
         'резинноут', 'ресы', 'бездна', 'фарм', 'таланты', 'книги',
         'данжи', 'заметки', 'награды', 'статы', 'пром', 'гдб'
     ]
+
+
+class Extensions:
+    EXT = {'jpg': 'photo', 'png': 'photo', 'gif': 'doc'}
+

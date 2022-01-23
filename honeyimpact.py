@@ -41,8 +41,11 @@ class Parser:
         return 1
 
     def parse(self, url: str) -> int:
-        self.html = requests.get(url=url, headers=self.HEADERS, params=self.ATTRIBUTES).text
-        self.tree = html.document_fromstring(self.html)
+        try:
+            self.html = requests.get(url=url, headers=self.HEADERS, params=self.ATTRIBUTES).text
+            self.tree = html.document_fromstring(self.html)
+        except requests.exceptions.RequestException:
+            self.tree = html.document_fromstring('<html></html>')
         return 1
 
 

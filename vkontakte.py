@@ -115,7 +115,7 @@ class Files:
         id_ = []
 
         for attachment in attachments:
-            if attachment['type'] in self.attachment_types:
+            if attachment.get('type') in self.attachment_types:
                 id_.append(self.attachment_types[attachment['type']](attachment[attachment['type']]))
 
         return id_ if id_ else None
