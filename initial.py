@@ -83,7 +83,7 @@ class Booru:
         if len(raw_tags) > 4:
             return {'message': 'Нельзя указать более 4 тегов одновремено!'}
 
-        amount = amount if amount <= 10 else 10
+        amount = abs(amount) if abs(amount) <= 10 else 10
         errors = []
         tags = []
 
@@ -109,7 +109,12 @@ class Booru:
                     'photo'
                 )
             )
-        return {'attachments': api.vk.files.get_files_id(pic_arrays)}
+
+        response = {
+            'message': f"По вашему запросу найдено {len(pic_arrays)} изображений!",
+            'attachments': api.vk.files.get_files_id(pic_arrays)
+        }
+        return response
 
 
 class UserCommands:
@@ -206,7 +211,7 @@ class UserCommands:
 
         if name not in self.commands[chat_id]['commands']:
             return {'message': 'Вы не можете удалить несуществующую команду!'}
-        elif not self.commands[chat_id]['ffa'] and not api.vk.check_for_privileges(chat_id, user_id):
+        elif not self.commands[chat_id]['ffa'] and not api.vk.chats.check_for_privileges(api, chat_id, user_id):
             return {'message': 'У вас недостаточно прав для удаления данной команды!'}
 
         path = f"/home/Moldus/vkbot/genshin/user_commands/files/chat_{chat_id}/"
