@@ -5,6 +5,7 @@ from socket import timeout
 from urllib3.exceptions import ReadTimeoutError
 
 from requests.exceptions import ReadTimeout, ConnectionError
+from vk_api.exceptions import ApiError
 
 import vkontakte
 import genshin
@@ -93,6 +94,10 @@ def main_thread():
                         threading.Thread(target=execute, name='ГДБ').start()
         except (ReadTimeout, ReadTimeoutError, timeout, ConnectionError):
             sleep(2)
+        except ApiError:
+            pass
+        except Exception:
+            bot.vk.messages.send_(2000000004, f"{traceback.format_exc()[:4096]}")
 
 
 def resin_thread():
