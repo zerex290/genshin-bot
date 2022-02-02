@@ -124,7 +124,7 @@ class Files:
     def download_file(url: str, type_: str, ext: str, dir_: str = None, cache: bool = False) -> str:
         """Service use only"""
 
-        file_directory = f"/home/Moldus/vkbot/cache/{type_}_{random.randint(0, 10)}.{ext}" if dir_ is None else dir_
+        file_directory = f"/home/Moldus/vkbot/cache/{type_}_{random.randint(0, 1000)}.{ext}" if dir_ is None else dir_
 
         with open(file_directory, 'wb') as file:
             file.write(requests.get(url).content)
@@ -145,7 +145,10 @@ class Files:
             file = {}
 
         if not cache:
-            os.remove(dir_)
+            try:
+                os.remove(dir_)
+            except FileNotFoundError:
+                pass
         return [file]
 
 
@@ -213,7 +216,8 @@ class Vk(Session):
     def get_username(self, user_id: int) -> str:
         """Service use only"""
 
-        return self.group_api.users.get(user_ids=user_id)[0]['first_name']
+        name = self.group_api.users.get(user_ids=user_id)
+        return name[0]['first_name'] if name else 'Undefined Group'
 
     @staticmethod
     def create_keyboard(one_time=False, inline=True) -> VkKeyboard:
