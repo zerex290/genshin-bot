@@ -178,6 +178,8 @@ class Uncategorized:
         'данжи', 'заметки', 'награды', 'статы', 'пром', 'гдб'
     ]
 
+    SYMBOLS = list('!@#$%^&*)+=~`[]{};:\'",<.>/?№')
+
 
 class Extensions:
     EXT = {'jpg': 'photo', 'png': 'photo', 'gif': 'doc'}
