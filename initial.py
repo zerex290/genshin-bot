@@ -259,6 +259,7 @@ class Initial(Main):
 
         self.recently_posted = {}
         self.tags = ''
+        self.thematic = False
 
     def load_recently_posted(self) -> int:
         """Service use only"""
@@ -274,6 +275,46 @@ class Initial(Main):
             pickle.dump(self.recently_posted, recently_posted)
             return 1
 
+    def _insert_post_ids(self, post_id: dict, picture, donut: bool) -> int:
+        post_type = 'common' if not donut else 'donut'
+        self.recently_posted[post_type]['vk_ids'].append(post_id['post_id'])
+        self.recently_posted[post_type]['ids'].append(picture['id'])
+        return 1
+
+    def _is_pic_exists(self, pic: dict) -> bool:
+        status = False
+
+        if (pic and pic['id'] not in self.recently_posted['common']['ids']
+                and pic['id'] not in self.recently_posted['donut']['ids']):
+            status = True
+        return status
+
+    def _get_picture(self, limit: int, thematic: bool, donut: bool) -> dict:
+        status = False
+        response = {}
+
+        while not status:
+            pictures = self.booru.api.post_list(
+                random=True, limit=limit,
+                tags=(f"genshin_impact -filetype:mp4 rating:{'s' if not donut else 'q'} "
+                      f"{'' if not donut else '-loli'} {self.tags}")
+            )
+            picture = templates.initial.Initial.primary_sorting(pictures)
+
+            if not self._is_pic_exists(picture):
+                continue
+
+            picture = templates.initial.Initial.secondary_sorting(picture, donut=donut)
+
+            if not picture:
+                continue
+            elif thematic and not len(picture['characters']) <= 3:
+                continue
+            response = picture
+            status = True
+
+        return response
+
     def make_post(self, api, limit: int = 10, donut=False) -> int:
         """Service use only"""
 
@@ -281,62 +322,30 @@ class Initial(Main):
         status = False
 
         while not status:
-            pics = self.booru.api.post_list(
-                random=True, limit=limit,
-                tags=(f"genshin_impact -filetype:mp4 rating:{'s' if not donut else 'q'} "
-                      f"{'' if not donut else '-loli'} {self.tags}")
-            )
-            pics = [templates.initial.Initial.parts(p) for p in pics if p.get('id') and p.get('fav_count', 0) >= 30]
-            pic = {pic['favourites']: pic['id'] for pic in pics}
-            pic = [picture for picture in pics if picture['id'] == pic[max(pic)]][0]
-
-            if not pic:
-                continue
-            elif pic['id'] in self.recently_posted['common']['ids']:
-                continue
-            elif pic['id'] in self.recently_posted['donut']['ids']:
-                continue
-
-            characters = [char.replace('"', '').replace('-', '_').replace("'", '') for char in pic['characters']]
-            general = [tag.replace('"', '').replace('-', '_').replace("'", '') for tag in pic['general']]
-            universes = [uvs.replace('"', '').replace('-', '_').replace("'", '') for uvs in pic['universes']]
-            artists = [artist.replace('"', '').replace('-', '_').replace("'", '') for artist in pic['artists']]
-
-            if not donut and {'areora_slip', 'bdsm', 'lingerie'} <= set(general):
-                continue
-            elif donut and {'anus', 'penis'} <= set(general):
-                continue
-
-            tags = templates.initial.Initial.prettified_tags(characters, universes, artists, general, donut=donut)
-            message = templates.initial.Initial.message(tags, pic['favourites'], pic['date'], donut=donut)
+            picture = self._get_picture(limit, self.thematic, donut=donut)
+            message = templates.initial.Initial.get_message(picture, donut=donut)
 
             args = {
                 'owner_id': -private.Vk.GROUP_ID, 'message': message,
-                'close_comments': 0, 'copyright': pic['original_url']
+                'close_comments': 0, 'copyright': picture['original_url']
             }
 
             try:
-                picture = api.vk.files.get_files_id(
+                picture_id = api.vk.files.get_files_id(
                     api.vk.files.upload_file(
                         private.Vk.GROUP_ID,
-                        api.vk.files.download_file(pic['resized_url'], 'photo_wall', pic['ext'], cache=True),
+                        api.vk.files.download_file(picture['resized_url'], 'photo_wall', picture['ext'], cache=True),
                         'photo_wall'
                     )
                 )
-                args['attachments'] = picture
+                args['attachments'] = picture_id
                 if donut:
                     args['donut_paid_duration'] = -1
 
                 post_id = api.vk.user_api.wall.post(**args)
-                if not donut:
-                    self.recently_posted['common']['vk_ids'].append(post_id['post_id'])
-                    self.recently_posted['common']['ids'].append(pic['id'])
-                else:
-                    self.recently_posted['donut']['vk_ids'].append(post_id['post_id'])
-                    self.recently_posted['donut']['ids'].append(pic['id'])
-
+                self._insert_post_ids(post_id, picture, donut=donut)
                 self.dump_recently_posted()
                 status = True
             except VkApiError:
-                api.vk.messages.send_(2000000004, f"{str(pic)}\n{traceback.format_exc()}")
+                api.vk.messages.send_(2000000004, f"{str(picture)}\n{traceback.format_exc()}"[:4096])
         return 1
