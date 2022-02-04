@@ -6,6 +6,7 @@ import datetime
 import os
 
 from pybooru import Danbooru
+from simplejson.errors import JSONDecodeError
 from vk_api.exceptions import VkApiError
 
 import constants
@@ -81,7 +82,7 @@ class Booru:
         except (ValueError, IndexError):
             return {'message': 'Ошибка в указании количества изображений!'}
         if len(raw_tags) > 4:
-            return {'message': 'Нельзя указать более 4 тегов одновремено!'}
+            return {'message': 'Нельзя указать более 4 тегов одновременно!'}
 
         amount = abs(amount) if abs(amount) <= 10 else 10
         errors = []
@@ -346,6 +347,8 @@ class Initial(Main):
                 self._insert_post_ids(post_id, picture, donut=donut)
                 self.dump_recently_posted()
                 status = True
+            except JSONDecodeError:
+                continue
             except VkApiError:
                 api.vk.messages.send_(2000000004, f"{str(picture)}\n{traceback.format_exc()}"[:4096])
         return 1

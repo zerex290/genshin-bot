@@ -78,10 +78,6 @@ class Commands:
                               'chat_id': self.api.vk.messages.chat_id,
                               'character': self.get_command(self.api.vk.messages.message).lower()}},
 
-            'бездна': {'func': self.api.genshin.get_spiral_abyss,
-                       'args': {'api': self.api,
-                                'chat_id': self.api.vk.messages.chat_id}},
-
             'фарм': {'func': self.api.genshin.get_daily_farm,
                      'args': {'api': self.api,
                               'chat_id': self.api.vk.messages.chat_id}},

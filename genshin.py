@@ -30,17 +30,6 @@ class Main:
         return {'attachments': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
 
     @staticmethod
-    def get_spiral_abyss(api, chat_id: int) -> dict:
-        file_directory = '/home/Moldus/vkbot/genshin/abyss/abyss.png'
-        pic = api.vk.files.upload.photo_messages(file_directory, peer_id=chat_id)
-
-        response = {
-            'attachments': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"],
-            'message': api.genshin.abyss_blessing
-        }
-        return response
-
-    @staticmethod
     def get_boss_materials(api, chat_id: int) -> dict:
         file_directory = '/home/Moldus/vkbot/genshin/boss_materials/materials.png'
         pic = api.vk.files.upload.photo_messages(file_directory, peer_id=chat_id)
@@ -495,8 +484,6 @@ class Genshin(Main):
     """Genshin class constructor"""
 
     def __init__(self):
-        self.abyss_blessing = ''
-
         self.main = Main()
         self.hoyolab = HoYoLAB()
         self.db = Database()
