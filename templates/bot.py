@@ -1,5 +1,7 @@
 """Service use only"""
 
+import re
+
 
 import constants
 
@@ -70,8 +72,8 @@ class Commands:
                         'args': {'user_id': self.api.vk.messages.user_id}},
 
             'резинноут': {'func': self.api.genshin.hoyolab.switch_resin_notifications,
-                          'args': {'user_id': self.api.vk.messages.user_id,
-                                   'raw': self.get_command(self.api.vk.messages.message).lower()}},
+                          'args': {'options': self.get_options(),
+                                   'user_id': self.api.vk.messages.user_id}},
 
             'ресы': {'func': self.api.genshin.get_ascension_materials,
                      'args': {'api': self.api,
@@ -95,7 +97,9 @@ class Commands:
                                'chat_id': self.api.vk.messages.chat_id}},
 
             'заметки': {'func': self.api.genshin.hoyolab.get_notes,
-                        'args': {'user_id': self.api.vk.messages.user_id}},
+                        'args': {'options': self.get_options(),
+                                 'reply_message': self.api.vk.messages.reply_message,
+                                 'user_id': self.api.vk.messages.user_id}},
 
             'награды': {'func': self.api.genshin.hoyolab.get_daily_reward,
                         'args': {'api': self.api,
@@ -119,11 +123,15 @@ class Commands:
     def __exit__(self, exc_type, exc_val, exc_tb):
         del self.coms
 
+    def get_options(self) -> set:
+        options = re.findall('-\\w', self.api.vk.messages.message)
+        return set(options) if options else {'default'}
+
     def get_command(self, raw: str):
-        if raw.find(' ') != -1:
-            return raw.replace(f"!{self.api.vk.messages.trigger} ", '')
-        else:
-            return ''
+        raw = raw
+        for opt in self.get_options():
+            raw = raw.replace(opt, '')
+        return raw.lstrip(f"!{self.api.vk.messages.trigger}").lstrip()
 
 
 class PayloadTypes:

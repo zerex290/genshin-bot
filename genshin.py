@@ -7,6 +7,7 @@ import genshinstats as gs
 
 import constants
 import templates.genshin
+from wrappers import genshinwrap
 import honeyimpact
 
 
@@ -92,19 +93,43 @@ class HoYoLAB:
         self.dump_accounts()
         return {'message': 'Ваши данные были успешно удалены!'}
 
-    def get_notes(self, user_id: int) -> dict:
-        notes = []
+    # @genshinwrap.get_notes
+    # def get_notes(self, user_id: int) -> dict:
+    #     notes = []
+    #
+    #     try:
+    #         notes.append(gs.get_notes(
+    #             uid=self.accounts[user_id]['uid'], lang='ru-ru',
+    #             cookie=gs.set_cookie(ltuid=self.accounts[user_id]['ltuid'], ltoken=self.accounts[user_id]['ltoken'])
+    #         ))
+    #     except gs.errors.GenshinStatsException as exc:
+    #         return {'message': f"Ошибка: {exc}"}
+    #     except KeyError:
+    #         return {'message': 'Ошибка: в базе отсутствуют ваши данные!'}
+    #     return {'message': templates.genshin.HoYoLAB.notes(notes[0])}
 
+    @genshinwrap.get_notes
+    def get_notes(self, user_id: int) -> dict:
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=zametki
+        \n Описание: При использовании данной команды бот отправляет в чат сообщение с вашими заметками \
+        путешественника в реальном времени.
+        \n Синтаксис: !заметки [опции]\
+        \n -п >>> текущая справка по команде\
+        \n -у [ответ на сообщение другого игрока] >>> просмотр заметок другого путешественника
+        """
+
+        notes = {}
         try:
-            notes.append(gs.get_notes(
+            notes['data'] = templates.genshin.HoYoLAB.notes(gs.get_notes(
                 uid=self.accounts[user_id]['uid'], lang='ru-ru',
                 cookie=gs.set_cookie(ltuid=self.accounts[user_id]['ltuid'], ltoken=self.accounts[user_id]['ltoken'])
             ))
         except gs.errors.GenshinStatsException as exc:
-            return {'message': f"Ошибка: {exc}"}
+            notes['error'] = f"Ошибка: {exc}"
         except KeyError:
-            return {'message': 'Ошибка: в базе отсутствуют ваши данные!'}
-        return {'message': templates.genshin.HoYoLAB.notes(notes[0])}
+            notes['error'] = 'Ошибка: в базе отсутствуют ваши данные!'
+        return notes
 
     def get_daily_reward(self, api, chat_id: int, user_id: int) -> dict:
         rewards = []
@@ -187,17 +212,39 @@ class HoYoLAB:
                             )
         sleep(1800)
 
-    def switch_resin_notifications(self, user_id: int, raw: str) -> dict:
-        if raw.find('вкл') != -1:
-            self.accounts[user_id]['resin_notify'] = True
-            self.dump_accounts()
-            return {'message': 'Автоматическое напоминание потратить смолу включено!'}
-        elif raw.find('выкл') != -1:
-            self.accounts[user_id]['resin_notify'] = False
-            self.dump_accounts()
-            return {'message': 'Автоматическое напоминание потратить смолу отключено!'}
-        else:
-            return {'message': 'Неправильно указаны агрументы для команды!'}
+    # def switch_resin_notifications(self, user_id: int, raw: str) -> dict:
+    #     if raw.find('вкл') != -1:
+    #         self.accounts[user_id]['resin_notify'] = True
+    #         self.dump_accounts()
+    #         return {'message': 'Автоматическое напоминание потратить смолу включено!'}
+    #     elif raw.find('выкл') != -1:
+    #         self.accounts[user_id]['resin_notify'] = False
+    #         self.dump_accounts()
+    #         return {'message': 'Автоматическое напоминание потратить смолу отключено!'}
+    #     else:
+    #         return {'message': 'Неправильно указаны агрументы для команды!'}
+
+    @genshinwrap.switch_resin_notifications
+    def switch_resin_notifications(self, user_id: int) -> dict:
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=rezinnout
+        \n Описание: Данная команда может проводить манипуляции с функцией отметки в чате пользователя, значение смолы \
+        которого достигло или превысило 150 единиц.\
+        \n По умолчанию показывает текущий статус функции отметки в чате.
+        \n Синтаксис: !резинноут [опции]\
+        \n -п >>> текущая справка по команде\
+        \n -выкл >>> выключение функции отметки в чате\
+        \n -вкл >>> включение функции отметки в чате
+        """
+
+        response = {}
+        try:
+            response['data'] = (
+                f"В данный момент у вас {'включены' if self.accounts[user_id]['resin_notify'] else 'отключены'} "
+                f"оповещения о трате смолы!")
+        except KeyError:
+            response['error'] = f"Ошибка: в базе отсутствуют ваши данные!"
+        return response
 
     def claim_daily_rewards(self, api) -> None:
         self.load_accounts()
