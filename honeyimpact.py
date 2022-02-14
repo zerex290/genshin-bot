@@ -285,10 +285,18 @@ class Weapons(Parser):
 
     def get_ability(self, name: str, type_: str):
         self._get_certain_weapon(name, type_)
-        table = self.tree.xpath('//div[@class="wrappercont"]//table[@class="item_main_table"][1]')[0]
-        abi_title = ''.join(table.xpath('.//tr/td[text()="Special (passive) Ability"]/following-sibling::td/text()'))
-        abi_desc = ''.join(table.xpath('.//tr/td[contains(text(), "Ability Desc")]/following-sibling::td//text()'))
 
+        def get_information(beta: bool = False) -> tuple:
+            table_number = 1 if beta else 0
+
+            table_list = self.tree.xpath(f'//div[@class="wrappercont"]//table[@class="item_main_table"]')
+            table = table_list[table_number]
+            title = ''.join(table.xpath('.//tr/td[text()="Special (passive) Ability"]/following-sibling::td/text()'))
+            desc = ''.join(table.xpath('.//tr/td[contains(text(), "Ability Desc")]/following-sibling::td//text()'))
+            return title, desc
+
+        abi_title, abi_desc = get_information()
+        abi_title, abi_desc = get_information(beta=True) if not abi_title or not abi_desc else (abi_title, abi_desc)
         info = {
             'ability_title': abi_title,
             'ability_description': abi_desc

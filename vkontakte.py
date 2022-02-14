@@ -10,6 +10,8 @@ from vk_api.upload import VkUpload
 from vk_api.keyboard import VkKeyboard
 from vk_api.longpoll import VkLongPoll
 from vk_api.utils import get_random_id
+from vk_api.exceptions import ApiError
+from simplejson.errors import JSONDecodeError
 
 import templates.vkontakte
 
@@ -141,7 +143,7 @@ class Files:
                 file = {type_: self.upl_types[type_](self.upload, dir_, peer)[0], 'type': type_}
             else:
                 file = self.upl_types['doc'](self.upload, dir_, peer, title)
-        except vk_api.exceptions.ApiError:
+        except (vk_api.exceptions.ApiError, JSONDecodeError):
             file = {}
 
         if not cache:
@@ -174,8 +176,22 @@ class Chats:
     def get_chat_members(api, chat_id: int) -> list:
         """Service use only"""
 
-        members = api.vk.group_api.messages.getConversationMembers(peer_id=chat_id)['items']
+        try:
+            members = api.vk.group_api.messages.getConversationMembers(peer_id=chat_id)['items']
+        except ApiError:
+            return []
+
         return templates.vkontakte.Chats.members(members)
+
+    def refresh_chat_members(self, api, chat_id: int) -> int:
+        actions = ['chat_invite_user_by_link', 'chat_kick_user', 'chat_invite_user']
+        if api.vk.messages.action in actions:
+            for chat in self.chats['chats']:
+                if chat['id'] == chat_id:
+                    chat['members'] = self.get_chat_members(api, chat_id)
+                    self.dump()
+                    break
+        return 1
 
     def check_for_member(self, api, chat_id: int, user_id: int) -> bool:
         """Service use only"""
@@ -193,12 +209,32 @@ class Chats:
                 return True
         return False
 
-    def add_new_chat(self, api, chat_id: int) -> int:
+    def _add_chat(self, api, chat_id: int) -> int:
         """Service use only"""
 
         self.chats['chats'].append(templates.vkontakte.Chats.new_chat(chat_id, self.get_chat_members(api, chat_id)))
         self.chats['ids'].append(chat_id)
         self.dump()
+        return 1
+
+    def _delete_chat(self, chat_id: int) -> int:
+        for i, chat in enumerate(self.chats['chats']):
+            if self.chats['chats'][i]['id'] == chat_id:
+                del self.chats['chats'][i]
+                self.chats['ids'].remove(chat_id)
+                break
+        self.dump()
+        return 1
+
+    def refresh_chats(self, api, chat_id: int) -> int:
+        if chat_id not in self.chats['ids'] and chat_id >= 2 * (10 ** 9):
+            self._add_chat(api, chat_id)
+        else:
+            try:
+                self.get_chat_members(api, chat_id)
+            except ApiError as access_error:
+                if access_error.code == 917:
+                    self._delete_chat(chat_id)
         return 1
 
 

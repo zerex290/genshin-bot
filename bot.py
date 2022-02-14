@@ -61,14 +61,8 @@ def main_thread():
                     bot.vk.chats.load()
                     bot.init.usercoms.load()
 
-                    if chat_id not in bot.vk.chats.chats['ids'] and chat_id >= 2 * (10 ** 9):
-                        bot.vk.chats.add_new_chat(bot, chat_id)
-
-                    if bot.vk.messages.action:
-                        for chat in bot.vk.chats.chats['chats']:
-                            if chat['id'] == chat_id:
-                                chat['members'] = bot.vk.chats.get_chat_members(bot, chat_id)
-                                bot.vk.chats.dump()
+                    bot.vk.chats.refresh_chat_members(bot, chat_id)
+                    bot.vk.chats.refresh_chats(bot, chat_id)
 
                     if (bot.vk.messages.prefix
                             and (trigger in bot.init.usercoms.commands.get(chat_id, {}).get('commands', {}))):

@@ -2,7 +2,6 @@
 
 import re
 
-
 import constants
 
 
@@ -13,87 +12,101 @@ class Commands:
     def __enter__(self):
         self.coms = {
             'команды': {'func': self.api.init.get_guide,
-                        'args': {}},
+                        'args': {'options': self.get_options()}},
 
             'exec': {'func': self.api.execute,
                      'args': {'user_id': self.api.vk.messages.user_id,
                               'raw': self.get_command(self.api.vk.messages.message)}},
 
             'конверт': {'func': self.api.init.convert,
-                        'args': {'reply_message': self.api.vk.messages.reply_message}},
+                        'args': {'options': self.get_options(),
+                                 'reply_message': self.api.vk.messages.reply_message}},
 
             'таймер': {'func': self.api.init.set_timer,
-                       'args': {'api': self.api,
+                       'args': {'options': self.get_options(),
+                                'api': self.api,
                                 'chat_id': self.api.vk.messages.chat_id,
                                 'user_id': self.api.vk.messages.user_id,
                                 'username': self.api.vk.get_username(self.api.vk.messages.user_id),
                                 'raw': self.get_command(self.api.vk.messages.message).lower()}},
 
             'выбери': {'func': self.api.init.make_choice,
-                       'args': {'raw': self.get_command(self.api.vk.messages.message)}},
+                       'args': {'options': self.get_options(),
+                                'raw': self.get_command(self.api.vk.messages.message)}},
 
             'перешли': {'func': self.api.init.send_attachments,
-                        'args': {'api': self.api,
+                        'args': {'options': self.get_options(),
+                                 'api': self.api,
                                  'attachments': self.api.vk.messages.attachments}},
 
             'рандомтег': {'func': self.api.init.booru.get_randtags,
-                          'args': {'raw': self.get_command(self.api.vk.messages.message)}},
+                          'args': {'options': self.get_options(),
+                                   'raw': self.get_command(self.api.vk.messages.message)}},
 
             'п': {'func': self.api.init.booru.get_randpics,
-                  'args': {'api': self.api,
+                  'args': {'options': self.get_options(),
+                           'api': self.api,
                            'chat_id': self.api.vk.messages.chat_id,
                            'raw': self.get_command(self.api.vk.messages.message)}},
 
             'комы': {'func': self.api.init.usercoms.get,
-                     'args': {'chat_id': self.api.vk.messages.chat_id}},
+                     'args': {'options': self.get_options(),
+                              'api': self.api,
+                              'chat_id': self.api.vk.messages.chat_id,
+                              'user_id': self.api.vk.messages.user_id}},
 
             'аддком': {'func': self.api.init.usercoms.add,
-                       'args': {'api': self.api,
+                       'args': {'options': self.get_options(),
+                                'api': self.api,
                                 'chat_id': self.api.vk.messages.chat_id,
                                 'user_id': self.api.vk.messages.user_id,
                                 'raw': self.get_command(self.api.vk.messages.message),
                                 'attachments': self.api.vk.messages.attachments}},
 
             'делком': {'func': self.api.init.usercoms.delete,
-                       'args': {'api': self.api,
+                       'args': {'options': self.get_options(),
+                                'api': self.api,
                                 'chat_id': self.api.vk.messages.chat_id,
                                 'user_id': self.api.vk.messages.user_id,
                                 'name': self.get_command(self.api.vk.messages.message).lower()}},
-            'свитчком': {'func': self.api.init.usercoms.switch,
-                         'args': {'api': self.api,
-                                  'chat_id': self.api.vk.messages.chat_id,
-                                  'user_id': self.api.vk.messages.user_id}},
 
             'геншрег': {'func': self.api.genshin.hoyolab.register_in_gdb,
-                        'args': {'user_id': self.api.vk.messages.user_id,
+                        'args': {'options': self.get_options(),
+                                 'user_id': self.api.vk.messages.user_id,
                                  'raw': self.get_command(self.api.vk.messages.message)}},
 
             'геншдел': {'func': self.api.genshin.hoyolab.remove_data_from_gdb,
-                        'args': {'user_id': self.api.vk.messages.user_id}},
+                        'args': {'options': self.get_options(),
+                                 'user_id': self.api.vk.messages.user_id}},
 
-            'резинноут': {'func': self.api.genshin.hoyolab.switch_resin_notifications,
+            'резинноут': {'func': self.api.genshin.hoyolab.manage_resin_notifications,
                           'args': {'options': self.get_options(),
                                    'user_id': self.api.vk.messages.user_id}},
 
             'ресы': {'func': self.api.genshin.get_ascension_materials,
-                     'args': {'api': self.api,
+                     'args': {'options': self.get_options(),
+                              'api': self.api,
                               'chat_id': self.api.vk.messages.chat_id,
                               'character': self.get_command(self.api.vk.messages.message).lower()}},
 
             'фарм': {'func': self.api.genshin.get_daily_farm,
-                     'args': {'api': self.api,
+                     'args': {'options': self.get_options(),
+                              'api': self.api,
                               'chat_id': self.api.vk.messages.chat_id}},
 
             'таланты': {'func': self.api.genshin.get_boss_materials,
-                        'args': {'api': self.api,
+                        'args': {'options': self.get_options(),
+                                 'api': self.api,
                                  'chat_id': self.api.vk.messages.chat_id}},
 
             'книги': {'func': self.api.genshin.get_books,
-                      'args': {'api': self.api,
+                      'args': {'options': self.get_options(),
+                               'api': self.api,
                                'chat_id': self.api.vk.messages.chat_id}},
 
             'данжи': {'func': self.api.genshin.get_domains,
-                      'args': {'api': self.api,
+                      'args': {'options': self.get_options(),
+                               'api': self.api,
                                'chat_id': self.api.vk.messages.chat_id}},
 
             'заметки': {'func': self.api.genshin.hoyolab.get_notes,
@@ -102,19 +115,24 @@ class Commands:
                                  'user_id': self.api.vk.messages.user_id}},
 
             'награды': {'func': self.api.genshin.hoyolab.get_daily_reward,
-                        'args': {'api': self.api,
+                        'args': {'options': self.get_options(),
+                                 'api': self.api,
                                  'chat_id': self.api.vk.messages.chat_id,
                                  'user_id': self.api.vk.messages.user_id}},
 
             'статы': {'func': self.api.genshin.hoyolab.get_stats,
-                      'args': {'user_id': self.api.vk.messages.user_id}},
+                      'args': {'options': self.get_options(),
+                               'reply_message': self.api.vk.messages.reply_message,
+                               'user_id': self.api.vk.messages.user_id}},
 
             'пром': {'func': self.api.genshin.hoyolab.activate_redeem,
-                     'args': {'user_id': self.api.vk.messages.user_id,
+                     'args': {'options': self.get_options(),
+                              'user_id': self.api.vk.messages.user_id,
                               'raw': self.get_command(self.api.vk.messages.message)}},
 
             'гдб': {'func': self.api.genshin.db.get_started,
-                    'args': {'api': self.api,
+                    'args': {'options': self.get_options(),
+                             'api': self.api,
                              'chat_id': self.api.vk.messages.chat_id,
                              'user_id': self.api.vk.messages.user_id}}
         }
@@ -124,8 +142,8 @@ class Commands:
         del self.coms
 
     def get_options(self) -> set:
-        options = re.findall('-\\w', self.api.vk.messages.message)
-        return set(options) if options else {'default'}
+        options = re.findall('\\s-[а-яА-ЯёЁ]+', self.api.vk.messages.message)
+        return set([opt.lstrip() for opt in options]) if options else {'default'}
 
     def get_command(self, raw: str):
         raw = raw
@@ -157,7 +175,8 @@ class PayloadTypes:
     def __enter__(self):
         self.responses = {
             'menu': {'func': self.api.genshin.db.get_started,
-                     'args': {'api': self.api,
+                     'args': {'options': self.get_options(),
+                              'api': self.api,
                               'chat_id': self.event.obj.get('peer_id'),
                               'user_id': self.event.obj.get('user_id')}},
 
@@ -253,3 +272,7 @@ class PayloadTypes:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         del self.responses
+
+    def get_options(self) -> set:
+        options = re.findall('\\s-[а-яА-ЯёЁ]+', self.api.vk.messages.message)
+        return set([opt.lstrip() for opt in options]) if options else {'default'}

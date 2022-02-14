@@ -15,38 +15,84 @@ class Main:
     """Отсюда можно команды сделать в одной!!!"""
 
     @staticmethod
+    @genshinwrap.get_ps_pictures
     def get_daily_farm(api, chat_id: int) -> dict:
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=farm
+        \n Описание: При использовании данной команды бот отправляет в чат сообщение с изображением тех персонажей и \
+        оружия, ресурсы для возвышения которых доступны на сегодняшний день.
+        \n Синтаксис: !фарм [опции]\
+        \n -п >>> текущая справка по команде\
+        """
+        # сделать так, чтобы можно было показывать фарм ресы на любой день через опции (-пн, -вт, -ср и т.п.)
+
         file_directory = f"/home/Moldus/vkbot/genshin/daily_farm/{datetime.datetime.now().weekday()}.png"
         pic = api.vk.files.upload.photo_messages(file_directory, peer_id=chat_id)
-        return {'attachments': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
+        return {'data': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
 
     @staticmethod
+    @genshinwrap.get_ascension_materials
     def get_ascension_materials(api, chat_id: int, character: str) -> dict:
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=farm
+        \n Описание: При использовании данной команды бот отправляет в чат сообщение с изображением материалов \
+        возвышения определенного персонажа.
+        \n Синтаксис: !ресы [опции] [имя персонажа]\
+        \n -п >>> текущая справка по команде\
+        """
+
         if not character:
-            return {'message': 'Вы не указали имя персонажа!'}
+            return {'error': 'Вы не указали имя персонажа!'}
         file_directory = constants.Genshin.ASCENSION.get(character.replace(' ', ''), None)
         if not file_directory:
-            return {'message': f"Ошибка в имени персонажа {character}!"}
+            return {'error': f"Ошибка в имени персонажа {character}!"}
         pic = api.vk.files.upload.photo_messages(file_directory, peer_id=chat_id)
-        return {'attachments': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
+        return {'data': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
 
     @staticmethod
+    @genshinwrap.get_ps_pictures
     def get_boss_materials(api, chat_id: int) -> dict:
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=talanty
+        \n Описание: При использовании данной команды бот отправляет в чат сообщение с изображением материалов \
+        боссов, используемых определенными персонажами.
+        \n Синтаксис: !таланты [опции]\
+        \n -п >>> текущая справка по команде\
+        """
+
         file_directory = '/home/Moldus/vkbot/genshin/boss_materials/materials.png'
         pic = api.vk.files.upload.photo_messages(file_directory, peer_id=chat_id)
-        return {'attachments': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
+        return {'data': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
 
     @staticmethod
+    @genshinwrap.get_ps_pictures
     def get_books(api, chat_id: int) -> dict:
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=knigi
+        \n Описание: При использовании данной команды бот отправляет в чат сообщение с изображением таблицы формата \
+        «дни недели-доступные для фарма книги».
+        \n Синтаксис: !книги [опции]\
+        \n -п >>> текущая справка по команде\
+        """
+
         file_directory = '/home/Moldus/vkbot/genshin/books/книги.png'
         pic = api.vk.files.upload.photo_messages(file_directory, peer_id=chat_id)
-        return {'attachments': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
+        return {'data': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
 
     @staticmethod
+    @genshinwrap.get_ps_pictures
     def get_domains(api, chat_id: int) -> dict:
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=danzhi
+        \n Описание: При использовании данной команды бот отправляет в чат сообщение с изображением игровых подземелий \
+        с их дропом, мобами и дебаффами подземелья.
+        \n Синтаксис: !данжи [опции]\
+        \n -п >>> текущая справка по команде\
+        """
+
         file_directory = '/home/Moldus/vkbot/genshin/dungeons/dungeon.png'
         pic = api.vk.files.upload.photo_messages(file_directory, peer_id=chat_id)
-        return {'attachments': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
+        return {'data': [f"photo{pic[0]['owner_id']}_{pic[0]['id']}_{pic[0]['access_key']}"]}
 
 
 class HoYoLAB:
@@ -67,9 +113,22 @@ class HoYoLAB:
             pickle.dump(self.accounts, accounts)
             return 1
 
+    @genshinwrap.register_in_gdb
     def register_in_gdb(self, user_id: int, raw: str):
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=genshreg
+        \n Описание: Данная команда позволяет зарегистрировать свой игровой аккаунт в базе данных бота.\
+        \n Требуемые данные: [ltoken], [ltuid], [cookie_token], [uid]
+        \n Примечание 1: после регистрации бот автоматически будет собирать логин-бонус для вашего аккаунта на сайте \
+        HoYoLab. Происходить это будет раз в 8 часов вечера по Московскому времени.\
+        \n Примечание 2: если после регистрации в базе вы решите сменить свои внутриигровые данные, то процесс \
+        регистрации придется проводить по новой, т.к. при их смене ваши куки меняются.
+        \n Синтаксис: !геншрег [опции] [данные=значение]\
+        \n -п >>> текущая справка по команде
+        """
+
         if user_id in self.accounts:
-            return {'message': 'Ваш аккаунт уже существует в базе!'}
+            return {'error': 'Ваш аккаунт уже существует в базе!'}
 
         data = {}
         try:
@@ -78,35 +137,28 @@ class HoYoLAB:
                 data[elem.lower().split('=')[0]] = elem.split('=')[1]
             assert 'ltuid' and 'ltoken' and 'cookie_token' and 'uid' in data
         except (AssertionError, IndexError):
-            return {'message': 'Ошибка: не все данные указаны, или при их указании нарушен синтаксис!'}
+            return {'error': 'Ошибка: не все данные указаны, или при их указании нарушен синтаксис!'}
 
         self.accounts[user_id] = data
         self.accounts[user_id]['resin_notify'] = False
         self.dump_accounts()
-        return {'message': 'Регистрация прошла успешно!'}
+        return {'data': 'Регистрация прошла успешно!'}
 
+    @genshinwrap.remove_data_from_gdb
     def remove_data_from_gdb(self, user_id: int):
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=genshdel
+        \n Описание: Данная команда удаляет ваш игровой аккаунт из базы данных бота.
+        \n Синтаксис: !геншдел [опции]\
+        \n -п >>> текущая справка по команде
+        """
+
         if user_id not in self.accounts:
-            return {'message': 'Неудачная попытка воспользоваться командой, т.к. вас нет в базе!'}
+            return {'error': 'Неудачная попытка воспользоваться командой, т.к. вас нет в базе!'}
 
         del self.accounts[user_id]
         self.dump_accounts()
-        return {'message': 'Ваши данные были успешно удалены!'}
-
-    # @genshinwrap.get_notes
-    # def get_notes(self, user_id: int) -> dict:
-    #     notes = []
-    #
-    #     try:
-    #         notes.append(gs.get_notes(
-    #             uid=self.accounts[user_id]['uid'], lang='ru-ru',
-    #             cookie=gs.set_cookie(ltuid=self.accounts[user_id]['ltuid'], ltoken=self.accounts[user_id]['ltoken'])
-    #         ))
-    #     except gs.errors.GenshinStatsException as exc:
-    #         return {'message': f"Ошибка: {exc}"}
-    #     except KeyError:
-    #         return {'message': 'Ошибка: в базе отсутствуют ваши данные!'}
-    #     return {'message': templates.genshin.HoYoLAB.notes(notes[0])}
+        return {'data': 'Ваши данные были успешно удалены!'}
 
     @genshinwrap.get_notes
     def get_notes(self, user_id: int) -> dict:
@@ -131,9 +183,17 @@ class HoYoLAB:
             notes['error'] = 'Ошибка: в базе отсутствуют ваши данные!'
         return notes
 
+    @genshinwrap.get_daily_reward
     def get_daily_reward(self, api, chat_id: int, user_id: int) -> dict:
-        rewards = []
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=nagrady
+        \n Описание: При использовании данной команды бот отправляет в чат сообщение с информацией о ваших \
+        логин-бонусах.
+        \n Синтаксис: !награды [опции]\
+        \n -п >>> текущая справка по команде
+        """
 
+        rewards = []
         try:
             rewards.append(gs.get_claimed_rewards(
                 cookie=gs.set_cookie(ltuid=self.accounts[user_id]['ltuid'], ltoken=self.accounts[user_id]['ltoken'])
@@ -155,23 +215,41 @@ class HoYoLAB:
         )
         return {'message': '\n'.join([info['title'], info['rewards']]), 'attachments': icon_link}
 
+    @genshinwrap.get_stats
     def get_stats(self, user_id: int) -> dict:
-        stats = []
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=staty
+        \n Описание: При использовании данной команды бот отправляет в чат сообщение с вашей внутриигровой статистикой.
+        \n Синтаксис: !статы [опции]\
+        \n -п >>> текущая справка по команде\
+        \n -у [ответ на сообщение другого игрока] >>> просмотр внутриигровой статистики другого путешественника
+        """
 
+        stats = []
         try:
             stats.append(gs.get_user_stats(
                 uid=self.accounts[user_id]['uid'], lang='ru-ru',
                 cookie=gs.set_cookie(ltuid=self.accounts[user_id]['ltuid'], ltoken=self.accounts[user_id]['ltoken'])
             ))
         except gs.errors.GenshinStatsException as exc:
-            return {'message': f"Ошибка: {exc}"}
+            return {'error': f"Ошибка: {exc}"}
         except KeyError:
-            return {'message': 'Ошибка: в базе отсутствуют ваши данные!'}
-        return {'message': templates.genshin.HoYoLAB.stats(stats[0])}
+            return {'error': 'Ошибка: в базе отсутствуют ваши данные!'}
+        return {'data': templates.genshin.HoYoLAB.stats(stats[0])}
 
+    @genshinwrap.activate_redeem
     def activate_redeem(self, user_id: int, raw: str) -> dict:
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=prom
+        \n Описание: При использовании данной команды команды бот активирует на вашем игровом аккаунте указанные в \
+        теле сообщения промокоды.
+        \n Примечание: промокоды вводятся через пробел.
+        \n Синтаксис: !пром [опции] [промокод-1] [промокод-2] [промокод-n]\
+        \n -п >>> текущая справка по команде
+        """
+
         if not raw:
-            return {'message': 'Ошибка: не указан ни один промокод!'}
+            return {'error': 'Ошибка: не указан ни один промокод!'}
         response = []
         codes = raw.split() if raw.find(' ') != -1 else [raw]
 
@@ -182,13 +260,14 @@ class HoYoLAB:
                                                     cookie_token=self.accounts[user_id]['cookie_token']))
                 response.append(f"Успешно активирован промокод {code}!")
             except KeyError:
-                return {'message': 'Ошибка: в базе отсутствуют ваши данные!'}
+                return {'error': 'Ошибка: в базе отсутствуют ваши данные!'}
             except gs.errors.GenshinStatsException as e:
                 response.append(f"Ошибка при активации промокода {code}: {e}")
             sleep(5)
-        return {'message': '\n'.join(response)}
+        return {'data': '\n'.join(response)}
 
     def notify_about_resin(self, api) -> None:
+        cases = {1: 'у', 2: 'ы', 3: 'ы', 4: 'ы'}
         self.load_accounts()
         api.vk.chats.load()
 
@@ -208,33 +287,22 @@ class HoYoLAB:
                         if api.vk.chats.check_for_member(api, chat['id'], user_id):
                             api.vk.messages.send_(
                                 chat['id'], message=f"@id{user_id} ({api.vk.get_username(user_id)}), ваша смола "
-                                                    f"достигла отметки в {resin} единиц, поспешите её потратить!"
+                                                    f"достигла отметки в {resin} единиц{cases.get(resin - 150, '')}, "
+                                                    f"поспешите её потратить!"
                             )
         sleep(1800)
 
-    # def switch_resin_notifications(self, user_id: int, raw: str) -> dict:
-    #     if raw.find('вкл') != -1:
-    #         self.accounts[user_id]['resin_notify'] = True
-    #         self.dump_accounts()
-    #         return {'message': 'Автоматическое напоминание потратить смолу включено!'}
-    #     elif raw.find('выкл') != -1:
-    #         self.accounts[user_id]['resin_notify'] = False
-    #         self.dump_accounts()
-    #         return {'message': 'Автоматическое напоминание потратить смолу отключено!'}
-    #     else:
-    #         return {'message': 'Неправильно указаны агрументы для команды!'}
-
-    @genshinwrap.switch_resin_notifications
-    def switch_resin_notifications(self, user_id: int) -> dict:
+    @genshinwrap.manage_resin_notifications
+    def manage_resin_notifications(self, user_id: int) -> dict:
         """
         \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=rezinnout
-        \n Описание: Данная команда может проводить манипуляции с функцией отметки в чате пользователя, значение смолы \
-        которого достигло или превысило 150 единиц.\
-        \n По умолчанию показывает текущий статус функции отметки в чате.
+        \n Описание: Данная команда может позволяет боту отмечать в чате пользователя, значение смолы которого \
+        достигло или превысило 150 единиц.\
+        \n Поведение по умолчанию для данной команды - отображение текущего статуса функции отметки пользователя в чате.
         \n Синтаксис: !резинноут [опции]\
         \n -п >>> текущая справка по команде\
-        \n -выкл >>> выключение функции отметки в чате\
-        \n -вкл >>> включение функции отметки в чате
+        \n -выкл >>> выключение функции отметки пользователя в чате\
+        \n -вкл >>> включение функции отметки пользователя в чате
         """
 
         response = {}
@@ -243,7 +311,7 @@ class HoYoLAB:
                 f"В данный момент у вас {'включены' if self.accounts[user_id]['resin_notify'] else 'отключены'} "
                 f"оповещения о трате смолы!")
         except KeyError:
-            response['error'] = f"Ошибка: в базе отсутствуют ваши данные!"
+            response['error'] = 'Ошибка: в базе отсутствуют ваши данные!'
         return response
 
     def claim_daily_rewards(self, api) -> None:
@@ -280,7 +348,16 @@ class Database:
         self.enemies = honeyimpact.Enemies()
 
     @staticmethod
+    @genshinwrap.get_database
     def get_started(api, chat_id: int, user_id: int) -> dict:
+        """
+        \n Ссылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=gdb
+        \n Описание: При использовании данной команды бот отправляет в чат сообщение с интерактивной базой данных, \
+        информация в которую загружается посредством парсинга сайта HoneyHunter.
+        \n Синтаксис: !гдб [опции]\
+        \n -п >>> текущая справка по команде
+        """
+
         keyboard = api.vk.create_keyboard()
 
         keyboard.add_callback_button(

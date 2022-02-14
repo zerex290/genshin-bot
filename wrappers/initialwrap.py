@@ -3,11 +3,11 @@ def guide(func, unk_opt=False):
     return {'data': ''.join(response) + func.__doc__}
 
 
-def get_ps_pictures(func):
-    def wrapper(options, api, chat_id):
+def get_guide(func):
+    def wrapper(options):
         behaviours = {
             '-п': {'fn': guide, 'kwargs': {'func': func}},
-            'default': {'fn': func, 'kwargs': {'api': api, 'chat_id': chat_id}}
+            'default': {'fn': func, 'kwargs': {}}
         }
         response = []
 
@@ -18,18 +18,85 @@ def get_ps_pictures(func):
         else:
             for opt in options:
                 data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
-                return {'attachments': data['data']}
+                response.append(data.get('data', data.get('error')))
 
         return {'message': ''.join(response)}
 
     return wrapper
 
 
-def get_ascension_materials(func):
-    def wrapper(options, api, chat_id, character):
+def make_choice(func):
+    def wrapper(options, raw):
         behaviours = {
             '-п': {'fn': guide, 'kwargs': {'func': func}},
-            'default': {'fn': func, 'kwargs': {'api': api, 'chat_id': chat_id, 'character': character}}
+            'default': {'fn': func, 'kwargs': {'raw': raw}}
+        }
+        response = []
+
+        if not options.issubset(set(behaviours)):
+            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'], unk_opt=True)['data'])
+        elif {'-п'}.issubset(options):
+            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'])['data'])
+        else:
+            for opt in options:
+                data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
+                response.append(data.get('data', data.get('error')))
+
+        return {'message': ''.join(response)}
+
+    return wrapper
+
+
+def convert(func):
+    def wrapper(options, reply_message):
+        behaviours = {
+            '-п': {'fn': guide, 'kwargs': {'func': func}},
+            'default': {'fn': func, 'kwargs': {'reply_message': reply_message}}
+        }
+        response = []
+
+        if not options.issubset(set(behaviours)):
+            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'], unk_opt=True)['data'])
+        elif {'-п'}.issubset(options):
+            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'])['data'])
+        else:
+            for opt in options:
+                data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
+                response.append(data.get('data', data.get('error')))
+
+        return {'message': ''.join(response)}
+
+    return wrapper
+
+
+def set_timer(func):
+    def wrapper(options, api, chat_id, user_id, username, raw):
+        behaviours = {
+            '-п': {'fn': guide, 'kwargs': {'func': func}},
+            'default': {'fn': func, 'kwargs': {'api': api, 'chat_id': chat_id, 'user_id': user_id,
+                                               'username': username, 'raw': raw}}
+        }
+        response = []
+
+        if not options.issubset(set(behaviours)):
+            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'], unk_opt=True)['data'])
+        elif {'-п'}.issubset(options):
+            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'])['data'])
+        else:
+            for opt in options:
+                data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
+                response.append(data.get('data', data.get('error')))
+
+        return {'message': ''.join(response)}
+
+    return wrapper
+
+
+def send_attachments(func):
+    def wrapper(options, api, attachments):
+        behaviours = {
+            '-п': {'fn': guide, 'kwargs': {'func': func}},
+            'default': {'fn': func, 'kwargs': {'api': api, 'attachments': attachments}}
         }
         response = []
 
@@ -47,11 +114,11 @@ def get_ascension_materials(func):
     return wrapper
 
 
-def register_in_gdb(func):
-    def wrapper(self, options, user_id, raw):
+def get_randtags(func):
+    def wrapper(options, raw):
         behaviours = {
             '-п': {'fn': guide, 'kwargs': {'func': func}},
-            'default': {'fn': func, 'kwargs': {'self': self, 'user_id': user_id, 'raw': raw}}
+            'default': {'fn': func, 'kwargs': {'raw': raw}}
         }
         response = []
 
@@ -69,59 +136,11 @@ def register_in_gdb(func):
     return wrapper
 
 
-def remove_data_from_gdb(func):
-    def wrapper(self, options, user_id):
+def get_randpics(func):
+    def wrapper(self, options, api, chat_id, raw):
         behaviours = {
             '-п': {'fn': guide, 'kwargs': {'func': func}},
-            'default': {'fn': func, 'kwargs': {'self': self, 'user_id': user_id}}
-        }
-        response = []
-
-        if not options.issubset(set(behaviours)):
-            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'], unk_opt=True)['data'])
-        elif {'-п'}.issubset(options):
-            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'])['data'])
-        else:
-            for opt in options:
-                data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
-                response.append(data.get('data', data.get('error')))
-
-        return {'message': ''.join(response)}
-
-    return wrapper
-
-
-def get_notes(func):
-    def another_user(self, user_id):
-        return func(self, user_id)
-
-    def wrapper(self, options, reply_message, user_id):
-        behaviours = {
-            '-у': {'fn': another_user, 'kwargs': {'self': self, 'user_id': reply_message.get('from_id')}},
-            '-п': {'fn': guide, 'kwargs': {'func': func}},
-            'default': {'fn': func, 'kwargs': {'self': self, 'user_id': user_id}}
-        }
-        response = []
-
-        if not options.issubset(set(behaviours)):
-            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'], unk_opt=True)['data'])
-        elif {'-п'}.issubset(options):
-            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'])['data'])
-        else:
-            for opt in options:
-                data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
-                response.append(data.get('data', data.get('error')))
-
-        return {'message': ''.join(response)}
-
-    return wrapper
-
-
-def get_daily_reward(func):
-    def wrapper(self, options, api, chat_id, user_id):
-        behaviours = {
-            '-п': {'fn': guide, 'kwargs': {'func': func}},
-            'default': {'fn': func, 'kwargs': {'self': self, 'api': api, 'chat_id': chat_id, 'user_id': user_id}}
+            'default': {'fn': func, 'kwargs': {'self': self, 'api': api, 'chat_id': chat_id, 'raw': raw}}
         }
         response = []
 
@@ -138,71 +157,43 @@ def get_daily_reward(func):
     return wrapper
 
 
-def get_stats(func):
-    def another_user(self, user_id):
-        return func(self, user_id)
-
-    def wrapper(self, options, reply_message, user_id):
-        behaviours = {
-            '-у': {'fn': another_user, 'kwargs': {'self': self, 'user_id': reply_message.get('from_id')}},
-            '-п': {'fn': guide, 'kwargs': {'func': func}},
-            'default': {'fn': func, 'kwargs': {'self': self, 'user_id': user_id}}
+def manage_user_commands(func):
+    def get_status(self, chat_id):
+        response = {
+            'data': f"В данный момент манипуляции с пользовательскими командами являются "
+                    f"{'общедоступными' if self.commands[chat_id]['ffa'] else 'ограниченными'}!"
         }
-        response = []
+        return response
 
-        if not options.issubset(set(behaviours)):
-            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'], unk_opt=True)['data'])
-        elif {'-п'}.issubset(options):
-            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'])['data'])
+    def make_ffa(self, api, chat_id, user_id):
+        if api.vk.chats.check_for_privileges(api, chat_id, user_id):
+            if not self.commands[chat_id]['ffa']:
+                self.commands[chat_id]['ffa'] = True
+                self.dump()
+                return {'data': 'Манипуляции с пользовательскими командами теперь общедоступны!'}
+            else:
+                return {'data': 'Манипуляции с пользовательскими командами уже являются общедоступными!'}
         else:
-            for opt in options:
-                data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
-                response.append(data.get('data', data.get('error')))
+            return {'error': 'Ошибка: для использования данной команды требуется быть администратором чата!'}
 
-        return {'message': ''.join(response)}
-
-    return wrapper
-
-
-def activate_redeem(func):
-    def wrapper(self, options, user_id, raw):
-        behaviours = {
-            '-п': {'fn': guide, 'kwargs': {'func': func}},
-            'default': {'fn': func, 'kwargs': {'self': self, 'user_id': user_id, 'raw': raw}}
-        }
-        response = []
-
-        if not options.issubset(set(behaviours)):
-            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'], unk_opt=True)['data'])
-        elif {'-п'}.issubset(options):
-            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'])['data'])
+    def make_limited(self, api, chat_id, user_id):
+        if api.vk.chats.check_for_privileges(api, chat_id, user_id):
+            if self.commands[chat_id]['ffa']:
+                self.commands[chat_id]['ffa'] = False
+                self.dump()
+                return {'data': 'Манипуляции с пользовательскими командами теперь ограничены!'}
+            else:
+                return {'data': 'Манипуляции с пользовательскими командами уже являются ограниченными!'}
         else:
-            for opt in options:
-                data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
-                response.append(data.get('data', data.get('error')))
+            return {'error': 'Ошибка: для использования данной команды требуется быть администратором чата!'}
 
-        return {'message': ''.join(response)}
-
-    return wrapper
-
-
-def manage_resin_notifications(func):
-    def turn_on(self, user_id):
-        self.accounts[user_id]['resin_notify'] = True
-        self.dump_accounts()
-        return {'data': 'Автоматическое напоминание потратить смолу включено!'}
-
-    def turn_off(self, user_id):
-        self.accounts[user_id]['resin_notify'] = False
-        self.dump_accounts()
-        return {'data': 'Автоматическое напоминание потратить смолу выключено!'}
-
-    def wrapper(self, options, user_id):
+    def wrapper(self, options, api, chat_id, user_id):
         behaviours = {
-            '-вкл': {'fn': turn_on, 'kwargs': {'self': self, 'user_id': user_id}},
-            '-выкл': {'fn': turn_off, 'kwargs': {'self': self, 'user_id': user_id}},
+            '-с': {'fn': get_status, 'kwargs': {'self': self, 'chat_id': chat_id}},
+            '-общ': {'fn': make_ffa, 'kwargs': {'self': self, 'api': api, 'chat_id': chat_id, 'user_id': user_id}},
+            '-огр': {'fn': make_limited, 'kwargs': {'self': self, 'api': api, 'chat_id': chat_id, 'user_id': user_id}},
             '-п': {'fn': guide, 'kwargs': {'func': func}},
-            'default': {'fn': func, 'kwargs': {'self': self, 'user_id': user_id}}
+            'default': {'fn': func, 'kwargs': {'self': self, 'chat_id': chat_id}}
         }
         response = []
 
@@ -210,23 +201,24 @@ def manage_resin_notifications(func):
             response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'], unk_opt=True)['data'])
         elif {'-п'}.issubset(options):
             response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'])['data'])
-        elif {'-вкл', '-выкл'}.issubset(options):
+        elif {'-общ', '-огр'}.issubset(options):
             response.append('Вы не можете одновременно использовать две противоположных по смыслу команды!')
         else:
             for opt in options:
                 data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
                 response.append(data.get('data', data.get('error')))
 
-        return {'message': ''.join(response)}
+        return {'message': '\n'.join(response)}
 
     return wrapper
 
 
-def get_database(func):
-    def wrapper(options, api, chat_id, user_id):
+def add_user_command(func):
+    def wrapper(self, options, api, chat_id, user_id, raw, attachments):
         behaviours = {
             '-п': {'fn': guide, 'kwargs': {'func': func}},
-            'default': {'fn': func, 'kwargs': {'api': api, 'chat_id': chat_id, 'user_id': user_id}}
+            'default': {'fn': func, 'kwargs': {'self': self, 'api': api, 'chat_id': chat_id,
+                                               'user_id': user_id, 'raw': raw, 'attachments': attachments}}
         }
         response = []
 
@@ -236,7 +228,31 @@ def get_database(func):
             response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'])['data'])
         else:
             for opt in options:
-                return behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
+                data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
+                response.append(data.get('data', data.get('error')))
+
+        return {'message': ''.join(response)}
+
+    return wrapper
+
+
+def delete_user_command(func):
+    def wrapper(self, options, api, chat_id, user_id, name):
+        behaviours = {
+            '-п': {'fn': guide, 'kwargs': {'func': func}},
+            'default': {'fn': func, 'kwargs': {'self': self, 'api': api, 'chat_id': chat_id,
+                                               'user_id': user_id, 'name': name}}
+        }
+        response = []
+
+        if not options.issubset(set(behaviours)):
+            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'], unk_opt=True)['data'])
+        elif {'-п'}.issubset(options):
+            response.append(behaviours['-п']['fn'](**behaviours['-п']['kwargs'])['data'])
+        else:
+            for opt in options:
+                data = behaviours[opt]['fn'](**behaviours[opt]['kwargs'])
+                response.append(data.get('data', data.get('error')))
 
         return {'message': ''.join(response)}
 
