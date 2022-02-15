@@ -35,6 +35,13 @@ class Bot:
         else:
             return {'message': 'У вас недостаточно прав для выполнения данной команды!'}
 
+    @staticmethod
+    def guess_command(commands, trigger: str):
+        coincidences = [com for com in commands if len(com) >= len(trigger)]
+        percentage = {len(set(cds).intersection(set(trigger))) / len(cds): cds for cds in coincidences}
+        best = max(percentage)
+        return {'percentage': best, 'implied': percentage[best]}
+
 
 def user_thread():
     while True:
@@ -69,11 +76,13 @@ def main_thread():
                         threading.Thread(target=bot.init.usercoms.send, args=(bot, chat_id, trigger)).start()
 
                     with Commands(bot) as commands:
+                        guess = bot.guess_command(commands, trigger)
                         if bot.vk.messages.prefix and trigger in commands:
                             def execute():
                                 bot.vk.messages.send_(chat_id, **commands[trigger]['func'](**commands[trigger]['args']))
-
                             threading.Thread(target=execute, name=trigger).start()
+                        elif bot.vk.messages.prefix and 0.75 <= guess['percentage'] < 1:
+                            bot.vk.messages.send_(chat_id, f"Возможно, вы имели ввиду <<!{guess['implied']}>>?")
 
                 elif (event.type == bot.vk.event_type.MESSAGE_EVENT
                       and event.obj['user_id'] == event.obj.payload['user_id']):
