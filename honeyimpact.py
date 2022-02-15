@@ -48,7 +48,8 @@ class Parser:
             self.tree = html.document_fromstring('<html></html>')
         return 1
 
-    def get_icon(self, api, url: str) -> list:
+    @staticmethod
+    def get_icon(api, url: str) -> list:
         response = api.vk.files.get_files_id(
             api.vk.files.upload_file(
                 2000000005, api.vk.files.download_file(url, 'photo', 'png', cache=True), 'photo'
