@@ -48,6 +48,14 @@ class Parser:
             self.tree = html.document_fromstring('<html></html>')
         return 1
 
+    def get_icon(self, api, url: str) -> list:
+        response = api.vk.files.get_files_id(
+            api.vk.files.upload_file(
+                2000000005, api.vk.files.download_file(url, 'photo', 'png', cache=True), 'photo'
+            )
+        )
+        return response
+
 
 class Characters(Parser):
     """Character links"""
@@ -85,15 +93,6 @@ class Characters(Parser):
     def _get_certain_character(self, name: str, elem: str) -> int:
         self.parse(f"{self.BASE_URL}{self.CERTAIN}{self.characters[elem][name]}/")
         return 1
-
-    def get_icon(self, api, name: str, elem: str) -> list:
-        url = f"{self.BASE_URL}img/char/{self.characters[elem][name]}.png"
-        response = api.vk.files.get_files_id(
-            api.vk.files.upload_file(
-                2000000005, api.vk.files.download_file(url, 'photo', 'png', cache=True), 'photo'
-            )
-        )
-        return response
 
     def get_information(self, name: str, elem: str) -> str:
         self._get_certain_character(name, elem)
@@ -254,15 +253,6 @@ class Weapons(Parser):
         self.parse(f"{self.BASE_URL}weapon/{self.weapons[type_][name]['code']}/")
         return 1
 
-    def get_icon(self, api, name: str, type_: str) -> list:
-        url = f"{self.BASE_URL}img/weapon/{self.weapons[type_][name]['code']}.png"
-        response = api.vk.files.get_files_id(
-            api.vk.files.upload_file(
-                2000000005, api.vk.files.download_file(url, 'photo', 'png', cache=True), 'photo'
-            )
-        )
-        return response
-
     def get_information(self, name: str, type_: str) -> str:
         self._get_certain_weapon(name, type_)
         table = self.tree.xpath('//div[@class="wrappercont"]//table[@class="item_main_table"][1]')[0]
@@ -362,15 +352,6 @@ class Artifacts(Parser):
         self.parse(f"{self.BASE_URL}db/art/family/{self.artifacts[type_][name]['code']}/")
         return 1
 
-    def get_icon(self, api, name: str, type_: str) -> list:
-        url = f"{self.artifacts[type_][name]['icon']}"
-        response = api.vk.files.get_files_id(
-            api.vk.files.upload_file(
-                2000000005, api.vk.files.download_file(url, 'photo', 'png', cache=True), 'photo'
-            )
-        )
-        return response
-
     def get_information(self, name: str, type_: str) -> str:
         self._get_certain_artifact(name, type_)
         table = self.tree.xpath('//table[@class="item_main_table"]')[0]
@@ -414,15 +395,6 @@ class Enemies(Parser):
     def _get_certain_enemy(self, name: str, type_: str) -> int:
         self.parse(f"{self.BASE_URL}db/monster/{self.enemies[type_][name]}/")
         return 1
-
-    def get_icon(self, api, name: str, type_: str) -> list:
-        url = f"{self.BASE_URL}/img/enemy/{self.enemies[type_][name]}.png"
-        response = api.vk.files.get_files_id(
-            api.vk.files.upload_file(
-                2000000005, api.vk.files.download_file(url, 'photo', 'png', cache=True), 'photo'
-            )
-        )
-        return response
 
     def get_information(self, name: str, type_: str) -> str:
         self._get_certain_enemy(name, type_)

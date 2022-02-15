@@ -510,9 +510,11 @@ class Database:
         )
         keyboard.add_line()
         keyboard.add_callback_button(label='Меню', color='positive', payload={'user_id': user_id, 'type': 'menu'})
+
+        url = f"{self.characters.BASE_URL}img/char/{self.characters.characters[filter_][name]}.png"
         response = {
             'keyboard': keyboard.get_keyboard(),
-            'attachments': self.characters.get_icon(api, name, filter_),
+            'attachments': self.characters.get_icon(api, url),
             'message': messages[data](**messages['args'])
         }
         return response
@@ -544,9 +546,11 @@ class Database:
         )
         keyboard.add_line()
         keyboard.add_callback_button(label='Меню', color='positive', payload={'user_id': user_id, 'type': 'menu'})
+
+        url = f"{self.weapons.BASE_URL}img/weapon/{self.weapons.weapons[filter_][name]['code']}.png"
         response = {
             'keyboard': keyboard.get_keyboard(),
-            'attachments': self.weapons.get_icon(api, name, filter_),
+            'attachments': self.weapons.get_icon(api, url),
             'message': messages[data](**messages['args'])
         }
         return response
@@ -564,9 +568,11 @@ class Database:
         )
         keyboard.add_line()
         keyboard.add_callback_button(label='Меню', color='positive', payload={'user_id': user_id, 'type': 'menu'})
+
+        url = f"{self.artifacts.artifacts[filter_][name]['icon']}"
         response = {
             'keyboard': keyboard.get_keyboard(),
-            'attachments': self.artifacts.get_icon(api, name, filter_),
+            'attachments': self.artifacts.get_icon(api, url),
             'message': self.artifacts.get_information(name, filter_)
         }
         return response
@@ -596,9 +602,11 @@ class Database:
         )
         keyboard.add_line()
         keyboard.add_callback_button(label='Меню', color='positive', payload={'user_id': user_id, 'type': 'menu'})
+
+        url = f"{self.enemies.BASE_URL}img/enemy/{self.enemies.enemies[filter_][name]}.png"
         response = {
             'keyboard': keyboard.get_keyboard(),
-            'attachments': self.enemies.get_icon(api, name, filter_),
+            'attachments': self.enemies.get_icon(api, url),
             'message': messages[data](**messages['args'])
         }
         return response
