@@ -229,7 +229,7 @@ class Chats:
     def refresh_chats(self, api, chat_id: int) -> int:
         if chat_id not in self.chats['ids'] and chat_id >= 2 * (10 ** 9):
             self._add_chat(api, chat_id)
-        else:
+        elif chat_id >= 2 * (10 ** 9):
             try:
                 self.get_chat_members(api, chat_id)
             except ApiError as access_error:
