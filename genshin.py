@@ -135,7 +135,7 @@ class HoYoLAB:
             assert len(raw.split()) == 4
             for elem in raw.split():
                 data[elem.lower().split('=')[0]] = elem.split('=')[1]
-            assert 'ltuid' and 'ltoken' and 'cookie_token' and 'uid' in data
+            assert {'ltuid', 'ltoken', 'uid', 'cookie_token'} == set(data)
         except (AssertionError, IndexError):
             return {'error': 'Ошибка: не все данные указаны, или при их указании нарушен синтаксис!'}
 
