@@ -40,7 +40,7 @@ class Bot:
         coincidences = [com for com in commands if len(com) >= len(trigger)]
         percentage = {len(set(cds).intersection(set(trigger))) / len(cds): cds for cds in coincidences}
         best = max(percentage)
-        return {'percentage': best, 'implied': percentage[best]}
+        return {'percentage': best, 'implied': percentage[best], 'is_equal': percentage[best] == trigger}
 
 
 def user_thread():
@@ -81,7 +81,7 @@ def main_thread():
                             def execute():
                                 bot.vk.messages.send_(chat_id, **commands[trigger]['func'](**commands[trigger]['args']))
                             threading.Thread(target=execute, name=trigger).start()
-                        elif bot.vk.messages.prefix and 0.75 <= guess['percentage'] < 1:
+                        elif bot.vk.messages.prefix and 0.75 <= guess['percentage'] and not guess['is_equal']:
                             bot.vk.messages.send_(chat_id, f"Возможно, вы имели ввиду <<!{guess['implied']}>>?")
 
                 elif (event.type == bot.vk.event_type.MESSAGE_EVENT
