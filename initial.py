@@ -6,7 +6,6 @@ import datetime
 import os
 
 from pybooru import Danbooru
-from simplejson.errors import JSONDecodeError
 from vk_api.exceptions import VkApiError
 
 import constants
@@ -447,8 +446,6 @@ class Initial(Main):
                 self._insert_post_ids(post_id, picture, donut=donut)
                 self.dump_recently_posted()
                 status = True
-            except JSONDecodeError:
-                continue
             except VkApiError:
                 api.vk.messages.send_(2000000004, f"{str(picture)}\n{traceback.format_exc()}"[:4096])
         return 1
