@@ -138,13 +138,19 @@ class Files:
     def upload_file(self, peer: int, dir_: str, type_: str, title: str = None, cache: bool = False) -> list:
         """Service use only"""
 
-        try:
-            if type_ != 'doc':
-                file = {type_: self.upl_types[type_](self.upload, dir_, peer)[0], 'type': type_}
-            else:
-                file = self.upl_types['doc'](self.upload, dir_, peer, title)
-        except (vk_api.exceptions.ApiError, JSONDecodeError):
-            file = {}
+        file = {}
+        reload = True
+        while reload:
+            try:
+                if type_ != 'doc':
+                    file = {type_: self.upl_types[type_](self.upload, dir_, peer)[0], 'type': type_}
+                else:
+                    file = self.upl_types['doc'](self.upload, dir_, peer, title)
+            except vk_api.exceptions.ApiError:
+                pass
+            except JSONDecodeError:
+                continue
+            reload = False
 
         if not cache:
             try:
