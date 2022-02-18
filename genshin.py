@@ -510,12 +510,12 @@ class Database:
             payload={'user_id': user_id, 'type': 'characters', 'filter': filter_, 'page': 0}
         )
         keyboard.add_line()
-        keyboard.add_callback_button(label='Меню', color='positive', payload={'user_id': user_id, 'type': 'menu'})
-        keyboard.add_line()
         keyboard.add_callback_button(
             label='К списку элементов', color='primary',
             payload={'user_id': user_id, 'type': 'characters_elem', 'filter': 'characters_elem'}
         )
+        keyboard.add_line()
+        keyboard.add_callback_button(label='Меню', color='positive', payload={'user_id': user_id, 'type': 'menu'})
 
         url = f"{self.characters.BASE_URL}img/char/{self.characters.characters[filter_][name]}.png"
         response = {
