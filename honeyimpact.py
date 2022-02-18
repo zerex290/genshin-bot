@@ -1,6 +1,8 @@
 """Service use only"""
 
 
+from random import randint
+
 import requests
 from lxml import html
 
@@ -436,3 +438,57 @@ class Enemies(Parser):
                 '4⃣👤🛡': stat.xpath('./td[13]/text()')[0],
             })
         return self._template.progression(info)
+
+
+class Books(Parser):
+    def __init__(self, lang='RU'):
+        super().__init__(lang)
+        self._lang = lang
+        self.books = self._get_books()
+        self._template = templates.honeyimpact.Books()
+
+    def _get_books(self):
+        volumes = {}
+
+        self.parse(self.BASE_URL)
+        books = self.tree.xpath('//div/span[text() = "Книги"]/../following-sibling::div[1]/a')
+
+        for book in books:
+            volume = ''.join(book.xpath('.//text()'))
+            link = f"{self.BASE_URL}{book.get('href').rstrip(f'?lang={self._lang}')[1:]}"
+            volumes[volume] = link
+        return {'Книги': volumes}
+
+    def _get_txt(self, api, text: str, name: str, volume: int):
+        path = f"/home/Moldus/vkbot/cache/temporary_{randint(0, 100)}.txt"
+
+        with open(path, 'w') as file:
+            file.write(text)
+
+        return api.vk.files.get_files_id(api.vk.files.upload_file(2000000005, path, 'doc', f"{name}: Том {volume + 1}"))
+
+    def get_volumes(self, name: str):
+        self.parse(self.books['Книги'][name])
+        return self.tree.xpath(f'//div[@class="items_wrap"]//span/..')
+
+    def get_information(self, api, name: str, volume: int = 0):
+        volumes = self.get_volumes(name)
+
+        self.parse(f"{self.BASE_URL}{volumes[volume].get('href').rstrip(f'?lang={self._lang}')[1:]}")
+        volume_story = self.tree.xpath('//span[text() = "Item Story"]/following-sibling::table//text()')
+        if not volume_story:
+            volume_story = self.tree.xpath(
+                '//div[@class="wrappercont"]//td[text() = "In-game Description"]/following-sibling::td//text()'
+            )
+        volume_story = '\n'.join(volume_story)
+        volume_link = self.tree.xpath('//div[contains(@class, "itempic_cont")]/img')[0].get('data-src')[1:]
+        volume_link = f"{self.BASE_URL}{volume_link}"
+        doc = self._get_txt(api, volume_story, name, volume)
+
+        len_ = (70 + len(name) + len(str(volume)) + len(volume_story)) <= 4096
+        info = {
+            'name': name,
+            'volume': volume,
+            'story': volume_story if len_ else 'Недоступно из-за превышения максимальной длины сообщения Вконтакте...',
+        }
+        return self._template.main(info), volume_link, doc
