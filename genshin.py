@@ -346,6 +346,7 @@ class Database:
         self.weapons = honeyimpact.Weapons()
         self.artifacts = honeyimpact.Artifacts()
         self.enemies = honeyimpact.Enemies()
+        self.books = honeyimpact.Books()
 
     @staticmethod
     @genshinwrap.get_database
@@ -377,6 +378,11 @@ class Database:
 
         keyboard.add_callback_button(
             label='Противники', color='primary', payload={'user_id': user_id, 'type': 'enemies_type'}
+        )
+        keyboard.add_line()
+
+        keyboard.add_callback_button(
+            label='Книги', color='primary', payload={'user_id': user_id, 'type': 'books', 'filter': 'Книги', 'page': 0}
         )
         response = {
             'keyboard': keyboard.get_keyboard(),
@@ -504,12 +510,12 @@ class Database:
             payload={'user_id': user_id, 'type': 'characters', 'filter': filter_, 'page': 0}
         )
         keyboard.add_line()
+        keyboard.add_callback_button(label='Меню', color='positive', payload={'user_id': user_id, 'type': 'menu'})
+        keyboard.add_line()
         keyboard.add_callback_button(
-            label='К списку стихий', color='primary',
+            label='К списку элементов', color='primary',
             payload={'user_id': user_id, 'type': 'characters_elem', 'filter': 'characters_elem'}
         )
-        keyboard.add_line()
-        keyboard.add_callback_button(label='Меню', color='positive', payload={'user_id': user_id, 'type': 'menu'})
 
         url = f"{self.characters.BASE_URL}img/char/{self.characters.characters[filter_][name]}.png"
         response = {
@@ -608,6 +614,74 @@ class Database:
             'keyboard': keyboard.get_keyboard(),
             'attachments': self.enemies.get_icon(api, url),
             'message': messages[data](**messages['args'])
+        }
+        return response
+
+    def get_book(self, api, user_id: int, name: str, data: str, volume: int, page_: int) -> dict:
+        keyboard = api.vk.create_keyboard()
+        keyboards = []
+        buttons_ = 0
+        page = 0
+        buttons = templates.genshin.Database.book(user_id, name, self.books.get_volumes(name))
+
+        for button in buttons:
+            if button == list(buttons)[-1]:
+                if data != button:
+                    keyboard.add_callback_button(**buttons[button])
+                    keyboard.add_line()
+                keyboard.add_callback_button(label='К списку книг', color='primary',
+                                             payload={'user_id': user_id, 'type': 'books',
+                                                      'filter': 'Книги', 'page': 0})
+                keyboard.add_line()
+                if page != 0:
+                    keyboard.add_callback_button(
+                        label='Назад', color='primary',
+                        payload={'user_id': user_id, 'type': 'book', 'name': name,
+                                 'data': data, 'volume': volume, 'page': page - 1}
+                    )
+                keyboard.add_callback_button(
+                    label='Меню', color='positive', payload={'user_id': user_id, 'type': 'menu'}
+                )
+                keyboards.append(keyboard.get_keyboard())
+                break
+            if data != button:
+                if buttons_ < 3:
+                    keyboard.add_callback_button(**buttons[button])
+                    keyboard.add_line()
+                    buttons_ += 1
+                else:
+                    keyboard.add_callback_button(**buttons[button])
+                    keyboard.add_line()
+                    keyboard.add_callback_button(label='К списку книг', color='primary',
+                                                 payload={'user_id': user_id, 'type': 'books',
+                                                          'filter': 'Книги', 'page': 0})
+                    keyboard.add_line()
+                    if page != 0:
+                        keyboard.add_callback_button(
+                            label='Назад', color='primary',
+                            payload={'user_id': user_id, 'type': 'book', 'name': name,
+                                     'data': data, 'volume': volume, 'page': page - 1}
+                        )
+                    keyboard.add_callback_button(
+                        label='Меню', color='positive', payload={'user_id': user_id, 'type': 'menu'}
+                    )
+                    page += 1
+                    keyboard.add_callback_button(
+                        label='Далее', color='primary',
+                        payload={'user_id': user_id, 'type': 'book', 'name': name,
+                                 'data': data, 'volume': volume, 'page': page}
+                    )
+                    keyboards.append(keyboard.get_keyboard())
+                    keyboard = api.vk.create_keyboard()
+                    buttons_ = 0
+
+        info = self.books.get_information(api, name, volume)
+        attachments = self.books.get_icon(api, info[1])
+        attachments.extend(info[2])
+        response = {
+            'keyboard': keyboards[page_],
+            'message': info[0],
+            'attachments': attachments
         }
         return response
 

@@ -49,7 +49,8 @@ class Genshin:
         'горо': '/home/Moldus/vkbot/genshin/ascension/gorou.png',
         'юньцзинь': '/home/Moldus/vkbot/genshin/ascension/yunjin.png',
         'шэньхэ': '/home/Moldus/vkbot/genshin/ascension/shenhe.png',
-        'яэмико': '/home/Moldus/vkbot/genshin/ascension/yae.png'
+        'яэмико': '/home/Moldus/vkbot/genshin/ascension/yae.png',
+        'аято': '/home/Moldus/vkbot/genshin/ascension/ayato.png'
     }
 
     ELEMENT = {
