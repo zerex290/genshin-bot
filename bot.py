@@ -8,6 +8,7 @@ from requests.exceptions import ReadTimeout, ConnectionError
 from vk_api.exceptions import ApiError
 
 import vkontakte
+from constants import Uncategorized
 import genshin
 import initial
 import private
@@ -37,8 +38,9 @@ class Bot:
 
     @staticmethod
     def guess_command(commands, trigger: str):
-        coincidences = [com for com in commands if len(com) >= len(trigger)]
-        percentage = {len(set(cds).intersection(set(trigger))) / len(cds): cds for cds in coincidences}
+        trigger_conv = ''.join([Uncategorized.KEYBOARD.get(s, s) for s in trigger])
+        coincidences = [com for com in commands if len(com) >= len(trigger_conv)]
+        percentage = {len(set(cds).intersection(set(trigger_conv))) / len(cds): cds for cds in coincidences}
         best = max(percentage)
         return {'percentage': best, 'implied': percentage[best], 'is_equal': percentage[best] == trigger}
 
