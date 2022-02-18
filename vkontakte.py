@@ -191,12 +191,10 @@ class Chats:
 
     def refresh_chat_members(self, api, chat_id: int) -> int:
         actions = ['chat_invite_user_by_link', 'chat_kick_user', 'chat_invite_user']
-        if api.vk.messages.action in actions:
-            for chat in self.chats['chats']:
-                if chat['id'] == chat_id:
-                    chat['members'] = self.get_chat_members(api, chat_id)
-                    self.dump()
-                    break
+        chat_pos = [i for i, pos in enumerate(self.chats['ids']) if pos == chat_id][0]
+        if (api.vk.messages.action in actions) or not self.chats['chats'][chat_pos]['members']:
+            self.chats['chats'][chat_pos]['members'] = self.get_chat_members(api, chat_id)
+            self.dump()
         return 1
 
     def check_for_member(self, api, chat_id: int, user_id: int) -> bool:
@@ -233,8 +231,12 @@ class Chats:
         return 1
 
     def refresh_chats(self, api, chat_id: int) -> int:
+        """Try/except cases are useless 'cuz get_chat_members will not cause any error"""
         if chat_id not in self.chats['ids'] and chat_id >= 2 * (10 ** 9):
-            self._add_chat(api, chat_id)
+            try:
+                self._add_chat(api, chat_id)
+            except ApiError:
+                pass
         elif chat_id >= 2 * (10 ** 9):
             try:
                 self.get_chat_members(api, chat_id)
