@@ -29,6 +29,14 @@ class HoYoLAB:
         def discounts():
             return f"💹Скидки на боссов: {n['remaining_boss_discounts']}"
 
+        def realm():
+            response = (
+                f"💰Монеты в чайнике: {n.get('realm_currency', 0)}/{n.get('max_realm_currency', 0)}, "
+                f"⌛До восполнения: {int(n.get('until_realm_currency_limit', 0)) // 3600} ч. "
+                f"{int(n.get('until_realm_currency_limit', 0)) % 3600 // 60} мин."
+            )
+            return response
+
         def expeditions():
             prettified = [f"🔰Начатые экспедиции: {len(n['expeditions'])}\n"]
 
@@ -39,7 +47,7 @@ class HoYoLAB:
                     f"{int(expedition['remaining_time']) % 3600 // 60} мин.\n"
                 )
             return ''.join(prettified)
-        return '\n'.join([title(), resin(), dailies(), discounts(), expeditions()])
+        return '\n'.join([title(), resin(), dailies(), discounts(), realm(), expeditions()])
 
     @staticmethod
     def rewards(r: list) -> dict:
@@ -216,4 +224,23 @@ class Database:
                             'filter': filter_, 'name': name, 'data': 'progression'}
             }
         }
+        return response
+
+    @staticmethod
+    def book(user_id: int, name: str, volumes: list) -> dict:
+        response = {
+            'main': {
+                'label': 'Том 1', 'color': 'secondary', 'payload': {'user_id': user_id, 'type': 'book',
+                                                                    'volume': 0, 'name': name, 'data': 'main'}
+            }
+        }
+
+        for i, volume in enumerate(volumes):
+            if i == 0:
+                continue
+            response[f"volume {i+1}"] = {
+                'label': f"Том {i+1}", 'color': 'secondary', 'payload': {'user_id': user_id, 'type': 'book',
+                                                                         'volume': i, 'name': name,
+                                                                         'data': f"volume {i+1}"}
+            }
         return response

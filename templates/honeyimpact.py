@@ -134,3 +134,15 @@ class Enemies:
                 f"4⃣👤💉: {i['4⃣👤💉']} 4⃣👤🗡: {i['4⃣👤🗡']} 4⃣👤🛡: {i['4⃣👤🛡']}\n"
             )
         return '\n'.join(response)
+
+
+class Books:
+    @staticmethod
+    def main(info: dict) -> str:
+        response = (
+            f"🖼Основная информация:\n"
+            f"📚Серия книг: {info['name']}\n"
+            f"📗Номер тома: {info['volume'] + 1}\n"
+            f"📖Содержание:\n{info['story']}"
+        )
+        return response

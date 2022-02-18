@@ -168,7 +168,8 @@ class PayloadTypes:
                 'characters': self.api.genshin.db.characters.characters,
                 'weapons': self.api.genshin.db.weapons.weapons,
                 'artifacts': self.api.genshin.db.artifacts.artifacts,
-                'enemies': self.api.genshin.db.enemies.enemies
+                'enemies': self.api.genshin.db.enemies.enemies,
+                'books': self.api.genshin.db.books.books
             }
         }
 
@@ -267,6 +268,22 @@ class PayloadTypes:
                                 'name': self.event.obj.payload.get('name'),
                                 'data': self.event.obj.payload.get('data'),
                                 'filter_': self.event.obj.payload.get('filter')}},
+
+            'books': {'func': self.api.genshin.db.get_filtered_list,
+                      'args': {'api': self.api,
+                               'user_id': self.event.obj.get('user_id'),
+                               'payloads': self.payloads,
+                               'payload_type': self.event.obj.payload.get('type'),
+                               'filter_': self.event.obj.payload.get('filter'),
+                               'page_': self.event.obj.payload.get('page')}},
+
+            'book': {'func': self.api.genshin.db.get_book,
+                     'args': {'api': self.api,
+                              'user_id': self.event.obj.get('user_id'),
+                              'name': self.event.obj.payload.get('name'),
+                              'data': self.event.obj.payload.get('data'),
+                              'volume': self.event.obj.payload.get('volume', 0),
+                              'page_': self.event.obj.payload.get('page', 0)}}
         }
         return self.responses
 
