@@ -173,14 +173,9 @@ class Characters(Parser):
     def get_passives(self, name: str, elem: str) -> str:
         self._get_certain_character(name, elem)
         table = self.tree.xpath(
-            '//div[@id="live_data"]/table[preceding-sibling::span[@id="scroll_passive_talent"]]'
-            '[following-sibling::span[@id="scroll_constellation"]]/tr'
+            '//div[@class="wrappercont"]//table[preceding-sibling::span[@id="beta_scroll_passive_talent"]]'
+            '[following-sibling::span[@id="beta_scroll_constellation"]]/tr'
         )
-        if not table:
-            table = self.tree.xpath(
-                '//div[@class="wrappercont"]//table[preceding-sibling::span[@id="beta_scroll_passive_talent"]]'
-                '[following-sibling::span[@id="beta_scroll_constellation"]]/tr'
-            )
         first_passive_name = ''.join(table[0].xpath('.//text()')) if table else ''
         first_passive_desc = ''.join(table[1].xpath('.//text()')).replace('•', '') if table else ''
         second_passive_name = ''.join(table[2].xpath('.//text()')) if table else ''
@@ -198,12 +193,8 @@ class Characters(Parser):
     def get_constellations(self, name: str, elem: str) -> str:
         self._get_certain_character(name, elem)
         table = self.tree.xpath(
-            '//div[@id="live_data"]/table[preceding-sibling::span[@id="scroll_constellation"]]/tr'
+            '//div[@class="wrappercont"]//table[preceding-sibling::span[@id="beta_scroll_constellation"]]/tr'
         )
-        if not table:
-            table = self.tree.xpath(
-                '//div[@class="wrappercont"]//table[preceding-sibling::span[@id="beta_scroll_constellation"]]/tr'
-            )
         first_con_name = ''.join(table[0].xpath('.//text()')) if table else ''
         first_con_desc = ''.join(table[1].xpath('.//text()')) if table else ''
         second_con_name = ''.join(table[2].xpath('.//text()')) if table else ''
@@ -258,7 +249,7 @@ class Weapons(Parser):
 
     def get_information(self, name: str, type_: str) -> str:
         self._get_certain_weapon(name, type_)
-        table = self.tree.xpath('//div[@class="wrappercont"]//table[@class="item_main_table"][1]')[0]
+        table = self.tree.xpath('//div[@class="wrappercont"]//table[@class="item_main_table"]')[1]
         fst_stat_value = ''.join(table.xpath('.//td[text()="Base Attack"]/following-sibling::td/text()'))
         snd_stat = ''.join(table.xpath('.//td[text()="Secondary Stat"]/following-sibling::td/text()'))
         snd_stat_value = ''.join(table.xpath('.//td[text()="Secondary Stat Value"]/following-sibling::td/text()'))
@@ -279,20 +270,13 @@ class Weapons(Parser):
     def get_ability(self, name: str, type_: str):
         self._get_certain_weapon(name, type_)
 
-        def get_information(beta: bool = False) -> tuple:
-            table_number = 1 if beta else 0
+        table = self.tree.xpath(f'//div[@class="wrappercont"]//table[@class="item_main_table"]')[1]
+        title = ''.join(table.xpath('.//tr/td[text()="Special (passive) Ability"]/following-sibling::td/text()'))
+        desc = ''.join(table.xpath('.//tr/td[contains(text(), "Ability Desc")]/following-sibling::td//text()'))
 
-            table_list = self.tree.xpath(f'//div[@class="wrappercont"]//table[@class="item_main_table"]')
-            table = table_list[table_number]
-            title = ''.join(table.xpath('.//tr/td[text()="Special (passive) Ability"]/following-sibling::td/text()'))
-            desc = ''.join(table.xpath('.//tr/td[contains(text(), "Ability Desc")]/following-sibling::td//text()'))
-            return title, desc
-
-        abi_title, abi_desc = get_information()
-        abi_title, abi_desc = get_information(beta=True) if not abi_title or not abi_desc else (abi_title, abi_desc)
         info = {
-            'ability_title': abi_title,
-            'ability_description': abi_desc
+            'ability_title': title,
+            'ability_description': desc
         }
         return self._template.ability(info)
 
@@ -307,7 +291,7 @@ class Weapons(Parser):
         )
         info = []
 
-        for tr in table[0].xpath('./tr[position()>1]'):
+        for tr in table[1].xpath('./tr[position()>1]'):
             info.append({
                 'Лв': tr.xpath('./td[1]/text()')[0], 'Атака': tr.xpath('./td[2]/text()')[0],
                 snd_stat[0]: tr.xpath('./td[3]/text()')[0]
@@ -459,7 +443,8 @@ class Books(Parser):
             volumes[volume] = link
         return {'Книги': volumes}
 
-    def _get_txt(self, api, text: str, name: str, volume: int):
+    @staticmethod
+    def _get_txt(api, text: str, name: str, volume: int):
         path = f"/home/Moldus/vkbot/cache/temporary_{randint(0, 100)}.txt"
 
         with open(path, 'w') as file:
