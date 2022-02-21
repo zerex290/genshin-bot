@@ -190,6 +190,8 @@ class Chats:
         return templates.vkontakte.Chats.members(members)
 
     def refresh_chat_members(self, api, chat_id: int) -> int:
+        if not chat_id >= 2 * (10 ** 9):
+            return 0
         actions = ['chat_invite_user_by_link', 'chat_kick_user', 'chat_invite_user']
         chat_pos = [i for i, pos in enumerate(self.chats['ids']) if pos == chat_id][0]
         if (api.vk.messages.action in actions) or not self.chats['chats'][chat_pos]['members']:
