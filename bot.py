@@ -41,8 +41,8 @@ class Bot:
         trigger_conv = ''.join([Uncategorized.KEYBOARD.get(s, s) for s in trigger])
         coincidences = [com for com in commands if len(com) >= len(trigger_conv)]
         percentage = {len(set(cds).intersection(set(trigger_conv))) / len(cds): cds for cds in coincidences}
-        best = max(percentage)
-        return {'percentage': best, 'implied': percentage[best], 'is_equal': percentage[best] == trigger}
+        best = max(percentage) if percentage else None
+        return {'percentage': best, 'implied': percentage.get(best), 'is_equal': percentage.get(best) == trigger}
 
 
 def user_thread():
