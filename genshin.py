@@ -210,7 +210,7 @@ class HoYoLAB:
         info = templates.genshin.HoYoLAB.rewards(rewards)
         icon_link = api.vk.files.get_files_id(
             api.vk.files.upload_file(
-                chat_id, api.vk.files.download_file(info['icon_link'], 'photo', 'jpg', cache=True), 'photo'
+                chat_id, api.vk.files.download_file(info['icon_link'], 'photo', 'jpg'), 'photo'
             )
         )
         return {'message': '\n'.join([info['title'], info['rewards']]), 'attachments': icon_link}

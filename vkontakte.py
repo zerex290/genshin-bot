@@ -123,16 +123,13 @@ class Files:
         return id_ if id_ else None
 
     @staticmethod
-    def download_file(url: str, type_: str, ext: str, dir_: str = None, cache: bool = False) -> str:
+    def download_file(url: str, type_: str, ext: str, dir_: str = None) -> str:
         """Service use only"""
 
         file_directory = f"/home/Moldus/vkbot/cache/{type_}_{random.randint(0, 1000)}.{ext}" if dir_ is None else dir_
 
         with open(file_directory, 'wb') as file:
             file.write(requests.get(url).content)
-
-        if not cache:
-            os.remove(file_directory)
         return file_directory
 
     def upload_file(self, peer: int, dir_: str, type_: str, title: str = None, cache: bool = False) -> list:

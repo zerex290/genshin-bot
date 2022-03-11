@@ -181,7 +181,7 @@ class Booru:
         for pic in pics:
             pic_arrays.extend(
                 api.vk.files.upload_file(
-                    chat_id, api.vk.files.download_file(pic['large_file_url'], 'photo', pic['file_ext'], cache=True),
+                    chat_id, api.vk.files.download_file(pic['large_file_url'], 'photo', pic['file_ext']),
                     'photo'
                 )
             )
@@ -285,14 +285,14 @@ class UserCommands:
             elif attachment['type'] == 'photo':
                 url = {s['height']: s['url'] for s in attachment['photo']['sizes']}
                 url = url[max(url)]
-                api.vk.files.download_file(url, 'photo',  'jpg', f"{path}{name}.jpg", cache=True)
+                api.vk.files.download_file(url, 'photo',  'jpg', f"{path}{name}.jpg")
             elif attachment['type'] == 'doc':
                 ext = attachment['doc']['ext']
                 url = attachment['doc']['url']
                 self.commands[chat_id]['commands'][name]['args']['attachments'].extend(
                     api.vk.files.get_files_id(
                         api.vk.files.upload_file(
-                            chat_id, api.vk.files.download_file(url, 'doc', ext, cache=True), 'doc', name
+                            chat_id, api.vk.files.download_file(url, 'doc', ext), 'doc', name
                         )
                     )
                 )
@@ -434,7 +434,7 @@ class Initial(Main):
                 picture_id = api.vk.files.get_files_id(
                     api.vk.files.upload_file(
                         private.Vk.GROUP_ID,
-                        api.vk.files.download_file(picture['resized_url'], 'photo_wall', picture['ext'], cache=True),
+                        api.vk.files.download_file(picture['resized_url'], 'photo_wall', picture['ext']),
                         'photo_wall'
                     )
                 )

@@ -54,7 +54,7 @@ class Parser:
     def get_icon(api, url: str) -> list:
         response = api.vk.files.get_files_id(
             api.vk.files.upload_file(
-                2000000005, api.vk.files.download_file(url, 'photo', 'png', cache=True), 'photo'
+                2000000005, api.vk.files.download_file(url, 'photo', 'png'), 'photo'
             )
         )
         return response
