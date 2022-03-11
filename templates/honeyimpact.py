@@ -12,6 +12,7 @@ class Characters:
             f"💫Редкость: {info['rarity']}⭐\n"
             f"⚔Оружие: {info['weapon_type']}\n"
             f"⚱Глаз Бога: {info['element']}\n"
+            f"📈Стат возвышения: {info['ascension_stat']}\n"
             f"🎉День рождения: {info['birthday']}\n"
             f"🔮Созвездие: {info['constellation_title']}\n"
             f"📖Описание: {info['description']}"

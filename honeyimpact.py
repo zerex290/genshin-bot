@@ -100,6 +100,8 @@ class Characters(Parser):
     def get_information(self, name: str, elem: str) -> str:
         self._get_certain_character(name, elem)
         table = self.tree.xpath('//div[@class="wrappercont"]//table[@class="item_main_table"][1]')[0]
+        asc_stat = self.tree.xpath('//div[@class="skilldmgwrapper"][preceding-sibling::span][1]')[0]
+        asc_stat = asc_stat.xpath('.//tr')[0].xpath('./td/text()')[4]
         title = ''.join(table.xpath('.//td[contains(text(), "Title")]/following-sibling::td/text()'))
         allegiance = ''.join(table.xpath('.//td[contains(text(), "Allegiance")]/following-sibling::td/text()'))
         rarity = len(table.xpath('.//td[contains(text(), "Rarity")]/following-sibling::td/div'))
@@ -125,6 +127,7 @@ class Characters(Parser):
             'rarity': rarity,
             'weapon_type': weapon,
             'element': elem,
+            'ascension_stat': asc_stat,
             'birthday': birthday,
             'constellation_title': const,
             'description': desc
