@@ -41,7 +41,7 @@ class Bot:
         trigger_conv = ''.join([Uncategorized.KEYBOARD.get(s, s) for s in trigger])
         coincidences = [com for com in commands if len(com) >= len(trigger_conv)]
         percentage = {len(set(cds).intersection(set(trigger_conv))) / len(cds): cds for cds in coincidences}
-        best = max(percentage) if percentage else None
+        best = max(percentage) if percentage else -1
         return {'percentage': best, 'implied': percentage.get(best), 'is_equal': percentage.get(best) == trigger}
 
 
