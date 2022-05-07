@@ -1,8 +1,8 @@
-private.py
+virtualenv/
+
 random shit.py
-tests/*
+time_meter.py
 
-.idea/
-
-__pycache__/
 *.pyc
+**.idea/
+**__pycache__/
