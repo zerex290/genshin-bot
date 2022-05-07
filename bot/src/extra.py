@@ -125,7 +125,7 @@ class PostUploader:
                 async with PostgresConnection() as connection:
                     await connection.execute(f"""
                         INSERT INTO group_posts VALUES (
-                            {wall_post.post_id}, {post.id}, NULL, 'photo', {'true' if donut else 'false'}
+                            {wall_post.post_id}, {post.id}, 'photo', {'true' if donut else 'false'}
                         );
                     """)
                 os.remove(file)
