@@ -1,4 +1,5 @@
 import datetime
+import re
 from typing import Sequence
 
 from genshin.models.genshin import Notes, Exploration, ClaimedDailyReward, PartialGenshinUserStats
@@ -13,7 +14,7 @@ def _get_estimated_recovery_time(object_recovery_time: datetime.datetime) -> str
     if object_recovery_time <= current_time:
         return '0 сек.'
 
-    time = str(object_recovery_time - current_time).split('.')[0].replace(' days, ', ':').split(':')
+    time = re.sub(r'\sday[s,]+\s', ':', str(object_recovery_time - current_time).split('.')[0]).split(':')
     match len(time):
         case 4:
             return '{} д. {} ч. {} мин.'.format(*time[:-1])
@@ -84,11 +85,12 @@ def format_stats(stats: PartialGenshinUserStats) -> str:
 
     explorations = []
     for e in stats.explorations:
-        explorations.append(
-            f"🌐{e.explored}% "
-            f"{Regions[e.name.lower().replace(':', '').replace(' ', '_')].value} "
-            f"{_get_formatted_exploration_rewards(e, e.name)}\n"
-        )
+        if e.name:
+            explorations.append(
+                f"🌐{e.explored}% "
+                f"{Regions[e.name.lower().replace(':', '').replace(' ', '_')].value} "
+                f"{_get_formatted_exploration_rewards(e, e.name)}\n"
+            )
 
     formatted_stats = (
         f"🖼Игровая статистика:\n"
