@@ -34,7 +34,7 @@ async def main() -> None:
         collect_login_bonus(),
         notify_about_resin_replenishment(bot.group),
         parse_genshin_db_objects(),
-        # post_uploader.make_post(bot.user.api, donut=True),
-        # post_uploader.make_post(bot.user.api)
+        post_uploader.make_post(bot.user.api, donut=True),
+        post_uploader.make_post(bot.user.api)
     )
     await asyncio.sleep(0)  #: Used to fix RuntimeError...
