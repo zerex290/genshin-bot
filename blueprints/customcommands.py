@@ -105,7 +105,7 @@ async def delete_custom_command(message: Message, options: Tuple[str, ...] = ('-
     name = message.text.lstrip('!делком').strip()
     if not (
             await has_postgres_data(f"SELECT * FROM chats WHERE chat_id = {message.peer_id} and ffa_commands = true;")
-            and await _check_for_privileges(message.peer_id, message.from_id)
+            or await _check_for_privileges(message.peer_id, message.from_id)
     ):
         await message.answer('Ошибка: В данном чате стоит ограничение на удаление команд!')
         return None
