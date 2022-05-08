@@ -4,7 +4,7 @@ import os
 import random
 from typing import List, Dict, Tuple, Optional
 
-from vkbottle import API, Bot
+from vkbottle import API, Bot, VKAPIError
 
 from genshin.types import Game
 
@@ -69,7 +69,7 @@ async def _get_users() -> List[Dict[str, str | int]]:
 
 
 async def _get_user_resin(account: Dict[str, str | int]) -> Optional[int]:
-    async with GenshinClient(exc_catch=True, ltuid=account['ltuid'], ltoken=account['ltoken'] + 'f') as client:
+    async with GenshinClient(exc_catch=True, ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
         return (await client.get_genshin_notes(account['uid'])).current_resin
 
 
@@ -79,12 +79,15 @@ async def notify_about_resin_replenishment(bot: Bot) -> None:
         for user in await _get_users():
             resin = await _get_user_resin(await get_genshin_account_by_id(user['user_id'], True, True, True))
             if isinstance(resin, int) and resin >= 150:
-                await bot.api.messages.send(
-                    random_id=random.randint(0, 1000),
-                    peer_id=user['chat_id'],
-                    message=f"@id{user['user_id']} ({user['first_name']}), ваша смола достигла отметки в "
-                            f"{resin} единиц{endings.get(resin - 150, '')}, поспешите её потратить!"
-                )
+                try:
+                    await bot.api.messages.send(
+                        random_id=random.randint(0, 1000),
+                        peer_id=user['chat_id'],
+                        message=f"@id{user['user_id']} ({user['first_name']}), ваша смола достигла отметки в "
+                                f"{resin} единиц{endings.get(resin - 150, '')}, поспешите её потратить!"
+                    )
+                except VKAPIError:
+                    pass  #: tba chat remove from users_in_chats
         await asyncio.sleep(1800)
 
 
