@@ -66,5 +66,5 @@ async def write_logs(event, handlers, is_error: bool = False, error: Optional[Ba
         else:
             await log.write(
                 f"{dt.strftime('%d.%m.%y - %H:%M:%S')}: {error.__class__.__name__}\n"
-                f"{'    '.join(traceback.format_tb(error.__traceback__))}\n\n"
+                f"{traceback.format_exc()}\n\n"
             )
