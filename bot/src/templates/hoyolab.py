@@ -11,6 +11,9 @@ from bot.src.types.genshin import Characters, ElementSymbols, Regions, Rewards
 def _get_estimated_recovery_time(object_recovery_time: datetime.datetime) -> str:
     current_time = get_current_timestamp(3)
 
+    if object_recovery_time is None:
+        return 'данные не были получены'
+
     if object_recovery_time <= current_time:
         return '0 сек.'
 
