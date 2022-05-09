@@ -51,8 +51,10 @@ async def get_ascension_materials(message: Message, options: Tuple[str, ...] = (
         await message.answer(f"Ошибка: не найден персонаж с именем {message.text.lstrip('!ресы')}!")
         return
 
-    ascension_mats = await upload(bp.api, 'photo_messages', Paths.get_ascension_path(Characters(character).name))
-    await message.answer(attachment=ascension_mats)
+    ascension_materials = await upload(
+        bp.api, 'photo_messages', Paths.get_ascension_path(Characters(character).name.lower())
+    )
+    await message.answer(attachment=ascension_materials)
 
 
 @bp.on.message(CommandRule(('таланты',), options=('-[default]', '-[error]', '-п')))

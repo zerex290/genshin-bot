@@ -19,7 +19,7 @@ from bot.utils.files import download, upload
 from bot.src import templates as tpl, models as mdl
 from bot.config.honeyimpact import URL, HEADERS, ATTRIBUTES
 from bot.config.dependencies.paths import FILECACHE
-from bot.src.types import Months
+from bot.src.types.uncategorized import Months
 from bot.src.types.genshin import Elements, Weapons, Artifacts, Enemies
 
 
@@ -55,7 +55,7 @@ class HoneyImpactParser:
         return await loop.run_in_executor(None, html.document_fromstring, '<html></html>')
 
     @staticmethod
-    async def _xpath(html_element: HtmlElement, query: str) -> HtmlElement:
+    async def _xpath(html_element: HtmlElement, query: str) -> List[HtmlElement]:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, html_element.xpath, query)
 
@@ -87,7 +87,7 @@ class CharacterParser(HoneyImpactParser):
                 name = ''.join(await self._xpath(character, './text()'))
                 path = (await self._xpath(character, './..'))[0].items()[0][-1].rstrip(f"?lang={self.lang}")[1:]
                 element = await self._xpath(character, './../..//img[contains(@class, "element")]')
-                element = element[0].items()[-1][-1].split('/')[-1].rstrip('_35.png')
+                element = element[0].items()[-1][-1].split('/')[-1].rstrip('_35.png').upper()
                 if re.search('traveler_boy', path):
                     name = 'Итер'
                 elif re.search('traveler_girl', path):
@@ -106,13 +106,13 @@ class CharacterParser(HoneyImpactParser):
         allegiance = ''.join(allegiance)
         rarity = len(await self._xpath(table, './/td[contains(text(), "Rarity")]/following-sibling::td/div'))
         weapon = (await self._xpath(table, './/td[contains(text(), "Weapon")]/following-sibling::td/a/text()'))[0]
-        weapon = Weapons[weapon.lower()].value
+        weapon = Weapons[weapon.upper()].value
         birthday = ''.join(await self._xpath(table, './/td[contains(text(), "Birthday")]/following-sibling::td/text()'))
         if len(birthday.split()) > 1:
             day, month = birthday.split()
-            birthday = f"{Months[month.lower()].value} {day}"
+            birthday = f"{Months[month.upper()].value} {day}"
         else:
-            birthday = Months[birthday.lower().strip()].value
+            birthday = Months[birthday.upper().strip()].value
         a_name = ''.join(await self._xpath(table, './/td[contains(text(), "Astrolabe")]/following-sibling::td/text()'))
 
         desc = ''.join(await self._xpath(table, './/td[contains(text(), "Description")]/following-sibling::td/text()'))
@@ -244,7 +244,7 @@ class WeaponParser(HoneyImpactParser):
         weapons = {w.value: {} for w in Weapons}
 
         for weapon_type in weapons:
-            tree = (await self._compile_html(self.base_url + 'db/weapon/' + Weapons(weapon_type).name))
+            tree = (await self._compile_html(self.base_url + 'db/weapon/' + Weapons(weapon_type).name.lower()))
             table = (await self._xpath(tree, '//div[@class="scrollwrapper"]/table[@class="art_stat_table"]/tr//a'))
             for element in table:
                 if await self._xpath(element, './text()'):
@@ -378,7 +378,7 @@ class EnemyParser(HoneyImpactParser):
         enemy_type = ''
         for item in tables[2:]:  #: First two items aren't necessary
             if item.get('class') == 'enemy_type':
-                enemy_type = (''.join(await self._xpath(item, './text()'))).lower().replace(' ', '_')
+                enemy_type = (''.join(await self._xpath(item, './text()'))).upper().replace(' ', '_')
             else:
                 name = ''.join(await self._xpath(item, './a//text()'))
                 code = (await self._xpath(item, './a'))[0].items()[0][-1].split('/')[-2]

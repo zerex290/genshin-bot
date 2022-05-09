@@ -6,7 +6,7 @@ from genshin.models.genshin import Notes, Exploration, ClaimedDailyReward, Parti
 
 from bot.utils import get_current_timestamp
 from bot.src.types.genshin import Characters, ElementSymbols, Regions, Rewards, DiaryCategories
-from bot.src.types import MonthIntegers, Months
+from bot.src.types.uncategorized import MonthIntegers, Months
 
 
 def _get_estimated_recovery_time(object_recovery_time: datetime.datetime) -> str:
@@ -36,7 +36,7 @@ def format_notes(notes: Notes) -> str:
         expedition_status = '♻' if e.status == 'Ongoing' else '✅'
         expeditions.append(
             f"{expedition_status}"
-            f"{Characters[e.character.name.lower().replace(' ', '_')].value}: "
+            f"{Characters[e.character.name.upper().replace(' ', '_')].value}: "
             f"🕑Осталось: {_get_estimated_recovery_time(e.completion_time)}\n"
         )
 
@@ -81,8 +81,8 @@ def format_stats(stats: PartialGenshinUserStats) -> str:
     for c in stats.characters:
         characters.append(
             f"{c.rarity}⭐ "
-            f"{ElementSymbols[c.element.lower()].value if c.element else '🌠'}"
-            f"{Characters[c.name.lower().replace(' ', '_')].value} "
+            f"{ElementSymbols[c.element.upper()].value if c.element else '🌠'}"
+            f"{Characters[c.name.upper().replace(' ', '_')].value} "
             f"Ур. {c.level} "
             f"🎮Ур. дружбы: {c.friendship}\n"
         )
@@ -92,7 +92,7 @@ def format_stats(stats: PartialGenshinUserStats) -> str:
         if e.name:
             explorations.append(
                 f"🌐{e.explored}% "
-                f"{Regions[e.name.lower().replace(':', '').replace(' ', '_')].value} "
+                f"{Regions[e.name.upper().replace(':', '').replace(' ', '_')].value} "
                 f"{_get_formatted_exploration_rewards(e, e.name)}\n"
             )
 
@@ -120,7 +120,7 @@ def format_stats(stats: PartialGenshinUserStats) -> str:
 
 
 def _get_formatted_daily_reward_name(reward: ClaimedDailyReward) -> str:
-    return Rewards[reward.name.lower().replace(' ', '_').replace("'s", "")].value
+    return Rewards[reward.name.upper().replace(' ', '_').replace("'s", "")].value
 
 
 def format_daily_rewards(rewards: Sequence[ClaimedDailyReward]) -> str:
@@ -140,15 +140,16 @@ def format_traveler_diary(diary: Diary) -> str:
     categories = []
     for c in diary.data.categories:
         categories.append(
-            f"{DiaryCategories[c.name.lower().replace(' ', '_')].value}: {c.amount} примогемов ({c.percentage}%)"
+            f"{DiaryCategories[c.name.upper().replace(' ', '_')].value}: {c.amount} примогемов ({c.percentage}%)"
         )
 
+    month = Months[MonthIntegers(diary.month).name].value
     formatted_traveler_diary = (
         f"🖼Дневник путешественника {diary.nickname}:\n"
         f"💰Получено моры за день: {diary.day_data.current_mora}\n"
         f"💎Получено примогемов за день: {diary.day_data.current_primogems}\n"
-        f"💰Получено моры за {Months[MonthIntegers(diary.month).name].value}: {diary.data.current_mora}\n"
-        f"💎Получено примогемов за {Months[MonthIntegers(diary.month).name].value}: {diary.data.current_primogems}\n\n"
+        f"💰Получено моры за {month}: {diary.data.current_mora}\n"
+        f"💎Получено примогемов за {month}: {diary.data.current_primogems}\n\n"
         f"🏅Получено примогемов по категориям:\n"
     ) + '\n'.join(categories)
     return formatted_traveler_diary
