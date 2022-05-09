@@ -1,4 +1,4 @@
 from . import genshin, help, sankaku
-from .uncategorized import Months
+from .uncategorized import Months, MonthIntegers
 
-__all__ = ('genshin', 'help', 'sankaku', 'Months')
+__all__ = ('genshin', 'help', 'sankaku', 'Months', 'MonthIntegers')

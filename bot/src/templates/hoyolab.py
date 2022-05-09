@@ -2,10 +2,11 @@ import datetime
 import re
 from typing import Sequence
 
-from genshin.models.genshin import Notes, Exploration, ClaimedDailyReward, PartialGenshinUserStats
+from genshin.models.genshin import Notes, Exploration, ClaimedDailyReward, PartialGenshinUserStats, Diary
 
 from bot.utils import get_current_timestamp
-from bot.src.types.genshin import Characters, ElementSymbols, Regions, Rewards
+from bot.src.types.genshin import Characters, ElementSymbols, Regions, Rewards, DiaryCategories
+from bot.src.types import MonthIntegers, Months
 
 
 def _get_estimated_recovery_time(object_recovery_time: datetime.datetime) -> str:
@@ -133,3 +134,22 @@ def format_daily_rewards(rewards: Sequence[ClaimedDailyReward]) -> str:
         f"🎖Последняя собранная награда: {_get_formatted_daily_reward_name(current_month_rewards[0])}"
     )
     return formatted_rewards
+
+
+def format_traveler_diary(diary: Diary) -> str:
+    categories = []
+    for c in diary.data.categories:
+        categories.append(
+            f"{DiaryCategories[c.name.lower().replace(' ', '_')].value}: {c.amount} примогемов ({c.percentage}%)"
+        )
+
+    formatted_traveler_diary = (
+        f"🖼Дневник путешественника {diary.nickname}:\n"
+        f"💰Получено моры за день: {diary.day_data.current_mora}\n"
+        f"💎Получено примогемов за день: {diary.day_data.current_primogems}\n"
+        f"💰Получено моры за {Months[MonthIntegers(diary.month).name].value}: {diary.data.current_mora}\n"
+        f"💎Получено примогемов за {Months[MonthIntegers(diary.month).name].value}: {diary.data.current_primogems}\n\n"
+        f"🏅Получено примогемов по категориям:\n"
+    ) + '\n'.join(categories)
+    return formatted_traveler_diary
+

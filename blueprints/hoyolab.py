@@ -53,6 +53,17 @@ async def _get_formatted_rewards(account: Dict[str, str | int]) -> Tuple[str, st
             return f"Необработанная ошибка: {e}\nПросьба сообщить о ней в личные сообщения группы!"
 
 
+async def _get_formatted_diary(account: Dict[str, str | int]) -> str:
+    async with GenshinClient(ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
+        try:
+            diary = await client.get_diary()
+            return tpl.hoyolab.format_traveler_diary(diary)
+        except InvalidCookies:
+            return 'Ошибка: указанные игровые данные больше недействительны!'
+        except GenshinException as e:
+            return f"Необработанная ошибка: {e}\nПросьба сообщить о ней в личные сообщения группы!"
+
+
 @bp.on.message(CommandRule(('линк',), options=('-[default]', '-[error]', '-п')))
 async def link_genshin_account(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
     if options[0] in hints.AccountLink.slots.value:
@@ -249,5 +260,29 @@ async def manage_resin_notifications(message: Message, options: Tuple[str, ...] 
             await message.answer('Автоматическое напоминание потратить смолу включено!')
         case ('-выкл', '-вкл') | ('-вкл', '-выкл'):
             await message.answer(f"Ошибка: переданы несовместимые опции: {' '.join(options)}!")
+        case _:
+            await message.answer(f"Ошибка: переданы несовместимые опции: {' '.join(options)}!")
+
+
+@bp.on.message(CommandRule(('дневник',), options=('-[default]', '-[error]', '-п', '-у')))
+async def get_traveler_diary(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+    match options:
+        case ('-[error]', ) | ('-п', ):
+            await message.answer(hints.Diary.slots.value[options[0]])
+        case ('-у', ) if message.reply_message:
+            reply_message_user_id = message.reply_message.from_id
+            account = await get_genshin_account_by_id(reply_message_user_id, False, True, True)
+            if not account:
+                await message.answer('Ошибка: в базе отсутствуют данные указанного игрока!')
+                return
+            await message.answer(await _get_formatted_diary(account))
+        case ('-у', ) if not message.reply_message:
+            await message.answer('Ошибка: не прикреплено сообщение другого игрока для просмотра его статистики!')
+        case ('-[default]', ):
+            account = await get_genshin_account_by_id(message.from_id, False, True, True)
+            if not account:
+                await message.answer('Ошибка: в базе отсутствуют ваши данные!')
+                return
+            await message.answer(await _get_formatted_diary(account))
         case _:
             await message.answer(f"Ошибка: переданы несовместимые опции: {' '.join(options)}!")
