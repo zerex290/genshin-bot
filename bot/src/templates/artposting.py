@@ -40,7 +40,7 @@ def format_post_message(donut: bool, tags: List[Tag]) -> str:
 
 
 def format_source(source: str) -> str:
-    if source.find('i.pximg.net') != 1:
+    if source.find('i.pximg.net') != -1:
         pixiv_id = source.rsplit('/', maxsplit=1)[-1].split('_')[0]
         return f"https://www.pixiv.net/en/artworks/{pixiv_id}"
     return source
