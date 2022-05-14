@@ -3,10 +3,8 @@ import asyncio
 from vkbottle import load_blueprints_from_package
 
 from bot.config import Bot
-from bot.middlewares import GroupFilterMiddleware, CustomCommandsMiddleware
-from bot.middlewares import UserRegisterMiddleware, ChatRegisterMiddleware, ChatUsersUpdateMiddleware
-from bot.middlewares import MessageLogMiddleware
-from bot.src.extra import collect_login_bonus, notify_about_resin_replenishment, parse_genshin_db_objects, PostUploader
+from bot.middlewares import *
+from bot.src.extra import *
 from bot.utils.files import write_logs
 
 bot = Bot()
@@ -33,7 +31,7 @@ async def main() -> None:
         bot.group.run_polling(),
         collect_login_bonus(),
         notify_about_resin_replenishment(bot.group),
-        parse_genshin_db_objects(),
+        parse_genshin_database_objects(),
         post_uploader.make_post(bot.user.api, donut=True),
         post_uploader.make_post(bot.user.api)
     )

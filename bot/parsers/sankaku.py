@@ -12,6 +12,9 @@ from bot.src.types.sankaku import Rating, Order, TagType
 from bot.src.models.sankaku import Post, Author, Tag
 
 
+__all__ = ('SankakuParser',)
+
+
 class SankakuParser:
     def __init__(
             self,

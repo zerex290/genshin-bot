@@ -8,7 +8,7 @@ from vkbottle import API, Bot, VKAPIError
 
 from genshin.types import Game
 
-from bot.parsers import SankakuParser, CharacterParser, WeaponParser, ArtifactParser, EnemyParser, BookParser
+from bot.parsers import *
 from bot.utils import PostgresConnection, GenshinClient, json
 from bot.utils.files import download, upload
 from bot.utils.genshin import get_genshin_account_by_id
@@ -19,7 +19,15 @@ from bot.config.dependencies.paths import FILECACHE
 from bot.config.dependencies.group import ID
 
 
-async def parse_genshin_db_objects() -> None:
+__all__ = (
+    'parse_genshin_database_objects',
+    'collect_login_bonus',
+    'notify_about_resin_replenishment',
+    'PostUploader'
+)
+
+
+async def parse_genshin_database_objects() -> None:
     loop = asyncio.get_running_loop()
     character = CharacterParser()
     weapon = WeaponParser()
@@ -74,7 +82,7 @@ async def _get_user_resin(account: Dict[str, str | int]) -> Optional[int]:
 
 
 async def notify_about_resin_replenishment(bot: Bot) -> None:
-    endings = {1: 'у', 2: 'ы', 3: 'ы', 4: 'ы'}  #: Used to write word "единица" in right cases
+    cases = {1: 'у', 2: 'ы', 3: 'ы', 4: 'ы'}  #: Used to write word "единица" in right cases
     while True:
         for user in await _get_users():
             resin = await _get_user_resin(await get_genshin_account_by_id(user['user_id'], True, True, True))
@@ -84,7 +92,7 @@ async def notify_about_resin_replenishment(bot: Bot) -> None:
                         random_id=random.randint(0, 1000),
                         peer_id=user['chat_id'],
                         message=f"@id{user['user_id']} ({user['first_name']}), ваша смола достигла отметки в "
-                                f"{resin} единиц{endings.get(resin - 150, '')}, поспешите её потратить!"
+                                f"{resin} единиц{cases.get(resin - 150, '')}, поспешите её потратить!"
                     )
                 except VKAPIError:
                     pass  #: tba chat remove from users_in_chats
@@ -95,7 +103,7 @@ class PostUploader:
     THEMATIC: bool = False
     THEMATIC_TAGS: Tuple[str, ...] = ()
     MINIMUM_DONUT_FAV_COUNT = 500
-    MINIMUM_FAV_COUNT = 0
+    MINIMUM_FAV_COUNT = 500
 
     def _get_tags(self, donut: bool) -> Tuple[str, ...]:
         if not self.__class__.THEMATIC:

@@ -1,4 +1,12 @@
-from .sankaku import SankakuParser
-from .honeyimpact import CharacterParser, WeaponParser, ArtifactParser, EnemyParser, BookParser
+from .sankaku import *
+from .honeyimpact import *
 
-__all__ = ('SankakuParser', 'CharacterParser', 'WeaponParser', 'ArtifactParser', 'EnemyParser', 'BookParser')
+
+__all__ = (
+    'SankakuParser',
+    'CharacterParser',
+    'WeaponParser',
+    'ArtifactParser',
+    'EnemyParser',
+    'BookParser'
+)

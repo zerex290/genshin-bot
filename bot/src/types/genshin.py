@@ -35,10 +35,10 @@ class Characters(Enum):
     ALOY = 'Элой'
     ITTO = 'Итто'
     GOROU = 'Горо'
-
     SHENHE = 'Шэнь Хэ'
-    YAE = 'Яэ'
     SHINOBU = 'Куки Синобу'
+    YELAN = 'Е Лань'
+    YEBLAN = 'Еблань'
 
     JEAN = 'Джинн'
     QIN = 'Джинн'
@@ -49,8 +49,12 @@ class Characters(Enum):
     AMBER = 'Эмбер'
     AMBOR = 'Эмбер'
 
-    YANFEI = 'Янь Фэй'
     FEIYAN = 'Янь Фэй'
+    YANFEI = 'Янь Фэй'
+
+    YAEMIKO = 'Яэ Мико'
+    YAE_MIKO = 'Яэ Мико'
+    YAE = 'Яэ Мико'
 
     AYAKA = 'Аяка'
     KAMISATO_AYAKA = 'Аяка'
@@ -87,31 +91,6 @@ class Characters(Enum):
 
     AYATO = 'Аято'
     KAMISATO_AYATO = 'Аято'
-
-    YELAN = 'Е Лань'
-    YEBLAN = 'Еблань'
-
-    @staticmethod
-    def format_character_name(character: str) -> str:
-        sub = {
-            'хутао': 'Ху Тао',
-            'ганьюй': 'Гань Юй',
-            'чжунли': 'Чжун Ли',
-            'синьянь': 'Синь Янь',
-            'кэцин': 'Кэ Цин',
-            'цици': 'Ци Ци',
-            'чуньюнь': 'Чунь Юнь',
-            'нингуан': 'Нин Гуан',
-            'синцю': 'Син Цю',
-            'бейдоу': 'Бей Доу',
-            'сянлин': 'Сян Лин',
-            'яньфэй': 'Янь Фэй',
-            'юньцзинь': 'Юнь Цзинь',
-            'шэньхэ': 'Шэнь Хэ',
-            'елань': 'Е Лань',
-            'кукисинобу': 'Куки Синобу'
-        }
-        return sub.get(character, character.capitalize())
 
 
 class Weapons(Enum):

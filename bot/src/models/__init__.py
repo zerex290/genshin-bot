@@ -1,3 +1,4 @@
-from . import customcommands, sankaku, honeyimpact
+from . import honeyimpact, customcommands, sankaku
 
-__all__ = ('customcommands', 'sankaku', 'honeyimpact')
+
+__all__ = ('honeyimpact', 'customcommands', 'sankaku')

@@ -9,6 +9,14 @@ from bot.utils import get_custom_commands
 from bot.src.models.customcommands import CustomCommand, ChatCustomCommands
 
 
+__all__ = (
+    'CommandRule',
+    'AdminRule',
+    'CustomCommandRule',
+    'EventRule'
+)
+
+
 class CommandRule(ABCRule[Message]):
     __slots__ = ('text', 'prefix', 'options')
 

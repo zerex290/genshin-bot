@@ -1,6 +1,5 @@
-from .base import GroupFilterMiddleware, CustomCommandsMiddleware
-from .base import UserRegisterMiddleware, ChatRegisterMiddleware, ChatUsersUpdateMiddleware
-from .base import MessageLogMiddleware
+from .base import *
+
 
 __all__ = (
     'GroupFilterMiddleware',

@@ -4,6 +4,9 @@ from datetime import datetime
 from vkbottle.bot import Blueprint, Message
 
 from bot.rules import CommandRule
+from bot.errors import IncompatibleOptions
+from bot.validators import BaseValidator
+from bot.validators.genshin import *
 from bot.utils.files import upload
 from bot.utils.genshin import Paths
 from bot.src.types.help import genshin as hints
@@ -25,36 +28,59 @@ async def _get_material_attachments(options: Tuple[str, ...]) -> str:
     CommandRule(('фарм',), options=('-[default]', '-[error]', '-п', '-пн', '-вт', '-ср', '-чт', '-пт', '-сб', '-вс'))
 )
 async def get_daily_materials(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
-    match options:
-        case ('-[error]',) | ('-п',):
-            await message.answer(hints.DailyMaterials.slots.value[options[0]])
-        case ('-[default]',):
-            mats = await upload(bp.api, 'photo_messages', Paths.get_daily_materials_path(datetime.now().weekday()))
-            await message.answer(attachment=mats)
-        case _ if '-п' not in options:
-            await message.answer(attachment=await _get_material_attachments(options))
-        case _ if '-п' in options:
-            await message.answer('Ошибка: вы не можете указать опцию -п в связке с остальными опциями!')
+    async with BaseValidator(message):
+        match options:
+            case ('-[error]',) | ('-п',):
+                await message.answer(hints.DailyMaterials.slots.value[options[0]])
+            case ('-[default]',):
+                mats = await upload(bp.api, 'photo_messages', Paths.get_daily_materials_path(datetime.now().weekday()))
+                await message.answer(attachment=mats)
+            case _ if '-п' not in options:
+                await message.answer(attachment=await _get_material_attachments(options))
+            case _ if '-п' in options:
+                raise IncompatibleOptions(options)
+
+
+def _format_character_name(character: str) -> str:
+    sub = {
+        'хутао': 'Ху Тао',
+        'ганьюй': 'Гань Юй',
+        'чжунли': 'Чжун Ли',
+        'синьянь': 'Синь Янь',
+        'кэцин': 'Кэ Цин',
+        'цици': 'Ци Ци',
+        'чуньюнь': 'Чунь Юнь',
+        'нингуан': 'Нин Гуан',
+        'синцю': 'Син Цю',
+        'бейдоу': 'Бей Доу',
+        'сянлин': 'Сян Лин',
+        'яньфэй': 'Янь Фэй',
+        'юньцзинь': 'Юнь Цзинь',
+        'шэньхэ': 'Шэнь Хэ',
+        'елань': 'Е Лань',
+        'кукисинобу': 'Куки Синобу',
+        'синобу': 'Куки Синобу',
+        'куки': 'Куки Синобу',
+        'яэмико': 'Яэ Мико'
+    }
+    return sub.get(character, character.capitalize())
 
 
 @bp.on.message(CommandRule(('ресы',), options=('-[default]', '-[error]', '-п')))
 async def get_ascension_materials(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
     if options[0] in hints.AscensionMaterials.slots.value:
         await message.answer(hints.AscensionMaterials.slots.value[options[0]])
-        return
+        return None
 
-    character = Characters.format_character_name(message.text.lstrip('!ресы').lstrip().lower().replace(' ', ''))
-    if not character:
-        await message.answer('Ошибка: вы не указали имя персонажа!')
-        return
-    elif character not in [char.value for char in Characters]:
-        await message.answer(f"Ошибка: не найден персонаж с именем {message.text.lstrip('!ресы')}!")
-        return
-
-    ascension_materials = await upload(
-        bp.api, 'photo_messages', Paths.get_ascension_path(Characters(character).name.lower())
-    )
-    await message.answer(attachment=ascension_materials)
+    character = _format_character_name(message.text.lstrip('!ресы').lstrip().lower().replace(' ', ''))
+    async with AscensionValidator(message) as validator:
+        validator.check_character_specified(character)
+        validator.check_character_available(character)
+        validator.check_character_exists(character)
+        ascension_materials = await upload(
+            bp.api, 'photo_messages', Paths.get_ascension_path(Characters(character).name.lower())
+        )
+        await message.answer(attachment=ascension_materials)
 
 
 @bp.on.message(CommandRule(('таланты',), options=('-[default]', '-[error]', '-п')))

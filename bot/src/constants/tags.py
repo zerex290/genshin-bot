@@ -91,7 +91,11 @@ CLOTHING = {
     'пиджак': 'jacket',
     'куртка': 'coat',
     'кофта': 'shirt',
-    'очки': 'sunglasses'
+    'очки': 'sunglasses',
+    'каблуки': 'high_heels',
+    'юката': 'yukata',
+    'кимоно': 'kimono',
+    'хаори': 'haori'
 }
 
 JEWELRY = {
@@ -99,6 +103,7 @@ JEWELRY = {
     'серьги': 'earrings',
     'браслет': 'bracelet',
     'армлет': 'armlet',
+    'анклет': 'anklet',
     'цепочка': 'necklace',
     'корона': 'crown',
     'тиара': 'tiara',
@@ -121,6 +126,7 @@ EMOTIONS = {
 }
 
 BODY = {
+    'пальцы_ног': 'toes',
     'ноги': 'legs',
     'руки': 'hands',
     'стопы': 'feet',
@@ -144,10 +150,15 @@ BODY = {
 CREATURES = {
     'демон': 'demon_boy',
     'демонесса': 'demon_girl',
+    'дракон': 'dragon_boy',
+    'драконесса': 'dragon_girl',
     'ангелы': 'angel',
     'демоны': 'demon',
     'вампиры': 'vampire',
+    'эльфы': 'elf',
+    'феи': 'fairy',
     'некомими': 'nekomimi',
     'китсунемими': 'kitsunemimi',
+    'инумими': 'inumimi',
     'фурри': 'furry'
 }

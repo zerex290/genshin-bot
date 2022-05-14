@@ -20,7 +20,16 @@ from bot.src import templates as tpl, models as mdl
 from bot.config.honeyimpact import URL, HEADERS, ATTRIBUTES
 from bot.config.dependencies.paths import FILECACHE
 from bot.src.types.uncategorized import Months
-from bot.src.types.genshin import Elements, Weapons, Artifacts, Enemies
+from bot.src.types.genshin import Characters, Elements, Weapons, Artifacts, Enemies
+
+
+__all__ = (
+    'CharacterParser',
+    'WeaponParser',
+    'ArtifactParser',
+    'EnemyParser',
+    'BookParser'
+)
 
 
 class HoneyImpactParser:
@@ -84,14 +93,10 @@ class CharacterParser(HoneyImpactParser):
             tree = await self._compile_html(url)
             table = await self._xpath(tree, '//div[@class="char_sea_cont"]//span[@class="sea_charname"]')
             for character in table:
-                name = ''.join(await self._xpath(character, './text()'))
                 path = (await self._xpath(character, './..'))[0].items()[0][-1].rstrip(f"?lang={self.lang}")[1:]
+                name = Characters[path.split('/')[-2].upper()].value
                 element = await self._xpath(character, './../..//img[contains(@class, "element")]')
                 element = element[0].items()[-1][-1].split('/')[-1].rstrip('_35.png').upper()
-                if re.search('traveler_boy', path):
-                    name = 'Итер'
-                elif re.search('traveler_girl', path):
-                    name = 'Люмин'
                 characters[Elements[element].value][name] = path
         return characters
 

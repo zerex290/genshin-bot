@@ -9,9 +9,10 @@ from bot.parsers import SankakuParser
 from bot.rules import CommandRule
 from bot.utils import PostgresConnection
 from bot.utils.files import download, upload
-from bot.errors.default import RandomPictureException
-from bot.validators.default import RandomPictureValidator
 from bot.src.constants import KEYBOARD, tags
+from bot.errors import IncompatibleOptions
+from bot.validators import BaseValidator
+from bot.validators.default import *
 from bot.src.types.help import default as hints
 from bot.src.types.sankaku import MediaType
 from bot.config.dependencies.paths import FILECACHE
@@ -31,8 +32,10 @@ async def choose(message: Message, options: Tuple[str, ...] = ('-[default]',)) -
         await message.answer(hints.Choice.slots.value[options[0]])
         return None
 
-    choice = random.choice(message.text.lstrip('!выбери').split('/')) if message.text.find('/') != -1 else ''
-    await message.answer(choice) if choice else await message.answer('Ошибка: не указаны варианты для выбора!')
+    async with ChoiceValidator(message) as validator:
+        choice_options = message.text.lstrip('!выбери').split('/') if message.text.find('/') != -1 else []
+        validator.check_choice_options_specified(choice_options)
+        await message.answer(random.choice(choice_options))
 
 
 @bp.on.message(CommandRule(('конверт',), options=('-[default]', '-[error]', '-п')))
@@ -41,14 +44,11 @@ async def convert(message: Message, options: Tuple[str, ...] = ('-[default]',)) 
         await message.answer(hints.Converter.slots.value[options[0]])
         return None
 
-    if not message.reply_message:
-        await message.answer('Ошибка: вы не прикрепили сообщение, текст которого нужно конвертировать!')
-        return None
-    if not message.reply_message.text:
-        await message.answer('Ошибка: сообщение, которое вы прикрепили, не содержит текста!')
-        return None
-    converted_message = ''.join([KEYBOARD.get(symbol, symbol) for symbol in message.reply_message.text])
-    await message.answer(converted_message)
+    async with ConvertValidator(message) as validator:
+        validator.check_reply_message(message.reply_message)
+        validator.check_reply_message_text(message.reply_message.text)
+        converted_message = ''.join([KEYBOARD.get(symbol, symbol) for symbol in message.reply_message.text])
+        await message.answer(converted_message)
 
 
 def _evaluate_time(time: str) -> Optional[int]:
@@ -67,24 +67,18 @@ async def set_timer(message: Message, options: Tuple[str, ...] = ('-[default]',)
         return None
 
     text = message.text.lstrip('!таймер')
-    if not text:
-        await message.answer('Ошибка: не задано время для установки таймера!')
-        return None
-
-    time, note = (text.split('/')[0], text.split('/')[1]) if text.find('/') != -1 else (text, '')
-    countdown = _evaluate_time(time)
-    if not countdown:
-        await message.answer('Ошибка: Синтаксис команды нарушен!')
-        return None
-
-    await message.answer('Таймер установлен!')
-    await sleep(countdown)
-
-    async with PostgresConnection() as connection:
-        query = await connection.fetchrow(f"SELECT first_name FROM users WHERE user_id = {message.from_id}")
-        first_name = dict(query)['first_name']
-        response = f"@id{message.from_id} ({first_name}), время прошло! {'Пометка: ' + note if note else ''}"
-        await message.answer(response)
+    async with TimerValidator(message) as validator:
+        validator.check_timer_specified(text)
+        time, note = (text.split('/')[0], text.split('/')[1]) if text.find('/') != -1 else (text, '')
+        countdown = _evaluate_time(time)
+        validator.check_timer_syntax(countdown)
+        await message.answer('Таймер установлен!')
+        await sleep(countdown)
+        async with PostgresConnection() as connection:
+            query = await connection.fetchrow(f"SELECT first_name FROM users WHERE user_id = {message.from_id}")
+            first_name = dict(query)['first_name']
+            response = f"@id{message.from_id} ({first_name}), время прошло! {'Пометка: ' + note if note else ''}"
+            await message.answer(response)
 
 
 @bp.on.message(CommandRule(('перешли',), options=('-[default]', '-[error]', '-п')))
@@ -93,19 +87,12 @@ async def forward_attachments(message: Message, options: Tuple[str, ...] = ('-[d
         await message.answer(hints.Attachments.slots.value[options[0]])
         return None
 
-    if not message.attachments:
-        await message.answer('Ошибка: не прикреплены изображения для пересылки!')
-        return None
-
-    response: List[str] = []
-    for attachment in message.attachments:
-        if not attachment.photo:
-            continue
-        response.append(f"photo{attachment.photo.owner_id}_{attachment.photo.id}_{attachment.photo.access_key}")
-    if not response:
-        await message.answer('Ошибка: пересылать можно только изображения!')
-        return None
-    await message.answer(attachment=','.join(response))
+    async with AttachmentForwardValidator(message) as validator:
+        attachments = message.attachments
+        validator.check_attachments(attachments)
+        response = [f"photo{a.photo.owner_id}_{a.photo.id}_{a.photo.access_key}" for a in attachments if a.photo]
+        validator.check_attachment_response(response)
+        await message.answer(attachment=','.join(response))
 
 
 def _get_all_tags() -> Dict[str, str]:
@@ -153,15 +140,16 @@ def _choose_available_tags(available_tags: Dict[str, str]) -> List[str]:
     CommandRule(('рандомтег',), options=('-[default]', '-[error]', '-п', '-г', '-ср', '-о', '-у', '-э', '-т', '-с'))
 )
 async def get_random_tags(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
-    match options:
-        case ('-[error]',) | ('-п',):
-            await message.answer(hints.RandomTag.slots.value[options[0]])
-        case ('-[default]',):
-            await message.answer('\n'.join(_choose_available_tags(_get_all_tags())))
-        case _ if '-п' not in options:
-            await message.answer('\n'.join(_choose_available_tags(_gather_available_tags(options))))
-        case _ if '-п' in options:
-            await message.answer('Ошибка: вы не можете указать опцию -п в связке с остальными опциями!')
+    async with BaseValidator(message) as validator:
+        match options:
+            case ('-[error]',) | ('-п',):
+                await message.answer(hints.RandomTag.slots.value[options[0]])
+            case ('-[default]',):
+                await message.answer('\n'.join(_choose_available_tags(_get_all_tags())))
+            case _ if '-п' not in options:
+                await message.answer('\n'.join(_choose_available_tags(_gather_available_tags(options))))
+            case _ if '-п' in options:
+                raise IncompatibleOptions(options)
 
 
 @bp.on.message(CommandRule(('пик',), options=('-[default]', '-[error]', '-п')))
@@ -170,14 +158,14 @@ async def get_random_picture(message: Message, options: Tuple[str, ...] = ('-[de
         await message.answer(hints.RandomPicture.slots.value[options[0]])
         return None
 
-    validator = RandomPictureValidator()
+    cases = {1: 'е', 2: 'я', 3: 'я', 4: 'я'}
     query = message.text.lstrip('!пик').split()
-    try:
-        validator.check_quantity_specified(query)
-        validator.check_quantity_overflowed(int(query[0]))
+    async with RandomPictureValidator(message) as validator:
+        validator.check_pictures_specified(query)
+        validator.check_pictures_quantity(int(query[0]))
         all_tags = _get_all_tags()
         chosen_tags = tuple([all_tags.get(tag, tag) for tag in query[1:]]) if len(query) > 1 else ()
-        validator.check_tags_overflowed(chosen_tags)
+        validator.check_tags_quantity(chosen_tags)
         attachments = []
         parser = SankakuParser(tags=chosen_tags)
         async for post in parser.iter_posts():
@@ -190,6 +178,7 @@ async def get_random_picture(message: Message, options: Tuple[str, ...] = ('-[de
                 continue
             attachments.append(await upload(bp.api, 'photo_messages', file))
             os.remove(file)
-        await message.answer(f"По вашему запросу найдено {len(attachments)} изображений!", ','.join(attachments))
-    except RandomPictureException as rp:
-        await message.answer(rp.error)
+        await message.answer(
+            f"По вашему запросу найдено {len(attachments)} изображени{cases.get(len(attachments), 'й')}!",
+            ','.join(attachments)
+        )

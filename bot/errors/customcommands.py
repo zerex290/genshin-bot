@@ -1,30 +1,57 @@
-class CommandCreationException(Exception):
-    _msg: str = ''
-
-    @property
-    def error(self) -> str:
-        return f"Ошибка: {self._msg}"
+from bot.errors import GenshinBotException
 
 
-class AvailabilityError(CommandCreationException):
-    _msg = 'В данном чате стоит ограничение на добавление команд!'
+__all__ = (
+    'CommandsNotCreated',
+    'AvailabilityError',
+    'AlreadyPublic',
+    'AlreadyRestricted',
+    'ManipulationError',
+    'CommandNotSpecified',
+    'CommandExists',
+    'CommandNotExists',
+    'CommandReserved',
+    'AdditionNotSpecified'
+)
 
 
-class EmptyNameError(CommandCreationException):
+class CommandsNotCreated(GenshinBotException):
+    _msg = 'В данном чате не создано ни одной команды!'
+
+
+class AvailabilityError(GenshinBotException):
+    _msg = 'Вы не являетесь создателем или администратором чата!'
+
+
+class AlreadyPublic(GenshinBotException):
+    _msg = 'Манипуляции с пользовательскими командами уже являются общедоступными!'
+
+
+class AlreadyRestricted(GenshinBotException):
+    _msg = 'Манипуляции с пользовательскими командами уже являются ограниченными!'
+
+
+class ManipulationError(GenshinBotException):
+    _msg = 'В данном чате стоит ограничение на изменение пользовательских команд!'
+
+
+class CommandNotSpecified(GenshinBotException):
     _msg = 'Вы не указали название команды!'
 
 
-class CommandExistsError(CommandCreationException):
+class CommandExists(GenshinBotException):
     def __init__(self, name: str) -> None:
-        self.name = name
-        self.__class__._msg = f"В данном чате уже существует команда '{self.name}'!"
+        self.__class__._msg = f"В данном чате уже существует команда '{name}'!"
 
 
-class CommandReservedError(CommandCreationException):
+class CommandNotExists(GenshinBotException):
+    _msg = 'Невозможно удалить несуществующую команду!'
+
+
+class CommandReserved(GenshinBotException):
     def __init__(self, name: str) -> None:
-        self.name = name
-        self.__class__._msg = f"Название '{self.name}' зарезервировано одной из стандартных команд бота!"
+        self.__class__._msg = f"Название '{name}' зарезервировано одной из стандартных команд бота!"
 
 
-class NotAnyAdditionError(CommandCreationException):
-    _msg = 'Укажите сообщение или прикрепите медиафайл для создания команды!'
+class AdditionNotSpecified(GenshinBotException):
+    _msg = 'Укажите сообщение и/или прикрепите медиафайл для создания команды!'

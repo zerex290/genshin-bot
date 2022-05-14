@@ -1,3 +1,4 @@
-from . import characters, weapons, artifacts, enemies, books
+from . import artifacts, books, characters, enemies, weapons
 
-__all__ = ('characters', 'weapons', 'artifacts', 'enemies', 'books')
+
+__all__ = ('artifacts', 'books', 'characters', 'enemies', 'weapons')

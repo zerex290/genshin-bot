@@ -10,6 +10,16 @@ from bot.utils.postgres import has_postgres_data
 from bot.config.dependencies.paths import USER_COMMANDS
 
 
+__all__ = (
+    'GroupFilterMiddleware',
+    'CustomCommandsMiddleware',
+    'UserRegisterMiddleware',
+    'ChatRegisterMiddleware',
+    'ChatUsersUpdateMiddleware',
+    'MessageLogMiddleware'
+)
+
+
 ACTIONS = [
     MessagesMessageActionStatus.CHAT_INVITE_USER,
     MessagesMessageActionStatus.CHAT_INVITE_USER_BY_MESSAGE_REQUEST,

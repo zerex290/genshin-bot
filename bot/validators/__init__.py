@@ -1,4 +1,4 @@
-from . import customcommands, default
+from .base import *
 
 
-__all__ = ('customcommands', 'default')
+__all__ = ('BaseValidator',)
