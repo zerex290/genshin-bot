@@ -6,3 +6,4 @@ time_meter.py
 *.pyc
 **.idea/
 **__pycache__/
+*.sh
