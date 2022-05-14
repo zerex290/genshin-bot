@@ -4,7 +4,7 @@ from enum import Enum
 class Characters(Enum):
     VENTI = 'Венти'
     ROSARIA = 'Розария'
-    HUTAO = 'Ху Тао'
+
     XIAO = 'Сяо'
     GANYU = 'Гань Юй'
     ALBEDO = 'Альбедо'
@@ -39,6 +39,9 @@ class Characters(Enum):
     SHINOBU = 'Куки Синобу'
     YELAN = 'Е Лань'
     YEBLAN = 'Еблань'
+
+    HUTAO = 'Ху Тао'
+    HU_TAO = 'Ху Тао'
 
     JEAN = 'Джинн'
     QIN = 'Джинн'
