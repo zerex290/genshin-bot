@@ -49,28 +49,25 @@ class CommandRule(ABCRule[Message]):
 
 
 class AdminRule(ABCRule[Message]):
-    __slots__ = ('commands', 'prefix')
+    __slots__ = ('commands', 'prefix', 'admins')
 
     def __init__(
             self,
-            commands: Tuple[str, ...] | str = ('exec', 'execpg'),
+            commands: Tuple[str, ...] = ('exec', 'execpg'),
             prefix: str = '!',
+            admins: Tuple[int, ...] = ()
     ) -> None:
         self.commands = commands
         self.prefix = prefix
+        self.admins = admins
 
     async def check(self, event: Message) -> bool | Dict[str, bool]:
-        if not event.text:
+        if not any([event.text.lower().startswith(self.prefix + command) for command in self.commands]):
             return False
-        elif (
-            event.from_id not in (191901652, 687594282)
-            and any([event.text.split()[0] == self.prefix + command for command in self.commands])
-        ):
+        if event.from_id not in self.admins:
             await event.answer('У вас недостаточно прав для использования данной команды!')
             return False
-        elif not any([event.text.split()[0] == self.prefix + command for command in self.commands]):
-            return False
-        return {'postgres': True if event.text.split()[0] == f"{self.prefix}execpg" else False}
+        return {'postgres': True if event.text.lower().startswith(f"{self.prefix}execpg") else False}
 
 
 class CustomCommandRule(ABCRule[Message]):

@@ -9,7 +9,7 @@ from bot.rules import AdminRule
 bp = Blueprint('AdminCommands')
 
 
-@bp.on.message(AdminRule())
+@bp.on.message(AdminRule(admins=(191901652, 687594282)))
 async def execute(message: Message, postgres: bool) -> None:
     code: str = message.text.lstrip('!execpg').lstrip('!exec').lstrip()
     if not postgres:

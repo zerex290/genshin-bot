@@ -59,7 +59,6 @@ async def create_pg_tables(connection):
         CREATE TABLE group_posts (
             post_id int PRIMARY KEY,
             sankaku_post_id int UNIQUE,
-            danbooru_post_id int UNIQUE,
             post_type varchar(8) NOT NULL,
             is_donut boolean NOT NULL
         );
