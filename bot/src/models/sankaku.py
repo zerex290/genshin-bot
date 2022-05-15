@@ -70,7 +70,7 @@ class Post:
     total_score: int
     comment_count: Optional[int]
 
-    source: Optional[str]
+    source: str
     in_visible_pool: bool
     is_premium: bool
     is_rating_locked: bool

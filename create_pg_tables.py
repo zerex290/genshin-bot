@@ -49,10 +49,10 @@ async def create_pg_tables(connection):
             message text,
             document_id varchar(40),
             audio_id varchar(40),
-            has_photo boolean NOT NULL,
+            photo_id varchar(40),
             PRIMARY KEY (name, chat_id),
             CONSTRAINT correctness 
-            CHECK (message IS NOT NULL OR document_id IS NOT NULL OR audio_id IS NOT NULL OR has_photo IS TRUE)
+            CHECK (message IS NOT NULL OR document_id IS NOT NULL OR audio_id IS NOT NULL OR photo_id IS NOT NULL)
         );
     """)
     group_posts = (f"""
@@ -64,8 +64,18 @@ async def create_pg_tables(connection):
             is_donut boolean NOT NULL
         );
     """)
+    genshin_db_aliases = (f"""
+        CREATE TABLE genshindb_aliases (
+            user_id int REFERENCES users(user_id),
+            alias text,
+            message text,
+            photo_id varchar(40),
+            keyboard text NOT NULL,
+            PRIMARY KEY (user_id, alias)
+        );
+    """)
 
-    for table in (chats, users, users_in_chats, genshin_accounts, custom_commands, group_posts):
+    for table in (chats, users, users_in_chats, genshin_accounts, custom_commands, group_posts, genshin_db_aliases):
         await connection.execute(table)
 
 

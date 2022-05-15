@@ -24,10 +24,8 @@ async def _get_material_attachments(options: Tuple[str, ...]) -> str:
     return ','.join(response)
 
 
-@bp.on.message(
-    CommandRule(('фарм',), options=('-[default]', '-[error]', '-п', '-пн', '-вт', '-ср', '-чт', '-пт', '-сб', '-вс'))
-)
-async def get_daily_materials(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('фарм',), options=('-п', '-пн', '-вт', '-ср', '-чт', '-пт', '-сб', '-вс')))
+async def get_daily_materials(message: Message, options: Tuple[str, ...]) -> None:
     async with BaseValidator(message):
         match options:
             case ('-[error]',) | ('-п',):
@@ -66,8 +64,8 @@ def _format_character_name(character: str) -> str:
     return sub.get(character, character.capitalize())
 
 
-@bp.on.message(CommandRule(('ресы',), options=('-[default]', '-[error]', '-п')))
-async def get_ascension_materials(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('ресы',), options=('-п',)))
+async def get_ascension_materials(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.AscensionMaterials.slots.value:
         await message.answer(hints.AscensionMaterials.slots.value[options[0]])
         return None
@@ -83,8 +81,8 @@ async def get_ascension_materials(message: Message, options: Tuple[str, ...] = (
         await message.answer(attachment=ascension_materials)
 
 
-@bp.on.message(CommandRule(('таланты',), options=('-[default]', '-[error]', '-п')))
-async def get_boss_materials(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('таланты',), options=('-п',)))
+async def get_boss_materials(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.BossMaterials.slots.value:
         await message.answer(hints.BossMaterials.slots.value[options[0]])
         return
@@ -93,8 +91,8 @@ async def get_boss_materials(message: Message, options: Tuple[str, ...] = ('-[de
     await message.answer(attachment=boss_materials)
 
 
-@bp.on.message(CommandRule(('книги',), options=('-[default]', '-[error]', '-п')))
-async def get_books(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('книги',), options=('-п',)))
+async def get_books(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.Books.slots.value:
         await message.answer(hints.Books.slots.value[options[0]])
         return
@@ -103,8 +101,8 @@ async def get_books(message: Message, options: Tuple[str, ...] = ('-[default]',)
     await message.answer(attachment=books)
 
 
-@bp.on.message(CommandRule(('данжи',), options=('-[default]', '-[error]', '-п')))
-async def get_domains(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('данжи',), options=('-п',)))
+async def get_domains(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.Domains.slots.value:
         await message.answer(hints.Domains.slots.value[options[0]])
         return

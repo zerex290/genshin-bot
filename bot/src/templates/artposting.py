@@ -6,7 +6,7 @@ from bot.config.dependencies.group import SHORTNAME
 
 
 def _prettify_tag(tag: str) -> str:
-    tag = re.sub(r'[!@#№$%^&*-+:;"\'{}\[\]<,>.?/\\|]', '', tag)
+    tag = re.sub(r'[!@#№$%^&*+:;"\'{}\[\]<,>.?/\\|]', '', tag).replace('-', '_')
     return tag[:tag.find('_(')] if tag.find('_(') != -1 else tag
 
 

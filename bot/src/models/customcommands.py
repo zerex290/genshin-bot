@@ -12,7 +12,7 @@ class CustomCommand:
     message: str
     document_id: str
     audio_id: str
-    has_photo: bool
+    photo_id: str
 
     @property
     def date_added(self) -> datetime.datetime:

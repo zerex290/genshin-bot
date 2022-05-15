@@ -21,13 +21,13 @@ from bot.config.dependencies.paths import FILECACHE
 bp = Blueprint('DefaultCommands')
 
 
-@bp.on.message(CommandRule(('команды',), options=('-[default]', '-[error]', '-п')))
-async def get_guide(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('команды',), options=('-п',)))
+async def get_guide(message: Message, options: Tuple[str, ...]) -> None:
     await message.answer(hints.Guide.slots.value[options[0]])
 
 
-@bp.on.message(CommandRule(('выбери',), options=('-[default]', '-[error]', '-п')))
-async def choose(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('выбери',), options=('-п',)))
+async def choose(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.Choice.slots.value:
         await message.answer(hints.Choice.slots.value[options[0]])
         return None
@@ -38,8 +38,8 @@ async def choose(message: Message, options: Tuple[str, ...] = ('-[default]',)) -
         await message.answer(random.choice(choice_options))
 
 
-@bp.on.message(CommandRule(('конверт',), options=('-[default]', '-[error]', '-п')))
-async def convert(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('конверт',), options=('-п',)))
+async def convert(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.Converter.slots.value:
         await message.answer(hints.Converter.slots.value[options[0]])
         return None
@@ -60,8 +60,8 @@ def _evaluate_time(time: str) -> Optional[int]:
     return countdown
 
 
-@bp.on.message(CommandRule(('таймер',), options=('-[default]', '-[error]', '-п')))
-async def set_timer(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('таймер',), options=('-п',)))
+async def set_timer(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.Timer.slots.value:
         await message.answer(hints.Timer.slots.value[options[0]])
         return None
@@ -81,8 +81,8 @@ async def set_timer(message: Message, options: Tuple[str, ...] = ('-[default]',)
             await message.answer(response)
 
 
-@bp.on.message(CommandRule(('перешли',), options=('-[default]', '-[error]', '-п')))
-async def forward_attachments(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('перешли',), options=('-п',)))
+async def forward_attachments(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.Attachments.slots.value:
         await message.answer(hints.Attachments.slots.value[options[0]])
         return None
@@ -136,11 +136,9 @@ def _choose_available_tags(available_tags: Dict[str, str]) -> List[str]:
     return chosen_tags
 
 
-@bp.on.message(
-    CommandRule(('рандомтег',), options=('-[default]', '-[error]', '-п', '-г', '-ср', '-о', '-у', '-э', '-т', '-с'))
-)
-async def get_random_tags(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
-    async with BaseValidator(message) as validator:
+@bp.on.message(CommandRule(('рандомтег',), options=('-п', '-г', '-ср', '-о', '-у', '-э', '-т', '-с')))
+async def get_random_tags(message: Message, options: Tuple[str, ...]) -> None:
+    async with BaseValidator(message):
         match options:
             case ('-[error]',) | ('-п',):
                 await message.answer(hints.RandomTag.slots.value[options[0]])
@@ -152,8 +150,8 @@ async def get_random_tags(message: Message, options: Tuple[str, ...] = ('-[defau
                 raise IncompatibleOptions(options)
 
 
-@bp.on.message(CommandRule(('пик',), options=('-[default]', '-[error]', '-п')))
-async def get_random_picture(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('пик',), options=('-п',)))
+async def get_random_picture(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.RandomPicture.slots.value:
         await message.answer(hints.RandomPicture.slots.value[options[0]])
         return None

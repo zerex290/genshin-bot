@@ -1,4 +1,3 @@
-import datetime
 import asyncio
 import os
 import random
@@ -9,11 +8,11 @@ from vkbottle import API, Bot, VKAPIError
 from genshin.types import Game
 
 from bot.parsers import *
-from bot.utils import PostgresConnection, GenshinClient, json
+from bot.utils import PostgresConnection, GenshinClient, json, get_current_timestamp
 from bot.utils.files import download, upload
 from bot.utils.genshin import get_genshin_account_by_id
 from bot.utils.postgres import has_postgres_data
-from bot.src.types.sankaku import MediaType, Rating
+from bot.src.types.sankaku import MediaType, Rating, TagType
 from bot.src.templates.artposting import format_post_message, format_source
 from bot.config.dependencies.paths import FILECACHE
 from bot.config.dependencies.group import ID
@@ -47,9 +46,7 @@ async def parse_genshin_database_objects() -> None:
 
 async def collect_login_bonus() -> None:
     while True:
-        tz_offset = datetime.timedelta(hours=3)  #: Moscow time offset
-        tz = datetime.timezone(tz_offset)
-        time = datetime.datetime.now(tz=tz)
+        time = get_current_timestamp(3)  #: Moscow time offset
 
         if time.hour < 20:
             await asyncio.sleep((20 - time.hour)*3600 - time.minute*60)
@@ -119,6 +116,8 @@ class PostUploader:
                     self.__class__.MINIMUM_DONUT_FAV_COUNT if donut else self.__class__.MINIMUM_FAV_COUNT
             ):
                 if post.file_mediatype == MediaType.VIDEO:
+                    continue
+                if len([tag for tag in post.tags if tag.type == TagType.CHARACTER]) > 2 and self.__class__.THEMATIC:
                     continue
                 if await has_postgres_data(f"SELECT * FROM group_posts WHERE sankaku_post_id = {post.id};"):
                     continue

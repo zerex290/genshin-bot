@@ -20,8 +20,8 @@ from bot.validators.customcommands import *
 bp = Blueprint('UserCommands')
 
 
-@bp.on.chat_message(CommandRule(('комы',), options=('-[default]', '-[error]', '-п', '-с', '-общ', '-огр')))
-async def view_custom_commands(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.chat_message(CommandRule(('комы',), options=('-п', '-с', '-общ', '-огр')))
+async def view_custom_commands(message: Message, options: Tuple[str, ...]) -> None:
     async with ViewValidator(message) as validator:
         match options:
             case ('-[error]',) | ('-п',):
@@ -60,15 +60,12 @@ async def view_custom_commands(message: Message, options: Tuple[str, ...] = ('-[
 @bp.on.chat_message(CustomCommandRule())
 async def send_custom_command(message: Message, command: CustomCommand) -> None:
     attachments: List[str] = []
-    if command.has_photo:
-        photo = await (
-                upload(bp.api, 'photo_messages', f"{USER_COMMANDS}{os.sep}{message.peer_id}{os.sep}{command.name}.jpg")
-            )
-        attachments.append(photo)
     if command.document_id:
         attachments.append(command.document_id)
     if command.audio_id:
         attachments.append(command.audio_id)
+    if command.photo_id:
+        attachments.append(command.photo_id)
     await message.answer(command.message, ','.join(attachments))
     async with PostgresConnection() as connection:
         await connection.execute(f"""
@@ -77,8 +74,8 @@ async def send_custom_command(message: Message, command: CustomCommand) -> None:
         """)
 
 
-@bp.on.chat_message(CommandRule(('делком',), options=('-[default]', '-[error]', '-п')))
-async def delete_custom_command(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.chat_message(CommandRule(('делком',), options=('-п',)))
+async def delete_custom_command(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.CommandDeletion.slots.value:
         await message.answer(hints.CommandDeletion.slots.value[options[0]])
         return None
@@ -98,11 +95,7 @@ async def delete_custom_command(message: Message, options: Tuple[str, ...] = ('-
         await message.answer(f"Команда '{name}' была успешно удалена!")
 
 
-async def _get_document_id(
-        command_name: str,
-        peer_id: int,
-        attachments: Optional[MessagesMessageAttachment]
-) -> str:
+async def _get_document_id(command_name: str, peer_id: int, attachments: Optional[MessagesMessageAttachment]) -> str:
     for attachment in attachments:
         document = attachment.doc
         if not document:
@@ -123,14 +116,15 @@ async def _get_audio_id(attachments: Optional[MessagesMessageAttachment]) -> str
     return ''
 
 
-async def _get_photo(command_name: str, peer_id: int, attachments: Optional[MessagesMessageAttachment]) -> bool:
+async def _get_photo_id(command_name: str, peer_id: int, attachments: Optional[MessagesMessageAttachment]) -> str:
     for attachment in attachments:
         if not attachment.photo:
             continue
         urls = {size.height * size.width: size.url for size in attachment.photo.sizes}
-        await download(urls[max(urls)], f"{USER_COMMANDS}{os.sep}{peer_id}{os.sep}", command_name, 'jpg')
-        return True
-    return False
+        path = await download(urls[max(urls)], f"{USER_COMMANDS}{os.sep}{peer_id}{os.sep}", command_name, 'jpg')
+        photo_id = await upload(bp.api, 'photo_messages', path)
+        return '_'.join(photo_id.split('_')[:-1])
+    return ''
 
 
 async def _insert(
@@ -142,19 +136,19 @@ async def _insert(
         message: str,
         document_id: str,
         audio_id: str,
-        has_photo: bool
+        photo_id: str
 ) -> None:
     async with PostgresConnection() as connection:
         await connection.execute(f"""
             INSERT INTO custom_commands VALUES (
                 '{name}', {chat_id}, {creator_id}, '{date_added}', 
-                {times_used}, '{message}', '{document_id}', '{audio_id}', {has_photo}
+                {times_used}, '{message}', '{document_id}', '{audio_id}', '{photo_id}'
             );
         """)
 
 
-@bp.on.chat_message(CommandRule(('аддком',), options=('-[default]', '-[error]', '-п')))
-async def add_custom_command(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.chat_message(CommandRule(('аддком',), options=('-п',)))
+async def add_custom_command(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.CommandDeletion.slots.value:
         await message.answer(hints.CommandCreation.slots.value[options[0]])
         return None
@@ -172,7 +166,7 @@ async def add_custom_command(message: Message, options: Tuple[str, ...] = ('-[de
         msg = ' '.join(query[1:]) if len(query) > 1 else ''
         document_id = await _get_document_id(name, message.peer_id, message.attachments)
         audio_id = await _get_audio_id(message.attachments)
-        has_photo = await _get_photo(name, message.peer_id, message.attachments)
-        validator.check_additions_specified([msg, document_id, audio_id, has_photo])
-        await _insert(name, message.peer_id, creator_id, date_added, times_used, msg, document_id, audio_id, has_photo)
+        photo_id = await _get_photo_id(name, message.peer_id, message.attachments)
+        validator.check_additions_specified([msg, document_id, audio_id, photo_id])
+        await _insert(name, message.peer_id, creator_id, date_added, times_used, msg, document_id, audio_id, photo_id)
         await message.answer(f"Команда '{name}' была успешно добавлена!")

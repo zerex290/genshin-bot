@@ -52,8 +52,8 @@ def _get_keyboard_menu(user_id: int) -> str:
     return keyboard.get_json()
 
 
-@bp.on.message(CommandRule(('гдб',), options=('-[default]', '-[error]', '-п')))
-async def get_started(message: Message, options: Tuple[str, ...] = ('-[default]',)) -> None:
+@bp.on.message(CommandRule(('гдб',), options=('-п',)))
+async def get_started(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.GenshinDatabase.slots.value:
         await message.answer(hints.GenshinDatabase.slots.value[options[0]])
         return None

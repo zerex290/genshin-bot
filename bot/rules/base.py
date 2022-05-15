@@ -18,7 +18,7 @@ __all__ = (
 
 
 class CommandRule(ABCRule[Message]):
-    __slots__ = ('text', 'prefix', 'options')
+    __slots__ = ('commands', 'prefix', 'options')
 
     def __init__(
             self,
@@ -32,27 +32,31 @@ class CommandRule(ABCRule[Message]):
 
     async def check(self, event: Message) -> bool | Dict[str, Tuple[str, ...]]:
         for command in self.commands:
-            options: Tuple = tuple([opt.lstrip() for opt in re.findall(r'\s-[а-яА-Яa-zA-Z\[\]]+', event.text)])
-            if options and event.text.lower() == self.prefix + command + ' ' + ' '.join(options):
+            if not event.text.lower().startswith(self.prefix + command):
+                continue
+            if event.text.lower() == self.prefix + command:
+                return {'options': ('-[default]',)}
+            options = tuple([option.lstrip() for option in re.findall(r'\s-\S+', event.text)])
+            if options:
                 filtered_options = set(options)
                 if not filtered_options.issubset(self.options):
                     return {'options': ('-[error]',)}
                 elif filtered_options.issubset(self.options):
                     return {'options': tuple([opt for opt, _ in groupby(options)])}
-            elif not options and event.text.lower().startswith(self.prefix + command):
-                return True
+            elif not options:
+                return {'options': ('-[default]',)}
         return False
 
 
 class AdminRule(ABCRule[Message]):
-    __slots__ = ('text', 'prefix')
+    __slots__ = ('commands', 'prefix')
 
     def __init__(
             self,
-            text: Tuple[str, ...] | str = ('exec', 'execpg'),
+            commands: Tuple[str, ...] | str = ('exec', 'execpg'),
             prefix: str = '!',
     ) -> None:
-        self.text = text
+        self.commands = commands
         self.prefix = prefix
 
     async def check(self, event: Message) -> bool | Dict[str, bool]:
@@ -60,11 +64,11 @@ class AdminRule(ABCRule[Message]):
             return False
         elif (
             event.from_id not in (191901652, 687594282)
-            and any([event.text.split()[0] == self.prefix + text for text in self.text])
+            and any([event.text.split()[0] == self.prefix + command for command in self.commands])
         ):
             await event.answer('У вас недостаточно прав для использования данной команды!')
             return False
-        elif not any([event.text.split()[0] == self.prefix + text for text in self.text]):
+        elif not any([event.text.split()[0] == self.prefix + command for command in self.commands]):
             return False
         return {'postgres': True if event.text.split()[0] == f"{self.prefix}execpg" else False}
 
