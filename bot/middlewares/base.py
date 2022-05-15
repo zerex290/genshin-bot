@@ -1,5 +1,3 @@
-import os
-
 from vkbottle import BaseMiddleware
 from vkbottle.bot import Message
 from vkbottle_types.objects import MessagesMessageActionStatus, UsersUserFull
@@ -7,12 +5,10 @@ from vkbottle_types.objects import MessagesMessageActionStatus, UsersUserFull
 from bot.utils import PostgresConnection, get_timestamp_from_unix
 from bot.utils.files import write_logs
 from bot.utils.postgres import has_postgres_data
-from bot.config.dependencies.paths import USER_COMMANDS
 
 
 __all__ = (
     'GroupFilterMiddleware',
-    'CustomCommandsMiddleware',
     'UserRegisterMiddleware',
     'ChatRegisterMiddleware',
     'ChatUsersUpdateMiddleware',
@@ -60,12 +56,6 @@ class GroupFilterMiddleware(BaseMiddleware[Message]):
     async def pre(self) -> None:
         if self.event.from_id < 0:
             self.stop()
-
-
-class CustomCommandsMiddleware(BaseMiddleware[Message]):
-    async def pre(self) -> None:
-        if not os.path.isdir(f"{USER_COMMANDS}{os.sep}{self.event.peer_id}{os.sep}") and self.event.peer_id >= 2e9:
-            os.mkdir(f"{USER_COMMANDS}{os.sep}{self.event.peer_id}{os.sep}")
 
 
 class UserRegisterMiddleware(BaseMiddleware[Message]):

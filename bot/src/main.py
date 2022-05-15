@@ -21,7 +21,6 @@ async def main() -> None:
     for bp in load_blueprints_from_package('blueprints'):
         bp.load(bot.group)
     bot.group.labeler.message_view.register_middleware(GroupFilterMiddleware)
-    bot.group.labeler.message_view.register_middleware(CustomCommandsMiddleware)
     bot.group.labeler.message_view.register_middleware(UserRegisterMiddleware)
     bot.group.labeler.message_view.register_middleware(ChatRegisterMiddleware)
     bot.group.labeler.message_view.register_middleware(ChatUsersUpdateMiddleware)

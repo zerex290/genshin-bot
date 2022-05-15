@@ -12,7 +12,7 @@ from bot.errors import IncompatibleOptions
 from bot.utils.files import download, upload
 from bot.utils.postgres import has_postgres_data
 from bot.src.types.help import customcommands as hints
-from bot.config.dependencies.paths import USER_COMMANDS
+from bot.config.dependencies.paths import FILECACHE
 from bot.src.models.customcommands import CustomCommand, ChatCustomCommands
 from bot.validators.customcommands import *
 
@@ -89,9 +89,6 @@ async def delete_custom_command(message: Message, options: Tuple[str, ...]) -> N
             await connection.execute(
                 f"DELETE FROM custom_commands WHERE name = '{name}' AND chat_id = {message.peer_id};"
             )
-        for file in os.listdir(f"{USER_COMMANDS}{os.sep}{message.peer_id}{os.sep}"):
-            if file.startswith(f"{name}.jpg"):
-                os.remove(f"{USER_COMMANDS}{os.sep}{message.peer_id}{os.sep}{name}.jpg")
         await message.answer(f"Команда '{name}' была успешно удалена!")
 
 
@@ -101,7 +98,7 @@ async def _get_document_id(command_name: str, peer_id: int, attachments: Optiona
         if not document:
             continue
         title = f"{command_name}.{document.ext}"
-        path = await download(document.url, f"{USER_COMMANDS}{os.sep}{peer_id}{os.sep}", command_name, document.ext)
+        path = await download(document.url, FILECACHE, f"{command_name}_{peer_id}", document.ext)
         document_id = await upload(bp.api, 'document_messages', title, path, peer_id=peer_id)
         os.remove(path)
         return document_id
@@ -121,8 +118,9 @@ async def _get_photo_id(command_name: str, peer_id: int, attachments: Optional[M
         if not attachment.photo:
             continue
         urls = {size.height * size.width: size.url for size in attachment.photo.sizes}
-        path = await download(urls[max(urls)], f"{USER_COMMANDS}{os.sep}{peer_id}{os.sep}", command_name, 'jpg')
+        path = await download(urls[max(urls)], FILECACHE, f"{command_name}_{peer_id}", 'jpg')
         photo_id = await upload(bp.api, 'photo_messages', path)
+        os.remove(path)
         return '_'.join(photo_id.split('_')[:-1])
     return ''
 
