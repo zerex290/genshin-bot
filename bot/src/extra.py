@@ -103,21 +103,19 @@ class PostUploader:
     MINIMUM_FAV_COUNT = 500
 
     def _get_tags(self, donut: bool) -> Tuple[str, ...]:
-        if not self.__class__.THEMATIC:
+        if not self.THEMATIC:
             tags = ('genshin_impact', '-loli') if donut else ('genshin_impact',)
         else:
-            tags = (*self.__class__.THEMATIC_TAGS, '-loli') if donut else self.__class__.THEMATIC_TAGS
+            tags = (*self.THEMATIC_TAGS, '-loli') if donut else self.THEMATIC_TAGS
         return tags
 
     async def make_post(self, api: API,  donut: bool = False):
         while True:
             parser = SankakuParser(tags=self._get_tags(donut), rating=Rating.Q if donut else Rating.S)
-            async for post in parser.iter_posts(
-                    self.__class__.MINIMUM_DONUT_FAV_COUNT if donut else self.__class__.MINIMUM_FAV_COUNT
-            ):
+            async for post in parser.iter_posts(self.MINIMUM_DONUT_FAV_COUNT if donut else self.MINIMUM_FAV_COUNT):
                 if post.file_mediatype == MediaType.VIDEO:
                     continue
-                if len([tag for tag in post.tags if tag.type == TagType.CHARACTER]) > 2 and self.__class__.THEMATIC:
+                if len([tag for tag in post.tags if tag.type == TagType.CHARACTER]) > 2 and self.THEMATIC:
                     continue
                 if await has_postgres_data(f"SELECT * FROM group_posts WHERE sankaku_post_id = {post.id};"):
                     continue

@@ -2,6 +2,8 @@ import datetime
 from typing import Dict, List, Tuple, AsyncGenerator
 
 import aiohttp
+from aiohttp.client_exceptions import ContentTypeError
+from asyncio import TimeoutError
 
 from fake_useragent import UserAgent
 from fake_useragent.errors import FakeUserAgentError
@@ -28,7 +30,7 @@ class SankakuParser:
 
         self._rating = rating.value
         self._order = order.value
-        self._tags = tags
+        self._tags = (*tags, self._rating, self._order)
 
     def _set_headers(self) -> Dict[str, str]:
         headers = self._headers.copy()
@@ -39,27 +41,34 @@ class SankakuParser:
             pass
         return headers
 
+    def _set_attributes(self, next_: str) -> Dict[str, str]:
+        attributes = self._attributes.copy()
+        attributes['tags'] += ' '.join(self._tags)
+        attributes['next'] = next_
+        return attributes
+
     async def _get_json(self, next_: str) -> Tuple[Dict[str, str | int], str] | Tuple[dict, None]:
         headers = self._set_headers()
-        attrs = self._attributes.copy()
-        attrs['tags'] += ' '.join(self._tags + (self._rating,) + (self._order,))
-        attrs['next'] = next_
+        attributes = self._set_attributes(next_)
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(self._url, headers=headers, params=attrs) as page:
-                json = await page.json()
-                if not json.get('success', True):
-                    return {}, None
-                return json['data'], json['meta']['next']
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self._url, headers=headers, params=attributes) as page:
+                    json = await page.json()
+                    if not json.get('success', True):
+                        return {}, None
+                    return json['data'], json['meta']['next']
+        except (TimeoutError, ContentTypeError):
+            return {}, None
 
     @staticmethod
-    def _get_author(post: dict) -> Author:
+    def _compile_author(post: dict) -> Author:
         author = post['author']
         author['avatar_rating'] = Rating[author['avatar_rating'].upper() if author['avatar_rating'] else 'U']
         return Author(**author)
 
     @staticmethod
-    def _get_tags(post: dict) -> List[Tag]:
+    def _compile_tags(post: dict) -> List[Tag]:
         tags = []
         post_tags = post['tags']
         for tag in post_tags:
@@ -69,8 +78,8 @@ class SankakuParser:
         return tags
 
     def _compile_post(self, post: dict) -> Post:
-        post['author'] = self._get_author(post)
-        post['tags'] = self._get_tags(post)
+        post['author'] = self._compile_author(post)
+        post['tags'] = self._compile_tags(post)
         post['rating'] = Rating[post['rating'].upper() if post['rating'] else 'U']
 
         timestamp = datetime.datetime.fromtimestamp(post['created_at']['s'], get_tz(3))
