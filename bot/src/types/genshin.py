@@ -39,6 +39,7 @@ class Characters(Enum):
     SHINOBU = 'Куки Синобу'
     YELAN = 'Е Лань'
     YEBLAN = 'Еблань'
+    HEIZO = 'Хэйдзо'
 
     HUTAO = 'Ху Тао'
     HU_TAO = 'Ху Тао'
