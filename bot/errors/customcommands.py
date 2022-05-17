@@ -8,7 +8,7 @@ __all__ = (
     'AlreadyRestricted',
     'ManipulationError',
     'CommandNotSpecified',
-    'CommandExists',
+    'CommandAlreadyExists',
     'CommandNotExists',
     'CommandReserved',
     'AdditionNotSpecified'
@@ -39,7 +39,7 @@ class CommandNotSpecified(GenshinBotException):
     _msg = 'Вы не указали название команды!'
 
 
-class CommandExists(GenshinBotException):
+class CommandAlreadyExists(GenshinBotException):
     def __init__(self, name: str) -> None:
         self.__class__._msg = f"В данном чате уже существует команда '{name}'!"
 

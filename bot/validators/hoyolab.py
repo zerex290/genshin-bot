@@ -20,7 +20,7 @@ __all__ = (
 
 class AccountLinkValidator(BaseValidator):
     @staticmethod
-    async def check_already_linked(user_id: int) -> None:
+    async def check_account_new(user_id: int) -> None:
         if await has_postgres_data(f"SELECT * FROM genshin_accounts WHERE user_id = {user_id};"):
             raise AccountAlreadyLinked
 
@@ -45,7 +45,7 @@ class AccountLinkValidator(BaseValidator):
 
 class AccountUnlinkValidator(BaseValidator):
     @staticmethod
-    async def check_linked(user_id: int) -> None:
+    async def check_account_linked(user_id: int) -> None:
         if not await has_postgres_data(f"SELECT * FROM genshin_accounts WHERE user_id = {user_id};"):
             raise AccountNotExists
 
@@ -60,10 +60,10 @@ class GenshinDataValidator(BaseValidator):
 
     def check_reply_message(self, reply_message: Optional[MessagesForeignMessage]) -> None:
         if not reply_message:
-            raise ReplyMessageNotAttached(self._datatype)
+            raise ReplyMessageError(self._datatype)
 
     @staticmethod
-    def check_account(account: Optional[Dict[str, str | int]], for_other_user: bool = False) -> None:
+    def check_account_exists(account: Optional[Dict[str, str | int]], for_other_user: bool = False) -> None:
         if not account:
             raise AccountNotFound(for_other_user)
 
@@ -77,6 +77,6 @@ class RedeemCodeValidator(GenshinDataValidator):
 
 class ResinNotifyValidator(BaseValidator):
     @staticmethod
-    async def check_linked(user_id: int) -> None:
+    async def check_account_linked(user_id: int) -> None:
         if not await has_postgres_data(f"SELECT * FROM genshin_accounts WHERE user_id = {user_id};"):
             raise CommandNotAllowed

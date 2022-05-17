@@ -35,11 +35,9 @@
     * ~~**DAILY_MATERIALS**~~
     * ~~**DATABASE_APPEARANCE**~~
     * ~~**DUNGEONS**~~
-    * ~~**FILECACHE**~~
-    * **USER_COMMANDS**: <code>str</code> - path to directory that will contain custom commands of chats using this 
-bot
-    * **LOGS**: <code>str</code> - path to  directory that will make contain logs
+    * **FILECACHE**: <code>str</code> - path to directory that will contain temporary file cache
+    * **LOGS**: <code>str</code> - path to directory that will contain logs
  3. Run **create_pg_tables.py**
 
-> After all conditions are met, just write <code>python3.10 -m bot</code> in the console.
+> After all conditions are met, just write <code>python -m bot</code> in the console.
 

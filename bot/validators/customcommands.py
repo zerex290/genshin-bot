@@ -43,7 +43,7 @@ class CreationValidator(BaseValidator):
     @staticmethod
     async def check_command_new(name: str, chat_id: int) -> None:
         if await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = '{name}' AND chat_id = {chat_id};"):
-            raise CommandExists(name)
+            raise CommandAlreadyExists(name)
 
     @staticmethod
     def check_command_not_reserved(name: str) -> None:

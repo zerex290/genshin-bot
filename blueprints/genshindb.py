@@ -1,13 +1,16 @@
 import os
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback, GroupEventType
 from vkbottle.bot import Blueprint, Message, MessageEvent
+from vkbottle_types.objects import MessagesKeyboard
 
 from bot.parsers import CharacterParser, WeaponParser, ArtifactParser, EnemyParser, BookParser
 from bot.rules import CommandRule, EventRule
 from bot.utils import PostgresConnection, json
+from bot.errors import IncompatibleOptions
 from bot.utils.files import upload
+from bot.validators.genshindb import GenshinDBValidator
 from bot.src.types.help import genshindb as hints
 from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION
 
@@ -52,17 +55,96 @@ def _get_keyboard_menu(user_id: int) -> str:
     return keyboard.get_json()
 
 
-@bp.on.message(CommandRule(('гдб',), options=('-п',)))
-async def get_started(message: Message, options: Tuple[str, ...]) -> None:
-    if options[0] in hints.GenshinDatabase.slots.value:
-        await message.answer(hints.GenshinDatabase.slots.value[options[0]])
-        return None
+async def _parse_shortcut(message: Message) -> Tuple[Optional[MessagesKeyboard], str, str]:
+    reply_message = (
+        await message.ctx_api.messages.get_by_conversation_message_id(
+            message.peer_id, [message.reply_message.conversation_message_id]
+        )
+    ).items[0]
+    keyboard = reply_message.keyboard
+    delattr(keyboard, 'author_id')
+    msg = reply_message.text.replace("'", '"')
+    photo = reply_message.attachments[0].photo if reply_message.attachments else None
+    photo_id = f"photo{photo.owner_id}_{photo.id}" if photo else ''
+    return keyboard, msg, photo_id
 
-    await message.answer(
-        f"Доброго времени суток, {await _get_username(message.from_id)}!",
-        attachment=await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png'),
-        keyboard=_get_keyboard_menu(message.from_id)
-    )
+
+async def _get_certain_shortcut(user_id: int, shortcut: str) -> Dict[str, str | int]:
+    async with PostgresConnection() as connection:
+        shortcut = await connection.fetchrow(f"""
+            SELECT message, photo_id, keyboard FROM genshin_db_shortcuts 
+            WHERE user_id = {user_id} AND shortcut = '{shortcut}';
+        """)
+        return dict(shortcut)
+
+
+async def _get_user_shortcuts(user_id: int) -> str:
+    async with PostgresConnection() as connection:
+        shortcuts = await connection.fetch(
+            f"SELECT shortcut FROM genshin_db_shortcuts WHERE user_id = {user_id};"
+        )
+        return '\n'.join([dict(s)['shortcut'] for s in shortcuts])
+
+
+async def _create_shortcut(user_id: int, name: str, message: str, photo_id: str, keyboard: str) -> None:
+    async with PostgresConnection() as connection:
+        await connection.execute(f"""
+            INSERT INTO genshin_db_shortcuts VALUES (
+                {user_id}, '{name}', '{message}', '{photo_id}', '{keyboard}'
+            );
+        """)
+
+
+async def _remove_shortcut(user_id: int, name: str) -> None:
+    async with PostgresConnection() as connection:
+        await connection.execute(f"""
+            DELETE FROM genshin_db_shortcuts WHERE shortcut = '{name}' AND user_id = {user_id};
+        """)
+
+
+@bp.on.message(CommandRule(('гдб',), options=('-п', '-аш', '-дш', '-ш')))
+async def send_genshin_database(message: Message, options: Tuple[str, ...]) -> None:
+    async with GenshinDBValidator(message) as validator:
+        match options:
+            case ('-[error]',) | ('-п',):
+                await message.answer(hints.GenshinDatabase.slots.value[options[0]])
+            case ('-[default]',):
+                shortcut = message.text.lstrip('!гдб').lstrip()
+                if not shortcut:
+                    await message.answer(
+                        message=f"Доброго времени суток, {await _get_username(message.from_id)}!",
+                        attachment=await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png'),
+                        keyboard=_get_keyboard_menu(message.from_id)
+                    )
+                    return None
+                await validator.check_shortcut_exists(shortcut, message.from_id)
+                shortcut = await _get_certain_shortcut(message.from_id, shortcut)
+                await message.answer(
+                    message=shortcut['message'],
+                    attachment=shortcut['photo_id'] if shortcut['photo_id'] else None,
+                    keyboard=shortcut['keyboard']
+                )
+            case ('-аш',):
+                shortcut = message.text[message.text.find('-аш') + 3:].lstrip()
+                validator.check_shortcut_specified(shortcut)
+                await validator.check_shortcut_new(shortcut, message.from_id)
+                validator.check_reply_message(message.reply_message)
+                keyboard, msg, photo_id = await _parse_shortcut(message)
+                validator.check_reply_message_keyboard(keyboard)
+                validator.check_reply_message_keyboard_owner(keyboard, message.from_id)
+                await _create_shortcut(message.from_id, shortcut, msg, photo_id, keyboard.json())
+                await message.answer(f"Шорткат '{shortcut}' был успешно создан!")
+            case ('-дш',):
+                shortcut = message.text[message.text.find('-дш') + 3:].lstrip()
+                validator.check_shortcut_specified(shortcut)
+                await validator.check_shortcut_exists(shortcut, message.from_id)
+                await _remove_shortcut(message.from_id, shortcut)
+                await message.answer(f"Шорткат '{shortcut}' был успешно удален!")
+            case ('-ш',):
+                await validator.check_shortcuts_created(message.from_id)
+                await message.answer('Список ваших шорткатов:\n' + await _get_user_shortcuts(message.from_id))
+            case _:
+                raise IncompatibleOptions(options)
 
 
 @bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('menu',)))

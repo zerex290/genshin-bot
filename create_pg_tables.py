@@ -63,18 +63,18 @@ async def create_pg_tables(connection):
             is_donut boolean NOT NULL
         );
     """)
-    genshin_db_aliases = (f"""
-        CREATE TABLE genshindb_aliases (
+    genshin_db_shortcuts = (f"""
+        CREATE TABLE genshin_db_shortcuts (
             user_id int REFERENCES users(user_id),
-            alias text,
+            shortcut text,
             message text,
             photo_id varchar(40),
             keyboard text NOT NULL,
-            PRIMARY KEY (user_id, alias)
+            PRIMARY KEY (user_id, shortcut)
         );
     """)
 
-    for table in (chats, users, users_in_chats, genshin_accounts, custom_commands, group_posts, genshin_db_aliases):
+    for table in (chats, users, users_in_chats, genshin_accounts, custom_commands, group_posts, genshin_db_shortcuts):
         await connection.execute(table)
 
 

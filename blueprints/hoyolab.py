@@ -100,7 +100,7 @@ async def link_genshin_account(message: Message, options: Tuple[str, ...]) -> No
         return None
 
     async with AccountLinkValidator(message) as validator:
-        await validator.check_already_linked(message.from_id)
+        await validator.check_account_new(message.from_id)
         cookies = message.text.lstrip('!линк').strip().split()
         validator.check_cookie_amount(cookies)
         validator.check_cookie_syntax(cookies)
@@ -123,7 +123,7 @@ async def unlink_genshin_account(message: Message, options: Tuple[str, ...]) -> 
         return
 
     async with AccountUnlinkValidator(message) as validator:
-        await validator.check_linked(message.from_id)
+        await validator.check_account_linked(message.from_id)
         async with PostgresConnection() as connection:
             await connection.execute(f"DELETE FROM genshin_accounts WHERE user_id = {message.from_id};")
         await message.answer('Ваш игровой аккаунт был успешно отвязан!')
@@ -138,11 +138,11 @@ async def get_notes(message: Message, options: Tuple[str, ...]) -> None:
             case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
-                validator.check_account(account, True)
+                validator.check_account_exists(account, True)
                 await message.answer(await _get_formatted_notes(account))
             case ('-[default]',):
                 account = await get_genshin_account_by_id(message.from_id, True, True, True)
-                validator.check_account(account)
+                validator.check_account_exists(account)
                 await message.answer(await _get_formatted_notes(account))
             case _:
                 raise IncompatibleOptions(options)
@@ -157,11 +157,11 @@ async def get_stats(message: Message, options: Tuple[str, ...]) -> None:
             case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
-                validator.check_account(account, True)
+                validator.check_account_exists(account, True)
                 await message.answer(await _get_formatted_stats(account))
             case ('-[default]',):
                 account = await get_genshin_account_by_id(message.from_id, True, True, True)
-                validator.check_account(account)
+                validator.check_account_exists(account)
                 await message.answer(await _get_formatted_stats(account))
             case _:
                 raise IncompatibleOptions(options)
@@ -175,7 +175,7 @@ async def get_claimed_rewards(message: Message, options: Tuple[str, ...]) -> Non
 
     async with GenshinDataValidator(message, 'Rewards') as validator:
         account = await get_genshin_account_by_id(message.from_id, False, True, True)
-        validator.check_account(account)
+        validator.check_account_exists(account)
         formatted_rewards = await _get_formatted_rewards(account)
         if isinstance(formatted_rewards, tuple):
             formatted_rewards, icon = formatted_rewards
@@ -195,7 +195,7 @@ async def activate_redeem_code(message: Message, options: Tuple[str, ...]) -> No
 
     async with RedeemCodeValidator(message, 'Redeem') as validator:
         account = await get_genshin_account_by_id(message.from_id, True, True, True, True)
-        validator.check_account(account)
+        validator.check_account_exists(account)
         codes = message.text.lstrip('!пром').strip().split()
         validator.check_redeem_specified(codes)
         await message.answer(await _get_formatted_redeem_codes(account, codes))
@@ -207,7 +207,7 @@ async def manage_resin_notifications(message: Message, options: Tuple[str, ...])
         await message.answer(hints.ResinNotifications.slots.value[options[0]])
         return
     async with ResinNotifyValidator(message) as validator:
-        await validator.check_linked(message.from_id)
+        await validator.check_account_linked(message.from_id)
         match options:
             case ('-[default]',):
                 async with PostgresConnection() as connection:
@@ -233,8 +233,6 @@ async def manage_resin_notifications(message: Message, options: Tuple[str, ...])
                         WHERE user_id = {message.from_id} AND chat_id = {message.peer_id};
                     """)
                 await message.answer('Автоматическое напоминание потратить смолу включено!')
-            case ('-выкл', '-вкл') | ('-вкл', '-выкл'):
-                raise IncompatibleOptions(options)
             case _:
                 raise IncompatibleOptions(options)
 
@@ -248,11 +246,11 @@ async def get_traveler_diary(message: Message, options: Tuple[str, ...]) -> None
             case ('-у', ):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, False, True, True)
-                validator.check_account(account, True)
+                validator.check_account_exists(account, True)
                 await message.answer(await _get_formatted_diary(account))
             case ('-[default]', ):
                 account = await get_genshin_account_by_id(message.from_id, False, True, True)
-                validator.check_account(account)
+                validator.check_account_exists(account)
                 await message.answer(await _get_formatted_diary(account))
             case _:
                 raise IncompatibleOptions(options)

@@ -8,7 +8,7 @@ __all__ = (
     'InvalidAccountCookies',
     'AccountNotExists',
     'AccountNotFound',
-    'ReplyMessageNotAttached',
+    'ReplyMessageError',
     'RedeemCodeNotSpecified',
     'CommandNotAllowed'
 )
@@ -42,7 +42,7 @@ class AccountNotFound(GenshinBotException):
             self.__class__._msg = 'В базе отсутствуют ваши данные!'
 
 
-class ReplyMessageNotAttached(GenshinBotException):
+class ReplyMessageError(GenshinBotException):
     def __init__(self, datatype: str) -> None:
         datatypes = {
             'Notes': 'просмотра его игровых заметок',
