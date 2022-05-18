@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Tuple, Dict, List, Optional
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback, GroupEventType
@@ -102,6 +103,12 @@ async def _remove_shortcut(user_id: int, name: str) -> None:
         """)
 
 
+def _change_keyboard_owner(keyboard: MessagesKeyboard, user_id: int) -> MessagesKeyboard:
+    for b in keyboard.buttons:
+        b[0]['action']['payload'] = re.sub(r'"user_id":\d+', f'"user_id":{user_id}', b[0]['action']['payload'])
+    return keyboard
+
+
 @bp.on.message(CommandRule(('гдб',), options=('-п', '-аш', '-дш', '-ш')))
 async def send_genshin_database(message: Message, options: Tuple[str, ...]) -> None:
     async with GenshinDBValidator(message) as validator:
@@ -131,7 +138,7 @@ async def send_genshin_database(message: Message, options: Tuple[str, ...]) -> N
                 validator.check_reply_message(message.reply_message)
                 keyboard, msg, photo_id = await _parse_shortcut(message)
                 validator.check_reply_message_keyboard(keyboard)
-                validator.check_reply_message_keyboard_owner(keyboard, message.from_id)
+                keyboard = _change_keyboard_owner(keyboard, message.from_id)
                 await _create_shortcut(message.from_id, shortcut, msg, photo_id, keyboard.json())
                 await message.answer(f"Шорткат '{shortcut}' был успешно создан!")
             case ('-дш',):

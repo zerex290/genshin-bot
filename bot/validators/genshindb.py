@@ -41,11 +41,6 @@ class GenshinDBValidator(BaseValidator):
             raise ReplyMessageKeyboardError
 
     @staticmethod
-    def check_reply_message_keyboard_owner(keyboard: Optional[MessagesKeyboard], user_id: int) -> None:
-        if not user_id == eval(keyboard.buttons[0][0]['action']['payload'])['user_id']:
-            raise ForeignKeyboardError
-
-    @staticmethod
     async def check_shortcuts_created(user_id: int) -> None:
         if not await has_postgres_data(
             f"SELECT * FROM genshin_db_shortcuts WHERE user_id = {user_id};"

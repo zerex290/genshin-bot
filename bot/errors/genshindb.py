@@ -7,7 +7,6 @@ __all__ = (
     'ShortcutNotExists',
     'ReplyMessageError',
     'ReplyMessageKeyboardError',
-    'ForeignKeyboardError',
     'ShortcutsNotCreated'
 )
 
@@ -32,10 +31,6 @@ class ReplyMessageError(GenshinBotException):
 
 class ReplyMessageKeyboardError(GenshinBotException):
     _msg = 'Сообщение, которое вы прикрепили, не является сообщением с интерактивной базой данных!'
-
-
-class ForeignKeyboardError(GenshinBotException):
-    _msg = 'Вы не можете прикреплять сообщение с интерактивной базой данных другого участника!'
 
 
 class ShortcutsNotCreated(GenshinBotException):
