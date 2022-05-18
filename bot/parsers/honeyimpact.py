@@ -322,7 +322,7 @@ class WeaponParser(HoneyImpactParser):
     async def get_refinement(self, name: str, weapon_type: str) -> str:
         tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
         table = await self._xpath(
-            tree, '//div[@class="wrappercont"]//span[contains(text(), "(Refine)")]/following-sibling::table'
+            tree, '//div[@class="wrappercont"]//span[contains(text(), "(Refine)")]/following-sibling::table[1]'
         )
         information: List[mdl.weapons.RefinementRow] = []
         for row in await self._xpath(table[-1], './tr[position()>1]'):
