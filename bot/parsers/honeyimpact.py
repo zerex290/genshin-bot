@@ -261,8 +261,7 @@ class WeaponParser(HoneyImpactParser):
     async def get_information(self, name: str, weapon_type: str) -> str:
         code, rarity = json.load('weapons')[weapon_type][name]
         tree = await self._compile_html(self.base_url + 'weapon/' + code)
-        table = (await self._xpath(tree, '//div[@class="wrappercont"]//table[@class="item_main_table"]'))
-        table = table[1] if len(table) == 2 else (table[2] if len(table) == 4 else table[0])
+        table = (await self._xpath(tree, '//div[@class="wrappercont"]//table[@class="item_main_table"][1]'))[1]
 
         first_stat_title = 'Базовая атака'
         first_stat = (await self._xpath(table, './/td[text()="Base Attack"]/following-sibling::td/text()'))[0]
@@ -281,7 +280,7 @@ class WeaponParser(HoneyImpactParser):
 
     async def get_ability(self, name: str, weapon_type: str) -> str:
         tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
-        table = (await self._xpath(tree, '//div[@class="wrappercont"]//table[@class="item_main_table"]'))[1]
+        table = (await self._xpath(tree, '//div[@class="wrappercont"]//table[@class="item_main_table"][1]'))[1]
 
         title = ''.join(
             await self._xpath(table, './/tr/td[text()="Special (passive) Ability"]/following-sibling::td/text()')
