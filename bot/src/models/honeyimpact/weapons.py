@@ -32,3 +32,14 @@ class ProgressionRow:
 @dataclass()
 class Progression:
     information: List[ProgressionRow]
+
+
+@dataclass()
+class RefinementRow:
+    level: str | Any
+    description: str | Any
+
+
+@dataclass()
+class Refinement:
+    information: List[RefinementRow]

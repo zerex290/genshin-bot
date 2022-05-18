@@ -16,7 +16,8 @@ from fake_useragent.errors import FakeUserAgentError
 
 from bot.utils import json
 from bot.utils.files import download, upload
-from bot.src import templates as tpl, models as mdl
+from bot.src.templates import honeyimpact as tpl
+from bot.src.models import honeyimpact as mdl
 from bot.config.honeyimpact import URL, HEADERS, ATTRIBUTES
 from bot.config.dependencies.paths import FILECACHE
 from bot.src.types.uncategorized import Months
@@ -64,7 +65,7 @@ class HoneyImpactParser:
         return await loop.run_in_executor(None, html.document_fromstring, '<html></html>')
 
     @staticmethod
-    async def _xpath(html_element: HtmlElement, query: str) -> List[HtmlElement]:
+    async def _xpath(html_element: HtmlElement, query: str) -> List[HtmlElement | str | int]:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, html_element.xpath, query)
 
@@ -131,10 +132,10 @@ class CharacterParser(HoneyImpactParser):
             case _:
                 pass
 
-        character = mdl.honeyimpact.characters.Information(
+        character = mdl.characters.Information(
             name, title, allegiance, rarity, weapon, element, ascension_stat, birthday, a_name, desc
         )
-        return tpl.honeyimpact.Characters.format_information(character)
+        return tpl.characters.format_information(character)
 
     async def get_active_skills(self, name: str, element: str) -> str:
         tree = await self._compile_html(self.base_url + json.load('characters')[element][name])
@@ -171,12 +172,12 @@ class CharacterParser(HoneyImpactParser):
         else:
             elemental_burst_title, elemental_burst_desc = '', ''
 
-        auto_attack = mdl.honeyimpact.characters.Skill(auto_attack_title, auto_attack_desc)
-        elemental_skill = mdl.honeyimpact.characters.Skill(elemental_skill_title, elemental_skill_desc)
-        alternative_sprint = mdl.honeyimpact.characters.Skill(alternative_sprint_title, alternative_sprint_desc)
-        elemental_burst = mdl.honeyimpact.characters.Skill(elemental_burst_title, elemental_burst_desc)
+        auto_attack = mdl.characters.Skill(auto_attack_title, auto_attack_desc)
+        elemental_skill = mdl.characters.Skill(elemental_skill_title, elemental_skill_desc)
+        alternative_sprint = mdl.characters.Skill(alternative_sprint_title, alternative_sprint_desc)
+        elemental_burst = mdl.characters.Skill(elemental_burst_title, elemental_burst_desc)
 
-        response = tpl.honeyimpact.Characters.format_active_skills(
+        response = tpl.characters.format_active_skills(
             auto_attack, elemental_skill, alternative_sprint, elemental_burst
         )
         return response
@@ -197,13 +198,11 @@ class CharacterParser(HoneyImpactParser):
         third_passive_title = ''.join(await self._xpath(table[-2], './/text()')) if table else ''
         third_passive_desc = ''.join(await self._xpath(table[-1], './/text()')).replace('•', '') if table else ''
 
-        first_passive = mdl.honeyimpact.characters.Skill(first_passive_title, first_passive_desc)
-        second_passive = mdl.honeyimpact.characters.Skill(second_passive_title, second_passive_desc)
-        third_passive = mdl.honeyimpact.characters.Skill(third_passive_title, third_passive_desc)
+        first_passive = mdl.characters.Skill(first_passive_title, first_passive_desc)
+        second_passive = mdl.characters.Skill(second_passive_title, second_passive_desc)
+        third_passive = mdl.characters.Skill(third_passive_title, third_passive_desc)
 
-        response = tpl.honeyimpact.Characters.format_passive_skills(
-            first_passive, second_passive, third_passive
-        )
+        response = tpl.characters.format_passive_skills(first_passive, second_passive, third_passive)
         return response
 
     async def get_constellations(self, name: str, element: str) -> str:
@@ -227,14 +226,14 @@ class CharacterParser(HoneyImpactParser):
         sixth_constellation_title = ''.join(await self._xpath(table[10], './/text()')) if table else ''
         sixth_constellation_desc = ''.join(await self._xpath(table[11], './/text()')) if table else ''
 
-        first_constellation = mdl.honeyimpact.characters.Skill(first_constellation_title, first_constellation_desc)
-        second_constellation = mdl.honeyimpact.characters.Skill(second_constellation_title, second_constellation_desc)
-        third_constellation = mdl.honeyimpact.characters.Skill(third_constellation_title, third_constellation_desc)
-        fourth_constellation = mdl.honeyimpact.characters.Skill(fourth_constellation_title, fourth_constellation_desc)
-        fifth_constellation = mdl.honeyimpact.characters.Skill(fifth_constellation_title, fifth_constellation_desc)
-        sixth_constellation = mdl.honeyimpact.characters.Skill(sixth_constellation_title, sixth_constellation_desc)
+        first_constellation = mdl.characters.Skill(first_constellation_title, first_constellation_desc)
+        second_constellation = mdl.characters.Skill(second_constellation_title, second_constellation_desc)
+        third_constellation = mdl.characters.Skill(third_constellation_title, third_constellation_desc)
+        fourth_constellation = mdl.characters.Skill(fourth_constellation_title, fourth_constellation_desc)
+        fifth_constellation = mdl.characters.Skill(fifth_constellation_title, fifth_constellation_desc)
+        sixth_constellation = mdl.characters.Skill(sixth_constellation_title, sixth_constellation_desc)
 
-        response = tpl.honeyimpact.Characters.format_constellations(
+        response = tpl.characters.format_constellations(
             first_constellation, second_constellation, third_constellation,
             fourth_constellation, fifth_constellation, sixth_constellation
         )
@@ -249,8 +248,8 @@ class WeaponParser(HoneyImpactParser):
         weapons = {w.value: {} for w in Weapons}
 
         for weapon_type in weapons:
-            tree = (await self._compile_html(self.base_url + 'db/weapon/' + Weapons(weapon_type).name.lower()))
-            table = (await self._xpath(tree, '//div[@class="scrollwrapper"]/table[@class="art_stat_table"]/tr//a'))
+            tree = await self._compile_html(self.base_url + 'db/weapon/' + Weapons(weapon_type).name.lower())
+            table = await self._xpath(tree, '//div[@class="scrollwrapper"]/table[@class="art_stat_table"]/tr//a')
             for element in table:
                 if await self._xpath(element, './text()'):
                     name = ''.join(await self._xpath(element, './text()'))
@@ -263,16 +262,7 @@ class WeaponParser(HoneyImpactParser):
         code, rarity = json.load('weapons')[weapon_type][name]
         tree = await self._compile_html(self.base_url + 'weapon/' + code)
         table = (await self._xpath(tree, '//div[@class="wrappercont"]//table[@class="item_main_table"]'))
-        match len(table):
-            case 2:
-                table = table[1]
-            case 4:
-                #: I hate Whiteblind and Prototype: Archaic
-                #: They both have shitty table with Diluc passive skill
-                #: https://genshin.honeyhunterworld.com/db/weapon/w_2309/?lang=EN
-                table = table[2]
-            case _:
-                table = table[0]
+        table = table[1] if len(table) == 2 else (table[2] if len(table) == 4 else table[0])
 
         first_stat_title = 'Базовая атака'
         first_stat = (await self._xpath(table, './/td[text()="Base Attack"]/following-sibling::td/text()'))[0]
@@ -284,10 +274,10 @@ class WeaponParser(HoneyImpactParser):
         )
         desc = ''.join(desc)
 
-        weapon = mdl.honeyimpact.weapons.Information(
+        weapon = mdl.weapons.Information(
             name, weapon_type, rarity, first_stat_title, first_stat, second_stat_title, second_stat, desc
         )
-        return tpl.honeyimpact.Weapons.format_information(weapon)
+        return tpl.weapons.format_information(weapon)
 
     async def get_ability(self, name: str, weapon_type: str) -> str:
         tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
@@ -300,8 +290,8 @@ class WeaponParser(HoneyImpactParser):
             await self._xpath(table, './/tr/td[contains(text(), "Ability Desc")]/following-sibling::td//text()')
         )
 
-        ability = mdl.honeyimpact.weapons.Ability(title, desc)
-        return tpl.honeyimpact.Weapons.format_ability(ability)
+        ability = mdl.weapons.Ability(title, desc)
+        return tpl.weapons.format_ability(ability)
 
     async def get_progression(self, name: str, weapon_type: str) -> str:
         tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
@@ -311,14 +301,14 @@ class WeaponParser(HoneyImpactParser):
             '[following-sibling::span[contains(text(), "Refine")]]'
         )
 
-        information: List[mdl.honeyimpact.weapons.ProgressionRow] = []
+        information: List[mdl.weapons.ProgressionRow] = []
         second_stat = await self._xpath(
             tree,
             '//div[@class="wrappercont"]//td[text()="Secondary Stat"]/following-sibling::td/text()'
         )
         for row in await self._xpath(table[1], './tr[position()>1]'):
             information.append(
-                mdl.honeyimpact.weapons.ProgressionRow(
+                mdl.weapons.ProgressionRow(
                     (await self._xpath(row, './td[1]/text()'))[0],
                     'Атака',
                     (await self._xpath(row, './td[2]/text()'))[0],
@@ -326,8 +316,22 @@ class WeaponParser(HoneyImpactParser):
                     (await self._xpath(row, './td[3]/text()'))[0]
                 )
             )
-        progression = mdl.honeyimpact.weapons.Progression(information)
-        return tpl.honeyimpact.Weapons.format_progression(progression)
+        progression = mdl.weapons.Progression(information)
+        return tpl.weapons.format_progression(progression)
+
+    async def get_refinement(self, name: str, weapon_type: str) -> str:
+        tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
+        table = await self._xpath(
+            tree, '//div[@class="wrappercont"]//span[contains(text(), "(Refine)")]/following-sibling::table'
+        )
+        information: List[mdl.weapons.RefinementRow] = []
+        for row in await self._xpath(table[-1], './tr[position()>1]'):
+            level, *description = (await self._xpath(row, './/text()'))
+            level = re.search(r'\d', level)[0]
+            description = ''.join(description)
+            information.append(mdl.weapons.RefinementRow(level, description))
+        refinement = mdl.weapons.Refinement(information)
+        return tpl.weapons.format_refinement(refinement)
 
     async def get_story(self, name: str, weapon_type: str) -> str:
         tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
@@ -335,7 +339,7 @@ class WeaponParser(HoneyImpactParser):
             tree,
             '//span[@class="item_secondary_title"][text()="Item Story"]/following-sibling::table//text()'
         )
-        return tpl.honeyimpact.Weapons.format_story(''.join(story))
+        return tpl.weapons.format_story(''.join(story))
 
 
 class ArtifactParser(HoneyImpactParser):
@@ -367,8 +371,8 @@ class ArtifactParser(HoneyImpactParser):
         piece2 = ''.join(await self._xpath(table, './tr/td[contains(text(), "2 Piece")]/following-sibling::td/text()'))
         piece4 = ''.join(await self._xpath(table, './tr/td[contains(text(), "4 Piece")]/following-sibling::td/text()'))
 
-        artifact = mdl.honeyimpact.artifacts.Information(name, artifact_type, rarity, piece2, piece4)
-        return tpl.honeyimpact.Artifacts.format_information(artifact)
+        artifact = mdl.artifacts.Information(name, artifact_type, rarity, piece2, piece4)
+        return tpl.artifacts.format_information(artifact)
 
 
 class EnemyParser(HoneyImpactParser):
@@ -402,18 +406,18 @@ class EnemyParser(HoneyImpactParser):
         )
         desc = ''.join(await self._xpath(tree, '//table[@class="item_main_table"]/tr[last()]/td[last()]//text()'))
 
-        enemy = mdl.honeyimpact.enemies.Information(name, enemy_type, drop, desc)
-        return tpl.honeyimpact.Enemies.format_information(enemy)
+        enemy = mdl.enemies.Information(name, enemy_type, drop, desc)
+        return tpl.enemies.format_information(enemy)
 
     async def get_progression(self, name: str, enemy_type: str) -> str:
         tree = await self._compile_html(self.base_url + 'db/monster/' + json.load('enemies')[enemy_type][name])
         table = await self._xpath(tree, '//div[@class="scrollwrapper"]/table')
         stats = await self._xpath(table[0], './tr[position()>1]') if table else []
 
-        information: List[mdl.honeyimpact.enemies.ProgressionRow] = []
+        information: List[mdl.enemies.ProgressionRow] = []
         for stat in stats:
             information.append(
-                mdl.honeyimpact.enemies.ProgressionRow(
+                mdl.enemies.ProgressionRow(
                     (await self._xpath(stat, './td[1]/text()'))[0][2:],
                     (await self._xpath(stat, './td[2]/text()'))[0],
                     (await self._xpath(stat, './td[3]/text()'))[0],
@@ -429,7 +433,8 @@ class EnemyParser(HoneyImpactParser):
                     (await self._xpath(stat, './td[13]/text()'))[0]
                 )
             )
-        return tpl.honeyimpact.Enemies.format_progression(mdl.honeyimpact.enemies.Progression(information))
+        progression = mdl.enemies.Progression(information)
+        return tpl.enemies.format_progression(progression)
 
 
 class BookParser(HoneyImpactParser):
@@ -481,5 +486,5 @@ class BookParser(HoneyImpactParser):
         if (len(name) + len(volume) + len(story) + 63) >= 4096:  #: Vk message max len constraint
             story = 'Недоступно из-за превышения максимальной длины сообщения Вконтакте...'
 
-        book = mdl.honeyimpact.books.Information(name, volume, story)
-        return tpl.honeyimpact.Books.format_information(book), doc
+        book = mdl.books.Information(name, volume, story)
+        return tpl.books.format_information(book), doc

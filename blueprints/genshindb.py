@@ -357,6 +357,7 @@ async def get_weapon(event: MessageEvent, payload: Dict[str, str | int]) -> None
         'information': ('Основная информация', weapon.get_information),
         'ability': ('Способность оружия', weapon.get_ability),
         'progression': ('Прогрессия', weapon.get_progression),
+        'refinement': ('Пробуждение', weapon.get_refinement),
         'story': ('История', weapon.get_story)
     }
     keyboard = Keyboard(one_time=False, inline=True)
