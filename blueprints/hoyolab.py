@@ -220,19 +220,21 @@ async def manage_resin_notifications(message: Message, options: Tuple[str, ...])
                         f"оповещения о трате смолы!"
                     )
             case ('-выкл',):
+                await validator.check_notifications_enabled(message.from_id, message.peer_id)
                 async with PostgresConnection() as connection:
                     await connection.execute(f"""
                         UPDATE users_in_chats SET resin_notifications = false 
                         WHERE user_id = {message.from_id} AND chat_id = {message.peer_id};
                     """)
-                await message.answer('Автоматическое напоминание потратить смолу выключено!')
+                await message.answer('Автоматическое напоминание потратить смолу теперь выключено!')
             case ('-вкл',):
+                await validator.check_notifications_disabled(message.from_id, message.peer_id)
                 async with PostgresConnection() as connection:
                     await connection.execute(f"""
                         UPDATE users_in_chats SET resin_notifications = true 
                         WHERE user_id = {message.from_id} AND chat_id = {message.peer_id};
                     """)
-                await message.answer('Автоматическое напоминание потратить смолу включено!')
+                await message.answer('Автоматическое напоминание потратить смолу теперь включено!')
             case _:
                 raise IncompatibleOptions(options)
 

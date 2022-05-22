@@ -10,7 +10,9 @@ __all__ = (
     'AccountNotFound',
     'ReplyMessageError',
     'RedeemCodeNotSpecified',
-    'CommandNotAllowed'
+    'CommandNotAllowed',
+    'NotificationsAlreadyEnabled',
+    'NotificationsAlreadyDisabled'
 )
 
 
@@ -62,3 +64,9 @@ class CommandNotAllowed(GenshinBotException):
     _msg = 'Вы не можете воспользоваться данной командой, т.к. не привязали свой игровой аккаунт!'
 
 
+class NotificationsAlreadyEnabled(GenshinBotException):
+    _msg = 'В данном чате уже включено автоматическое напоминание потратить смолу!'
+
+
+class NotificationsAlreadyDisabled(GenshinBotException):
+    _msg = 'В данном чате уже выключено автоматическое напоминание потратить смолу!'

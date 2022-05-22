@@ -80,3 +80,19 @@ class ResinNotifyValidator(BaseValidator):
     async def check_account_linked(user_id: int) -> None:
         if not await has_postgres_data(f"SELECT * FROM genshin_accounts WHERE user_id = {user_id};"):
             raise CommandNotAllowed
+
+    @staticmethod
+    async def check_notifications_disabled(user_id: int, chat_id: int) -> None:
+        if not await has_postgres_data(f"""
+                SELECT * from users_in_chats 
+                WHERE user_id = {user_id} AND chat_id = {chat_id} AND resin_notifications = false;
+        """):
+            raise NotificationsAlreadyEnabled
+
+    @staticmethod
+    async def check_notifications_enabled(user_id: int, chat_id: int) -> None:
+        if not await has_postgres_data(f"""
+                SELECT * from users_in_chats 
+                WHERE user_id = {user_id} AND chat_id = {chat_id} AND resin_notifications = true;
+        """):
+            raise NotificationsAlreadyDisabled
