@@ -8,7 +8,7 @@ from vkbottle_types.objects import MessagesMessageActionStatus, UsersUserFull
 from bot.utils import PostgresConnection, get_timestamp_from_unix
 from bot.utils.files import write_logs
 from bot.utils.postgres import has_postgres_data
-from bot.src.constants import COMMANDS, KEYBOARD
+from bot.src.constants import keyboard, COMMANDS
 
 
 __all__ = (
@@ -123,7 +123,7 @@ class ChatUsersUpdateMiddleware(BaseMiddleware[Message]):
 
 class CommandGuesserMiddleware(BaseMiddleware[Message]):
     def _format_query(self) -> str:
-        query = ''.join(KEYBOARD.get(symbol, symbol) for symbol in self.event.text)
+        query = ''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in self.event.text)
         for c in COMMANDS:
             if re.match(fr"!{c}\S", query):
                 query = query.replace(f"!{c}", f"!{c} ")

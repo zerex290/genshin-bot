@@ -9,7 +9,7 @@ from bot.parsers import SankakuParser
 from bot.rules import CommandRule
 from bot.utils import PostgresConnection
 from bot.utils.files import download, upload
-from bot.src.constants import KEYBOARD, tags
+from bot.src.constants import keyboard, tags
 from bot.errors import IncompatibleOptions
 from bot.validators import BaseValidator
 from bot.validators.default import *
@@ -78,7 +78,7 @@ async def convert(message: Message, options: Tuple[str, ...]) -> None:
     async with ConvertValidator(message) as validator:
         validator.check_reply_message(message.reply_message)
         validator.check_reply_message_text(message.reply_message.text)
-        converted_message = ''.join([KEYBOARD.get(symbol, symbol) for symbol in message.reply_message.text])
+        converted_message = ''.join([keyboard.CYRILLIC.get(symbol, symbol) for symbol in message.reply_message.text])
         await message.answer(converted_message)
 
 
