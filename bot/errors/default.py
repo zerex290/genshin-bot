@@ -2,6 +2,8 @@ from bot.errors import GenshinBotException
 
 
 __all__ = (
+    'AutocorrectionAlreadyEnabled',
+    'AutocorrectionAlreadyDisabled',
     'ChoiceOptionsNotSpecified',
     'ReplyMessageError',
     'ReplyMessageTextError',
@@ -13,6 +15,14 @@ __all__ = (
     'PictureQuantityOverflow',
     'TagQuantityOverflow'
 )
+
+
+class AutocorrectionAlreadyEnabled(GenshinBotException):
+    _msg = 'Автокоррекция команд уже включена!'
+
+
+class AutocorrectionAlreadyDisabled(GenshinBotException):
+    _msg = 'Автокоррекция команд уже выключена!'
 
 
 class ChoiceOptionsNotSpecified(GenshinBotException):

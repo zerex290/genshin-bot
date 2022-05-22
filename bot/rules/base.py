@@ -73,7 +73,7 @@ class AdminRule(ABCRule[Message]):
 class CustomCommandRule(ABCRule[Message]):
     __slots__ = ('prefix',)
 
-    def __init__(self, prefix: str = '!') -> None:
+    def __init__(self, prefix: str = '!!') -> None:
         self.prefix = prefix
 
     async def check(self, event: Message) -> bool | Dict[str, CustomCommand]:

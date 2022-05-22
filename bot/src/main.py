@@ -24,6 +24,7 @@ async def main() -> None:
     bot.group.labeler.message_view.register_middleware(UserRegisterMiddleware)
     bot.group.labeler.message_view.register_middleware(ChatRegisterMiddleware)
     bot.group.labeler.message_view.register_middleware(ChatUsersUpdateMiddleware)
+    bot.group.labeler.message_view.register_middleware(CommandGuesserMiddleware)
     bot.group.labeler.message_view.register_middleware(MessageLogMiddleware)
 
     await asyncio.gather(

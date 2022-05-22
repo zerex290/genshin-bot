@@ -6,5 +6,6 @@ __all__ = (
     'UserRegisterMiddleware',
     'ChatRegisterMiddleware',
     'ChatUsersUpdateMiddleware',
+    'CommandGuesserMiddleware',
     'MessageLogMiddleware',
 )

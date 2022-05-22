@@ -4,10 +4,12 @@ from vkbottle_types.objects import MessagesForeignMessage, MessagesMessageAttach
 
 from bot.validators import BaseValidator
 from bot.errors.default import *
+from bot.utils.postgres import has_postgres_data
 
 
 __all__ = (
     'ChoiceValidator',
+    'AutocorrectionValidator',
     'ConvertValidator',
     'TimerValidator',
     'AttachmentForwardValidator',
@@ -20,6 +22,18 @@ class ChoiceValidator(BaseValidator):
     def check_choice_options_specified(choice_options: List[str]) -> None:
         if not choice_options:
             raise ChoiceOptionsNotSpecified
+
+
+class AutocorrectionValidator(BaseValidator):
+    @staticmethod
+    async def check_autocorrection_already_enabled(user_id: int) -> None:
+        if await has_postgres_data(f"SELECT * FROM users WHERE user_id = {user_id} AND autocorrect = true;"):
+            raise AutocorrectionAlreadyEnabled
+
+    @staticmethod
+    async def check_autocorrection_already_disabled(user_id: int) -> None:
+        if await has_postgres_data(f"SELECT * FROM users WHERE user_id = {user_id} AND autocorrect = false;"):
+            raise AutocorrectionAlreadyDisabled
 
 
 class ConvertValidator(BaseValidator):

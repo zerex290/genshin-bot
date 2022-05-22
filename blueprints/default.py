@@ -26,6 +26,37 @@ async def get_guide(message: Message, options: Tuple[str, ...]) -> None:
     await message.answer(hints.Guide.slots.value[options[0]])
 
 
+@bp.on.message(CommandRule(('автокоррект',), options=('-п', '-выкл', '-вкл')))
+async def manage_syntax_autocorrection(message: Message, options: Tuple[str, ...]) -> None:
+    async with AutocorrectionValidator(message) as validator:
+        match options:
+            case ('-[error]',) | ('-п',):
+                await message.answer(hints.Autocorrection.slots.value[options[0]])
+            case ('-[default]',):
+                async with PostgresConnection() as connection:
+                    autocorrect = await connection.fetchrow(
+                        f"SELECT autocorrect FROM users WHERE user_id = {message.from_id};"
+                    )
+                    autocorrect = dict(autocorrect)['autocorrect']
+                await message.answer(f"У вас {'включена' if autocorrect else 'выключена'} автокоррекция команд!")
+            case ('-выкл',):
+                await validator.check_autocorrection_already_disabled(message.from_id)
+                async with PostgresConnection() as connection:
+                    await connection.execute(
+                        f"UPDATE users SET autocorrect = false WHERE user_id = {message.from_id};"
+                    )
+                await message.answer('Автокоррекция команд теперь выключена!')
+            case ('-вкл',):
+                await validator.check_autocorrection_already_enabled(message.from_id)
+                async with PostgresConnection() as connection:
+                    await connection.execute(
+                        f"UPDATE users SET autocorrect = true WHERE user_id = {message.from_id};"
+                    )
+                await message.answer('Автокоррекция команд теперь включена!')
+            case _:
+                raise IncompatibleOptions(options)
+
+
 @bp.on.message(CommandRule(('выбери',), options=('-п',)))
 async def choose(message: Message, options: Tuple[str, ...]) -> None:
     if options[0] in hints.Choice.slots.value:

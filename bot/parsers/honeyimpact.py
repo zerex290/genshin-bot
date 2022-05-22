@@ -15,10 +15,10 @@ from fake_useragent import UserAgent
 from fake_useragent.errors import FakeUserAgentError
 
 from bot.utils import json
+from bot.config import honeyimpact
 from bot.utils.files import download, upload
 from bot.src.templates import honeyimpact as tpl
 from bot.src.models import honeyimpact as mdl
-from bot.config.honeyimpact import URL, HEADERS, ATTRIBUTES
 from bot.config.dependencies.paths import FILECACHE
 from bot.src.types.uncategorized import Months
 from bot.src.types.genshin import Characters, Elements, Weapons, Artifacts, Enemies
@@ -35,11 +35,11 @@ __all__ = (
 
 class HoneyImpactParser:
     def __init__(self, lang: str = 'RU') -> None:
-        self.base_url = URL
+        self.base_url = honeyimpact.URL
         self.lang = lang
 
-        self._headers = HEADERS
-        self._attributes = ATTRIBUTES
+        self._headers = honeyimpact.HEADERS
+        self._attributes = honeyimpact.ATTRIBUTES
 
     def _set_headers(self) -> Dict[str, str]:
         headers = self._headers.copy()

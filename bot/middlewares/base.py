@@ -1,3 +1,6 @@
+import re
+from typing import Optional
+
 from vkbottle import BaseMiddleware
 from vkbottle.bot import Message
 from vkbottle_types.objects import MessagesMessageActionStatus, UsersUserFull
@@ -5,6 +8,7 @@ from vkbottle_types.objects import MessagesMessageActionStatus, UsersUserFull
 from bot.utils import PostgresConnection, get_timestamp_from_unix
 from bot.utils.files import write_logs
 from bot.utils.postgres import has_postgres_data
+from bot.src.constants import COMMANDS, KEYBOARD
 
 
 __all__ = (
@@ -12,6 +16,7 @@ __all__ = (
     'UserRegisterMiddleware',
     'ChatRegisterMiddleware',
     'ChatUsersUpdateMiddleware',
+    'CommandGuesserMiddleware',
     'MessageLogMiddleware'
 )
 
@@ -114,6 +119,40 @@ class ChatUsersUpdateMiddleware(BaseMiddleware[Message]):
                     await connection.execute(f"""
                         UPDATE chats SET member_count = member_count + 1 WHERE chat_id = {self.event.peer_id};
                     """)
+
+
+class CommandGuesserMiddleware(BaseMiddleware[Message]):
+    def _format_query(self) -> str:
+        query = ''.join(KEYBOARD.get(symbol, symbol) for symbol in self.event.text)
+        for c in COMMANDS:
+            if re.match(fr"!{c}\S", query):
+                query = query.replace(f"!{c}", f"!{c} ")
+                break
+        return query
+
+    @staticmethod
+    def _get_match(command: str, precision: float) -> Optional[str]:
+        matches = {}
+        for match in [c for c in COMMANDS if len(c) - 2 <= len(command) <= len(c) + 1]:
+            matches[len(set(match).intersection(command)) / len(match)] = match
+        return matches[max(matches)] if matches and max(matches) >= precision else None
+
+    async def pre(self) -> None:
+        if not self.event.text.startswith('!') or self.event.text.startswith('!!'):
+            return None
+        query = self._format_query()
+        command = query.split(maxsplit=1)[0].lstrip('!')
+        match = self._get_match(command, 0.66)
+        if not match:
+            return None
+        guess = re.sub(r'-\s', '-', query.replace(f"!{command}", f"!{match}"))
+        if self.event.text == guess:
+            return None
+        if await has_postgres_data(f"SELECT * FROM users WHERE user_id = {self.event.from_id} AND autocorrect = false"):
+            await self.event.answer(f"Возможно, вы имели ввиду <<{guess}>>?")
+            self.stop(description='Wrong command syntax')
+        else:
+            self.event.text = guess
 
 
 class MessageLogMiddleware(BaseMiddleware[Message]):
