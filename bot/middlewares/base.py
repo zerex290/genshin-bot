@@ -123,11 +123,18 @@ class ChatUsersUpdateMiddleware(BaseMiddleware[Message]):
 
 class CommandGuesserMiddleware(BaseMiddleware[Message]):
     def _format_query(self) -> str:
-        query = ''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in self.event.text)
+        query = re.sub(r'-\s', '-', self.event.text)
         for c in COMMANDS:
-            if re.match(fr"!{c}\S", query):
-                query = query.replace(f"!{c}", f"!{c} ")
+            command = ''.join(keyboard.LATIN.get(symbol, symbol) for symbol in c)
+            if re.match(fr"!{command}\S", query):
+                query = query.replace(f"!{command}", f"!{command} ")
                 break
+        command = query.split(maxsplit=1)[0].lstrip('!')
+        options = re.findall(r'\s-\S+', query)
+        options_converted = [''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in option) for option in options]
+        query = query.replace(f"!{command}", f"!{''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in command)}")
+        for i, option in enumerate(options):
+            query = query.replace(option, options_converted[i])
         return query
 
     @staticmethod
@@ -145,7 +152,7 @@ class CommandGuesserMiddleware(BaseMiddleware[Message]):
         match = self._get_match(command, 0.66)
         if not match:
             return None
-        guess = re.sub(r'-\s', '-', query.replace(f"!{command}", f"!{match}"))
+        guess = query.replace(f"!{command}", f"!{match}")
         if self.event.text == guess:
             return None
         if await has_postgres_data(f"SELECT * FROM users WHERE user_id = {self.event.from_id} AND autocorrect = false"):
