@@ -2,7 +2,7 @@ from bot.config.vk import Vk
 
 
 class Bot(Vk):
-    __slots__ = ['group', 'user', 'auth_type']
+    __slots__ = ['group', 'user']
 
     def __init__(self) -> None:
         super().__init__()

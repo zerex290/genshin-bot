@@ -99,8 +99,8 @@ async def notify_about_resin_replenishment(bot: Bot) -> None:
 class PostUploader:
     THEMATIC: bool = False
     THEMATIC_TAGS: Tuple[str, ...] = ()
-    MINIMUM_DONUT_FAV_COUNT = 500
-    MINIMUM_FAV_COUNT = 500
+    MINIMUM_DONUT_FAV_COUNT: int = 500
+    MINIMUM_FAV_COUNT: int = 500
 
     def _get_tags(self, donut: bool) -> Tuple[str, ...]:
         if not self.THEMATIC:

@@ -18,8 +18,6 @@ __all__ = (
 
 
 class CommandRule(ABCRule[Message]):
-    __slots__ = ('commands', 'prefix', 'options')
-
     def __init__(
             self,
             commands: Tuple[str, ...],
@@ -49,8 +47,6 @@ class CommandRule(ABCRule[Message]):
 
 
 class AdminRule(ABCRule[Message]):
-    __slots__ = ('commands', 'prefix', 'admins')
-
     def __init__(
             self,
             commands: Tuple[str, ...] = ('exec', 'execpg'),
@@ -71,8 +67,6 @@ class AdminRule(ABCRule[Message]):
 
 
 class CustomCommandRule(ABCRule[Message]):
-    __slots__ = ('prefix',)
-
     def __init__(self, prefix: str = '!!') -> None:
         self.prefix = prefix
 
@@ -89,8 +83,6 @@ class CustomCommandRule(ABCRule[Message]):
 
 
 class EventRule(ABCRule[MessageEvent]):
-    __slots__ = ('payload_types',)
-
     def __init__(self, payload_type: Tuple[str, ...]) -> None:
         self.payload_types = payload_type
 
