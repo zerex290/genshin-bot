@@ -10,7 +10,6 @@
 * **asyncpg**
 * **genshin**
 * **lxml**
-* **fake-useragent**
 
 ## Installation
 > For properly work you need both group and user api.

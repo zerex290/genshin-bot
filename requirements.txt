@@ -4,4 +4,3 @@ vkbottle==4.2.2
 asyncpg
 genshin
 lxml
-fake-useragent

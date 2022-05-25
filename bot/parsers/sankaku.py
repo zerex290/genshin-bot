@@ -3,9 +3,6 @@ from typing import Dict, List, Tuple, Optional, AsyncGenerator
 
 import aiohttp
 
-from fake_useragent import UserAgent
-from fake_useragent.errors import FakeUserAgentError
-
 from bot.config import sankaku
 from bot.utils import get_tz, catch_aiohttp_errors
 from bot.src.types.sankaku import Rating, Order, TagType
@@ -32,11 +29,6 @@ class SankakuParser:
 
     def _set_headers(self) -> Dict[str, str]:
         headers = self._headers.copy()
-        try:
-            useragent = UserAgent()
-            headers['user_agent'] = useragent.random
-        except FakeUserAgentError:
-            pass
         return headers
 
     def _set_attributes(self, next_: str) -> Dict[str, str]:

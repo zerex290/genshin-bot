@@ -11,9 +11,6 @@ from vkbottle import API
 from lxml import html
 from lxml.html import HtmlElement
 
-from fake_useragent import UserAgent
-from fake_useragent.errors import FakeUserAgentError
-
 from bot.utils import json, catch_aiohttp_errors
 from bot.config import honeyimpact
 from bot.utils.files import download, upload
@@ -43,11 +40,6 @@ class HoneyImpactParser:
 
     def _set_headers(self) -> Dict[str, str]:
         headers = self._headers.copy()
-        try:
-            useragent = UserAgent()
-            headers['user_agent'] = useragent.random
-        except FakeUserAgentError:
-            pass
         return headers
 
     def _set_attributes(self) -> Dict[str, str]:
