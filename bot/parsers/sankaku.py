@@ -27,7 +27,7 @@ class SankakuParser:
         self._order = order.value
         self._tags = (*tags, self._rating, self._order)
 
-    def _set_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> Dict[str, str]:
         headers = self._headers.copy()
         return headers
 
@@ -39,7 +39,7 @@ class SankakuParser:
 
     @catch_aiohttp_errors
     async def _get_json(self, next_: str) -> Tuple[List[Dict[str, str | int]], Optional[str]]:
-        headers = self._set_headers()
+        headers = self._get_headers()
         attributes = self._set_attributes(next_)
         async with aiohttp.ClientSession() as session:
             async with session.get(self._url, headers=headers, params=attributes) as page:
