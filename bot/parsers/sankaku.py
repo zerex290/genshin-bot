@@ -1,15 +1,13 @@
 import datetime
-from typing import Dict, List, Tuple, AsyncGenerator
+from typing import Dict, List, Tuple, Optional, AsyncGenerator
 
 import aiohttp
-from aiohttp.client_exceptions import ContentTypeError
-from asyncio import TimeoutError
 
 from fake_useragent import UserAgent
 from fake_useragent.errors import FakeUserAgentError
 
 from bot.config import sankaku
-from bot.utils import get_tz
+from bot.utils import get_tz, catch_aiohttp_errors
 from bot.src.types.sankaku import Rating, Order, TagType
 from bot.src.models.sankaku import Post, Author, Tag
 
@@ -47,19 +45,16 @@ class SankakuParser:
         attributes['next'] = next_
         return attributes
 
-    async def _get_json(self, next_: str) -> Tuple[Dict[str, str | int], str] | Tuple[dict, None]:
+    @catch_aiohttp_errors
+    async def _get_json(self, next_: str) -> Tuple[List[Dict[str, str | int]], Optional[str]]:
         headers = self._set_headers()
         attributes = self._set_attributes(next_)
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self._url, headers=headers, params=attributes) as page:
-                    json = await page.json()
-                    if not json.get('success', True):
-                        return {}, None
-                    return json['data'], json['meta']['next']
-        except (TimeoutError, ContentTypeError):
-            return {}, None
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self._url, headers=headers, params=attributes) as page:
+                json = await page.json()
+                data = json.get('data', [])
+                meta_next = json.get('meta', {}).get('next')
+                return data, meta_next
 
     @staticmethod
     def _compile_author(post: dict) -> Author:
@@ -90,7 +85,8 @@ class SankakuParser:
     async def _iter_pages(self) -> AsyncGenerator:
         next_ = ''
         while next_ is not None:
-            page, next_ = await self._get_json(next_)
+            page_data = await self._get_json(next_)
+            page, next_ = page_data if len(page_data) == 2 else ([], None)
             yield page
 
     async def iter_posts(self, minimum_fav_count: int = 0) -> AsyncGenerator:

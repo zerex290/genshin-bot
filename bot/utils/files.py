@@ -2,31 +2,27 @@ import traceback
 from os import sep
 from datetime import datetime
 from typing import Optional
-from asyncio.exceptions import TimeoutError
 from json.decoder import JSONDecodeError
 
 import aiohttp
 import aiofiles
-from aiohttp.client_exceptions import ClientPayloadError
 
 from vkbottle import API
 from vkbottle import PhotoMessageUploader, DocMessagesUploader, PhotoWallUploader, DocWallUploader, VideoUploader
 
+from bot.utils import catch_aiohttp_errors
 from bot.config.dependencies.paths import LOGS
 
 
-async def download(url: str, download_path: str, filename: str, suffix: str) -> str | bool:
+@catch_aiohttp_errors
+async def download(url: str, download_path: str, filename: str, suffix: str) -> Optional[str]:
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as query:
-            if not query.ok:
-                return False
-            async with aiofiles.open(download_path + sep + filename + '.' + suffix, 'wb') as file:
-                try:
-                    async for chunk in query.content.iter_chunked(1024):
+        async with session.get(url) as response:
+            if response.ok:
+                async with aiofiles.open(download_path + sep + filename + '.' + suffix, 'wb') as file:
+                    async for chunk in response.content.iter_chunked(1024):
                         await file.write(chunk) if chunk else await file.write(b'')
-                except (ClientPayloadError, TimeoutError):
-                    return False
-    return download_path + sep + filename + '.' + suffix
+                return download_path + sep + filename + '.' + suffix
 
 
 async def upload(api: API, uploader_type: str, *args, **kwargs) -> Optional[str]:

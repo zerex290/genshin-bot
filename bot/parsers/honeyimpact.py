@@ -14,7 +14,7 @@ from lxml.html import HtmlElement
 from fake_useragent import UserAgent
 from fake_useragent.errors import FakeUserAgentError
 
-from bot.utils import json
+from bot.utils import json, catch_aiohttp_errors
 from bot.config import honeyimpact
 from bot.utils.files import download, upload
 from bot.src.templates import honeyimpact as tpl
@@ -55,19 +55,19 @@ class HoneyImpactParser:
         attributes['lang'] = self.lang
         return attributes
 
-    async def _compile_html(self, page_url: str) -> HtmlElement:
+    @catch_aiohttp_errors
+    async def _compile_html(self, page_url: str) -> Optional[HtmlElement]:
         loop = asyncio.get_running_loop()
         async with aiohttp.ClientSession() as session:
-            async with session.get(page_url, headers=self._set_headers(), params=self._set_attributes()) as query:
-                if query.ok:
-                    html_element = await query.text()
+            async with session.get(page_url, headers=self._set_headers(), params=self._set_attributes()) as response:
+                if response.ok:
+                    html_element = await response.text()
                     return await loop.run_in_executor(None, html.document_fromstring, html_element)
-        return await loop.run_in_executor(None, html.document_fromstring, '<html></html>')
 
     @staticmethod
-    async def _xpath(html_element: HtmlElement, query: str) -> List[HtmlElement | str | int]:
+    async def _xpath(html_element: Optional[HtmlElement], query: str) -> List[HtmlElement | str | int]:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, html_element.xpath, query)
+        return await loop.run_in_executor(None, html_element.xpath, query) if html_element is not None else []
 
     @staticmethod
     async def get_icon_attachment(api: API, url: str) -> Optional[str]:
