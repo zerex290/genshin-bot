@@ -49,7 +49,7 @@ async def _insert_into_users_in_chats(event, users: list, chat_id: int) -> None:
                 invited_by = user.invited_by
                 join_date = get_timestamp_from_unix(3, user.join_date)
                 user_id = user.member_id
-                await _insert_into_users((await event.ctx_api.users.get())[0])
+                await _insert_into_users((await event.ctx_api.users.get([user_id]))[0])
                 await connection.execute(f"""
                     INSERT INTO users_in_chats VALUES (
                         {user_id}, {chat_id}, '{join_date}', {invited_by}, '{resin_notifications}'
