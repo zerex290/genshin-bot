@@ -78,12 +78,14 @@ class CharacterParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_characters(self) -> Dict[str, dict]:
+    async def get_characters(self) -> Dict[str, dict] | None:
         characters = {e.value: {} for e in Elements}
         urls = (self.base_url + self.RELEASED, self.base_url + self.BETA)
 
         for url in urls:
             tree = await self._compile_html(url)
+            if not tree:
+                return None
             table = await self._xpath(tree, '//div[@class="char_sea_cont"]//span[@class="sea_charname"]')
             for character in table:
                 path = (await self._xpath(character, './..'))[0].items()[0][-1].rstrip(f"?lang={self.lang}")[1:]
@@ -236,11 +238,13 @@ class WeaponParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_weapons(self) -> Dict[str, dict]:
+    async def get_weapons(self) -> Dict[str, dict] | None:
         weapons = {w.value: {} for w in Weapons}
 
         for weapon_type in weapons:
             tree = await self._compile_html(self.base_url + 'db/weapon/' + Weapons(weapon_type).name.lower())
+            if not tree:
+                return None
             table = await self._xpath(tree, '//div[@class="scrollwrapper"]/table[@class="art_stat_table"]/tr//a')
             for element in table:
                 if await self._xpath(element, './text()'):
@@ -337,11 +341,13 @@ class ArtifactParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_artifacts(self) -> Dict[str, dict]:
-        artifacts = {a.value: {} for a in Artifacts}
+    async def get_artifacts(self) -> Dict[str, dict] | None:
         tree = await self._compile_html(self.base_url + 'db/artifact/')
+        if not tree:
+            return None
         tables = await self._xpath(tree, '//div[@class="wrappercont"]/table[contains(@class, "art_stat_table")]')
 
+        artifacts = {a.value: {} for a in Artifacts}
         for i, table in enumerate(tables):
             for row in await self._xpath(table, './tr[position()>1]'):
                 if await self._xpath(row, './/a/text()'):
@@ -370,11 +376,13 @@ class EnemyParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_enemies(self) -> Dict[str, dict]:
-        enemies = {e.value: {} for e in Enemies}
+    async def get_enemies(self) -> Dict[str, dict] | None:
         tree = await self._compile_html(self.base_url + 'db/enemy/')
+        if not tree:
+            return None
         tables = await self._xpath(tree, '//div[contains(@class, "wrappercont_char")]/*')
 
+        enemies = {e.value: {} for e in Enemies}
         enemy_type = ''
         for item in tables[2:]:  #: First two items aren't necessary
             if item.get('class') == 'enemy_type':
@@ -432,8 +440,10 @@ class BookParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_books(self) -> Dict[str, dict]:
+    async def get_books(self) -> Dict[str, dict] | None:
         tree = await self._compile_html(self.base_url)
+        if not tree:
+            return None
         table = await self._xpath(tree, '//div/span[text() = "Книги"]/../following-sibling::div[1]/a')
 
         books: Dict[str, dict] = {}

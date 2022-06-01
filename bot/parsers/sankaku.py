@@ -78,7 +78,7 @@ class SankakuParser:
         next_ = ''
         while next_ is not None:
             page_data = await self._get_json(next_)
-            page, next_ = page_data if len(page_data) == 2 else ([], None)
+            page, next_ = page_data if page_data is not None else ([], None)
             yield page
 
     async def iter_posts(self, minimum_fav_count: int = 0) -> AsyncGenerator:
