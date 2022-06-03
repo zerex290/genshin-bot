@@ -84,7 +84,7 @@ class CharacterParser(HoneyImpactParser):
 
         for url in urls:
             tree = await self._compile_html(url)
-            if not tree:
+            if tree is None:
                 return None
             table = await self._xpath(tree, '//div[@class="char_sea_cont"]//span[@class="sea_charname"]')
             for character in table:
@@ -243,7 +243,7 @@ class WeaponParser(HoneyImpactParser):
 
         for weapon_type in weapons:
             tree = await self._compile_html(self.base_url + 'db/weapon/' + Weapons(weapon_type).name.lower())
-            if not tree:
+            if tree is None:
                 return None
             table = await self._xpath(tree, '//div[@class="scrollwrapper"]/table[@class="art_stat_table"]/tr//a')
             for element in table:
@@ -343,7 +343,7 @@ class ArtifactParser(HoneyImpactParser):
 
     async def get_artifacts(self) -> Dict[str, dict] | None:
         tree = await self._compile_html(self.base_url + 'db/artifact/')
-        if not tree:
+        if tree is None:
             return None
         tables = await self._xpath(tree, '//div[@class="wrappercont"]/table[contains(@class, "art_stat_table")]')
 
@@ -378,7 +378,7 @@ class EnemyParser(HoneyImpactParser):
 
     async def get_enemies(self) -> Dict[str, dict] | None:
         tree = await self._compile_html(self.base_url + 'db/enemy/')
-        if not tree:
+        if tree is None:
             return None
         tables = await self._xpath(tree, '//div[contains(@class, "wrappercont_char")]/*')
 
@@ -442,7 +442,7 @@ class BookParser(HoneyImpactParser):
 
     async def get_books(self) -> Dict[str, dict] | None:
         tree = await self._compile_html(self.base_url)
-        if not tree:
+        if tree is None:
             return None
         table = await self._xpath(tree, '//div/span[text() = "Книги"]/../following-sibling::div[1]/a')
 
