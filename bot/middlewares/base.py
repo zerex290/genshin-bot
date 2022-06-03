@@ -110,6 +110,7 @@ class ChatUsersUpdateMiddleware(BaseMiddleware[Message]):
                     if user.member_id == user_id and user.member_id > 0:
                         invited_by = user.invited_by
                         join_date = get_timestamp_from_unix(3, user.join_date)
+                await _insert_into_users((await self.event.ctx_api.users.get([user_id]))[0])
                 async with PostgresConnection() as connection:
                     await connection.execute(f"""
                         INSERT INTO users_in_chats VALUES (
