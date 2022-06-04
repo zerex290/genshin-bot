@@ -7,7 +7,7 @@ __all__ = (
 )
 
 
-class GenshinBotException(BaseException):
+class GenshinBotException(Exception):
     _msg = ''
 
     @property
