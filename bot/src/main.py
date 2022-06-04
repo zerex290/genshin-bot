@@ -12,7 +12,7 @@ post_uploader = PostUploader()
 
 
 @bot.group.error_handler.register_undefined_error_handler
-async def log_undefined_errors(error: BaseException) -> None:
+async def log_undefined_errors(error: Exception) -> None:
     await write_logs(None, None, True, error)
 
 
