@@ -163,6 +163,16 @@ async def return_to_menu(event: MessageEvent, payload: Dict[str, str | int]) -> 
     )
 
 
+async def _get_attachment_icon(icon_path: str) -> Optional[str]:
+    """
+    Check if icon exists.
+    If yes, then upload it to vk server and return formatted attachments string.
+    """
+    if not os.path.exists(icon_path):
+        return None
+    return await upload(bp.api, 'photo_messages', icon_path)
+
+
 @bp.on.raw_event(
     GroupEventType.MESSAGE_EVENT,
     MessageEvent,
@@ -206,14 +216,10 @@ async def get_type_filters(event: MessageEvent, payload: Dict[str, str | int]) -
             keyboards.append(keyboard.get_json())
             keyboard = Keyboard(one_time=False, inline=True)
 
-    if os.path.exists(f"{DATABASE_APPEARANCE}{os.sep}{payload_type}.png"):
-        attachment = await upload(bp.api, 'photo_messages', f"{DATABASE_APPEARANCE}{os.sep}{payload_type}.png")
-    else:
-        attachment = None
     await event.edit_message(
         'Пожалуйста, выберите интересующий вас раздел!',
         keyboard=keyboards[payload['page']],
-        attachment=attachment
+        attachment=await _get_attachment_icon(f"{DATABASE_APPEARANCE}{os.sep}{payload_type}.png")
     )
 
 
@@ -347,13 +353,9 @@ async def get_character(event: MessageEvent, payload: Dict[str, str | int]) -> N
         attachment = await character.get_icon_attachment(bp.api, url)
         message = await data_types[payload['obj_data']][1](payload['obj'], payload['filter'])
     else:
-        if os.path.exists(f"{ASCENSION}{os.sep}{name_en}.png"):
-            attachment = await data_types[payload['obj_data']][1](
-                bp.api, 'photo_messages', f"{ASCENSION}{os.sep}{name_en}.png"
-            )
-        else:
-            attachment = None
+        attachment = await _get_attachment_icon(f"{ASCENSION}{os.sep}{name_en}.png")
         message = f"🖼Материалы возвышения персонажа '{payload['obj']}':"
+
     await event.edit_message(message, attachment=attachment, keyboard=keyboard.get_json())
 
 
