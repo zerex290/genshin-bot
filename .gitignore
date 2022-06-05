@@ -1,9 +1,23 @@
+# virtual environment files
 virtualenv/
 
+# test files
 random shit.py
 time_meter.py
 
+# cached files of IDE
 *.pyc
 **.idea/
 **__pycache__/
 *.sh
+
+# External reqiured for work directories
+environment.zip
+ascension/
+books/
+boss_materials/
+cache/
+daily_farm/
+db_appearance/
+dungeons/
+logs/

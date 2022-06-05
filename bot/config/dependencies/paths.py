@@ -2,23 +2,24 @@
 ASCENSION: path to folder that contains character ascension pictures
 BOOKS: path to certain book picture
 BOSS_MATERIALS: path to certain boss materials picture
-MATERIALS: path to folder that contains accessible materials for each day of week
+DAILY_MATERIALS: path to folder that contains accessible materials for each day of week
 DATABASE_APPEARANCE: path to folder that contains database menu appearance files
 DUNGEONS: path to certain dungeons picture
 FILECACHE: path to folder which will contain files some amount of time
 LOGS: path to folder which will contain logs
-
-All pictures must be '*.png'
 """
 
 import os
 
 
-ASCENSION: str = os.getenv('ASCENSION', 'NO_ASCENSION')
-BOOKS: str = os.getenv('BOOKS', 'NO_BOOKS')
-BOSS_MATERIALS = os.getenv('BOSS_MATERIALS', 'NO_BOSS_MATERIALS')
-DAILY_MATERIALS: str = os.getenv('DAILY_MATERIALS', 'NO_DAILY_MATERIALS')
-DATABASE_APPEARANCE: str = os.getenv('DATABASE_APPEARANCE', 'NO_DATABASE_APPEARANCE')
-DUNGEONS: str = os.getenv('DUNGEONS', 'NO_DUNGEONS')
-FILECACHE: str = os.getenv('FILECACHE')
-LOGS: str = os.getenv('LOGS')
+os.chdir(f".{os.sep}..{os.sep}..{os.sep}..{os.sep}")  #: change current directory to root directory of bot
+root_dir: str = os.getcwd()
+
+ASCENSION: str = f"{root_dir}{os.sep}ascension"
+BOOKS: str = f"{root_dir}{os.sep}books{os.sep}books.png"
+BOSS_MATERIALS = f"{root_dir}{os.sep}boss_materials{os.sep}materials.png"
+DAILY_MATERIALS: str = f"{root_dir}{os.sep}daily_farm{os.sep}"
+DATABASE_APPEARANCE: str = f"{root_dir}{os.sep}db_appearance"
+DUNGEONS: str = f"{root_dir}{os.sep}dungeons{os.sep}dungeons.png"
+FILECACHE: str = f"{root_dir}{os.sep}cache"
+LOGS: str = f"{root_dir}{os.sep}logs"

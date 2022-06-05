@@ -12,31 +12,23 @@
 * **lxml**
 
 ## Installation
-> For properly work you need both group and user api.
-> Also you need to create postgresql database.  
-> 
-> Group api is easy to get. Same situation with database creation.  
-> User api can be obtained from registering any standalone vk app
-> and then giving it permissions. After that you can get user token.
+> A few word about dependencies:
+> 1. <code>Vk</code>: bot requires as group as user for proper work
+> 2. <code>Postgresql</code>: bot requires postgresql database to store information
+> 3. <code>Work Directory</code>: bot requires access to specific directories which can contain images or make logs; 
+can be downloaded from [YandexDisk](https://disk.yandex.ru/d/tAv8bxhkiq8MKw)
 
- 1. Clone git repository to chosen directory
+ 1. Clone git repository to chosen directory:
+<code> git clone https://github.com/zerex290/genshin-bot </code>
  2. Set necessary for work environmental variables:
     * **GROUP_TOKEN**: <code>str</code> - your group api access key
-    * **GROUP_ID**: <code>int</code> - your group id
+    * **GROUP_ID**: <code>int</code> - your group id *(e.g. -123456789)*
     * **SHORTNAME**: <code>str</code> - your group shortname *(e.g. @my_group)*
     * **USER_TOKEN**: <code>str</code> - token from vk standalone app
     * **USER_ID**: <code>int</code> - id of user on which standalone app was registered
     * **DATABASE_ADDRESS**: <code>str</code> - address of your database for asyncpg
 *(e.g. postgres://user:pass@host:port/database)*
-    * ~~**ASCENSION**~~
-    * ~~**BOOKS**~~
-    * ~~**BOSS_MATERIALS**~~
-    * ~~**DAILY_MATERIALS**~~
-    * ~~**DATABASE_APPEARANCE**~~
-    * ~~**DUNGEONS**~~
-    * **FILECACHE**: <code>str</code> - path to directory that will contain temporary file cache
-    * **LOGS**: <code>str</code> - path to directory that will contain logs
- 3. Run **create_pg_tables.py**
-
-> After all conditions are met, just write <code>python -m bot</code> in the console.
+ 3. Extract **Work Directory** into current folder: <code>tar -xf environment.zip </code>
+ 4. Run secondary script which will create postgresql tables: <code> ./create_pg_tables.py </code>
+ 5. Run main script: <code>python -m bot</code>
 
