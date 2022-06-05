@@ -12,14 +12,13 @@ LOGS: path to folder which will contain logs
 import os
 
 
-os.chdir(f".{os.sep}..{os.sep}..{os.sep}..{os.sep}")  #: change current directory to root directory of bot
-root_dir: str = os.getcwd()
+cwd: str = os.getcwd()  #: get current working directory
 
-ASCENSION: str = f"{root_dir}{os.sep}ascension"
-BOOKS: str = f"{root_dir}{os.sep}books{os.sep}books.png"
-BOSS_MATERIALS = f"{root_dir}{os.sep}boss_materials{os.sep}materials.png"
-DAILY_MATERIALS: str = f"{root_dir}{os.sep}daily_farm{os.sep}"
-DATABASE_APPEARANCE: str = f"{root_dir}{os.sep}db_appearance"
-DUNGEONS: str = f"{root_dir}{os.sep}dungeons{os.sep}dungeons.png"
-FILECACHE: str = f"{root_dir}{os.sep}cache"
-LOGS: str = f"{root_dir}{os.sep}logs"
+ASCENSION: str = f"{cwd}{os.sep}ascension"
+BOOKS: str = f"{cwd}{os.sep}books{os.sep}books.png"
+BOSS_MATERIALS = f"{cwd}{os.sep}boss_materials{os.sep}materials.png"
+DAILY_MATERIALS: str = f"{cwd}{os.sep}daily_farm{os.sep}"
+DATABASE_APPEARANCE: str = f"{cwd}{os.sep}db_appearance"
+DUNGEONS: str = f"{cwd}{os.sep}dungeons{os.sep}dungeons.png"
+FILECACHE: str = f"{cwd}{os.sep}cache"
+LOGS: str = f"{cwd}{os.sep}logs"
