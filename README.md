@@ -12,11 +12,11 @@
 * **lxml**
 
 ## Installation
-> A few word about dependencies:
+> A few words about dependencies:
 > 1. <code>Vk</code>: bot requires as group as user for proper work
 > 2. <code>Postgresql</code>: bot requires postgresql database to store information
 > 3. <code>Work Directory</code>: bot requires access to specific directories which can contain images or make logs; 
-can be downloaded from [YandexDisk](https://disk.yandex.ru/d/tAv8bxhkiq8MKw)
+can be downloaded from [YandexDisk](https://disk.yandex.ru/d/LPnj__Hr9pK8NA)
 
  1. Clone git repository to chosen directory:
 <code> git clone https://github.com/zerex290/genshin-bot </code>
@@ -31,4 +31,3 @@ can be downloaded from [YandexDisk](https://disk.yandex.ru/d/tAv8bxhkiq8MKw)
  3. Extract **Work Directory** into current folder: <code>tar -xf environment.zip </code>
  4. Run secondary script which will create postgresql tables: <code> ./create_pg_tables.py </code>
  5. Run main script: <code>python -m bot</code>
-

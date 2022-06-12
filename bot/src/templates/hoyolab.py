@@ -2,7 +2,8 @@ import datetime
 import re
 from typing import Sequence
 
-from genshin.models.genshin import Notes, Exploration, ClaimedDailyReward, PartialGenshinUserStats, Diary
+from genshin.models import Notes, Exploration, ClaimedDailyReward, PartialGenshinUserStats, Diary
+from genshin.models.genshin.chronicle.abyss import SpiralAbyss, AbyssRankCharacter
 
 from bot.utils import get_current_timestamp
 from bot.src.types.genshin import Characters, ElementSymbols, Regions, Rewards, DiaryCategories
@@ -154,3 +155,29 @@ def format_traveler_diary(diary: Diary) -> str:
     ) + '\n'.join(categories)
     return formatted_traveler_diary
 
+
+def _format_abyss_character(ch: AbyssRankCharacter) -> str:
+    return f"{ElementSymbols[ch.element.upper()].value}{Characters[ch.name.upper().replace(' ', '_')].value}"
+
+
+def _format_abyss_ranks(characters: Sequence[AbyssRankCharacter]) -> str:
+    if not characters:
+        return 'данные отсутствуют'
+    return f"{_format_abyss_character(characters[0])} -> {characters[0].value}"
+
+
+def format_spiral_abyss(abyss: SpiralAbyss) -> str:
+    most_played = [f"{_format_abyss_character(c)}-{c.value}" for c in abyss.ranks.most_played]
+    formatted_spiral_abyss = (
+        f"🖼Витая бездна:\n"
+        f"♨Период: с {abyss.start_time.strftime('%d.%m.%Y')} по {abyss.end_time.strftime('%d.%m.%Y')}\n"
+        f"🌀Макс. глубина: {abyss.max_floor} | {abyss.total_stars}⭐\n"
+        f"⚔Битвы: {abyss.total_battles}\n"
+        f"👥Попыток битв: {', '.join(most_played)}\n"
+        f"🏅Максимум побед: {_format_abyss_ranks(abyss.ranks.most_kills)}\n"
+        f"👊Самый мощный удар: {_format_abyss_ranks(abyss.ranks.strongest_strike)}\n"
+        f"💢Макс. полученного урона: {_format_abyss_ranks(abyss.ranks.most_damage_taken)}\n"
+        f"💥Выполнено взрывов стихий: {_format_abyss_ranks(abyss.ranks.most_bursts_used)}\n"
+        f"💣Элементальные навыки: {_format_abyss_ranks(abyss.ranks.most_skills_used)}"
+    )
+    return formatted_spiral_abyss

@@ -14,7 +14,8 @@ __all__ = (
     'AccountUnlinkValidator',
     'GenshinDataValidator',
     'RedeemCodeValidator',
-    'ResinNotifyValidator'
+    'ResinNotifyValidator',
+    'SpiralAbyssValidator'
 )
 
 
@@ -96,3 +97,10 @@ class ResinNotifyValidator(BaseValidator):
                 WHERE user_id = {user_id} AND chat_id = {chat_id} AND resin_notifications = true;
         """):
             raise NotificationsAlreadyDisabled
+
+
+class SpiralAbyssValidator(GenshinDataValidator):
+    @staticmethod
+    def check_abyss_unlocked(status: bool) -> None:
+        if not status:
+            raise SpiralAbyssLocked

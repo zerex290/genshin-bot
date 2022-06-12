@@ -13,6 +13,7 @@ from bot.rules import CommandRule
 from bot.utils import PostgresConnection, GenshinClient
 from bot.utils.files import download, upload
 from bot.utils.genshin import get_genshin_account_by_id
+from bot.imageprocessing.abyss import get_abyss_image
 from bot.src.types.help import hoyolab as hints
 from bot.validators.hoyolab import *
 from bot.config.dependencies.paths import FILECACHE
@@ -87,6 +88,21 @@ async def _get_formatted_diary(account: Dict[str, str | int]) -> str:
         try:
             diary = await client.get_diary()
             return tpl.hoyolab.format_traveler_diary(diary)
+        except InvalidCookies:
+            return 'Ошибка: указанные игровые данные больше недействительны!'
+        except GenshinException as e:
+            return f"Необработанная ошибка: {e}\nПросьба сообщить о ней в личные сообщения группы!"
+
+
+async def _get_formatted_spiral_abyss(account: dict[str, str | int], validator: SpiralAbyssValidator) -> tuple[str, str] | str:
+    async with GenshinClient(ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
+        try:
+            abyss = await client.get_genshin_spiral_abyss(account['uid'])
+            validator.check_abyss_unlocked(abyss.unlocked)
+            abyss_image_path = await get_abyss_image(abyss)
+            attachment = await upload(bp.api, 'photo_messages', abyss_image_path)
+            os.remove(abyss_image_path)
+            return tpl.hoyolab.format_spiral_abyss(abyss), attachment
         except InvalidCookies:
             return 'Ошибка: указанные игровые данные больше недействительны!'
         except GenshinException as e:
@@ -254,5 +270,35 @@ async def get_traveler_diary(message: Message, options: Tuple[str, ...]) -> None
                 account = await get_genshin_account_by_id(message.from_id, False, True, True)
                 validator.check_account_exists(account)
                 await message.answer(await _get_formatted_diary(account))
+            case _:
+                raise IncompatibleOptions(options)
+
+
+@bp.on.message(CommandRule(('бездна',), options=('-п', '-у')))
+async def get_spiral_abyss(message: Message, options: Tuple[str, ...]) -> None:
+    async with SpiralAbyssValidator(message, 'SpiralAbyss') as validator:
+        match options:
+            case ('-[error]',) | ('-п',):
+                await message.answer(hints.SpiralAbyss.slots.value[options[0]])
+            case ('-у',):
+                validator.check_reply_message(message.reply_message)
+                account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
+                validator.check_account_exists(account, True)
+
+                formatted_abyss = await _get_formatted_spiral_abyss(account, validator)
+                if isinstance(formatted_abyss, tuple):
+                    formatted_abyss, attachment = formatted_abyss
+                else:
+                    attachment = None
+                await message.answer(formatted_abyss, attachment)
+            case ('-[default]',):
+                account = await get_genshin_account_by_id(message.from_id, True, True, True)
+                validator.check_account_exists(account)
+                formatted_abyss = await _get_formatted_spiral_abyss(account, validator)
+                if isinstance(formatted_abyss, tuple):
+                    formatted_abyss, attachment = formatted_abyss
+                else:
+                    attachment = None
+                await message.answer(formatted_abyss, attachment)
             case _:
                 raise IncompatibleOptions(options)

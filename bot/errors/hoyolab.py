@@ -12,7 +12,8 @@ __all__ = (
     'RedeemCodeNotSpecified',
     'CommandNotAllowed',
     'NotificationsAlreadyEnabled',
-    'NotificationsAlreadyDisabled'
+    'NotificationsAlreadyDisabled',
+    'SpiralAbyssLocked'
 )
 
 
@@ -51,7 +52,8 @@ class ReplyMessageError(GenshinBotException):
             'Stats': 'просмотра его игровой статистики',
             'Rewards': 'просмотра его игровых наград',
             'Redeem': 'активации ему промокодов',
-            'Diary': 'просмотра его дневника путешественника'
+            'Diary': 'просмотра его дневника путешественника',
+            'SpiralAbyss': 'просмотра его прогресса витой бездны'
         }
         self.__class__._msg = f"Не прикреплено сообщение другого игрока для {datatypes[datatype]}!"
 
@@ -70,3 +72,7 @@ class NotificationsAlreadyEnabled(GenshinBotException):
 
 class NotificationsAlreadyDisabled(GenshinBotException):
     _msg = 'В данном чате уже выключено автоматическое напоминание потратить смолу!'
+
+
+class SpiralAbyssLocked(GenshinBotException):
+    _msg = 'Вы не можете воспользоваться данной командой, т.к. ваш прогресс витой бездны меньше 9 этажа!'
