@@ -16,12 +16,12 @@ def _draw_floor_text(draw: ImageDraw.ImageDraw, floor_number: int, floor: Floor,
     """Draws text of the certain floor to the image template
 
     Width calculations:
-        - 250 -> ident of floor text box center
-        - 500 -> ident between floors
+        - 250 -> indent of floor text box center
+        - 500 -> indent between floors
 
     Height calculations:
-        - 9 -> ident of floor text box
-        - 400 -> ident between chambers
+        - 9 -> indent of floor text box
+        - 400 -> indent between chambers
 
     :param draw: An image to draw in
     :param floor_number: Number of floor in the sequence
@@ -42,12 +42,12 @@ def _draw_chamber_text(draw: ImageDraw.ImageDraw, floor_number: int, chamber_num
     """Draws text of the certain chamber to the image template
 
     Width calculations:
-        - 250 -> ident of chamber text box center
-        - 500 -> ident between floors
+        - 250 -> indent of chamber text box center
+        - 500 -> indent between floors
 
     Height calculations:
-        - 50 -> ident of chamber text box
-        - 400 -> ident between chambers
+        - 50 -> indent of chamber text box
+        - 400 -> indent between chambers
 
     :param draw: An image to draw in
     :param floor_number: Number of floor in the sequence
@@ -75,13 +75,13 @@ def _draw_half_text(
     """Draws text of the certain battle-half to the image template
 
     Width calculations:
-        - 132.5 -> ident of first-half text box center
-        - 235 -> ident between centers of first-half and second-half text boxes
-        - 500 -> ident between floors
+        - 132.5 -> indent of first-half text box center
+        - 235 -> indent between centers of first-half and second-half text boxes
+        - 500 -> indent between floors
 
     Height calculations:
-        - 91 -> ident of battle-half text box
-        - 400 -> ident between chambers
+        - 91 -> indent of battle-half text box
+        - 400 -> indent between chambers
 
     :param draw: An image to draw in
     :param floor_number: Number of floor in the sequence
@@ -116,15 +116,15 @@ def _paste_character(
     """Pastes certain character to the image template.
 
     Width calculations:
-        - 500 -> ident between floors
+        - 500 -> indent between floors
         - 235 -> value calculated by subtraction of
-    ident of first character's icon box (32) from ident of second character's icon box (267)
+    indent of first character's icon box (32) from indent of second character's icon box (267)
         - 96 -> optimal width coordinate to resize base 256x256 character icons
 
     Height calculations:
-        - 400 -> ident between chambers
-        - 218 -> ident of first/second character's icon box
-        - 346 -> ident of third/fourth character's icon box
+        - 400 -> indent between chambers
+        - 218 -> indent of first/second character's icon box
+        - 346 -> indent of third/fourth character's icon box
         - 96 -> optimal height coordinate to resize base 256x256 character icons
 
     :param template: Template of the background image
@@ -156,16 +156,16 @@ def _draw_character_level(
     """Draws text of level of the certain character
 
     Width calculations:
-        - 500 -> ident between floors
+        - 500 -> indent between floors
         - 235 -> value calculated by subtraction of
-    ident of first character's icon box (32) from ident of second character's icon box (267)
-        - 80 -> ident of first/second character's icon box center
-        - 185 -> ident of second/fourth character's icon box center
+    indent of first character's icon box (32) from indent of second character's icon box (267)
+        - 80 -> indent of first/second character's icon box center
+        - 185 -> indent of second/fourth character's icon box center
 
     Height calculations:
-        - 400 -> ident between chambers
-        - 226 -> ident of first/second character's level text box
-        - 354 -> ident of third/fourth character's level text box
+        - 400 -> indent between chambers
+        - 226 -> indent of first/second character's level text box
+        - 354 -> indent of third/fourth character's level text box
 
     :param draw: An image to draw in
     :param floor_number: Number of floor in the sequence
@@ -197,11 +197,11 @@ def _paste_character_stars(
     """Pastes a certain character rarity stars to the image template
 
     Width calculations:
-        - 500 -> ident between floors
+        - 500 -> indent between floors
         - 235 -> value calculated by subtraction of
-    ident of first character's icon box (32) from ident of second character's icon box (267)
-        - 32 -> ident of first/third character's icon box
-        - 137 -> ident of second/fourth character's icon box
+    indent of first character's icon box (32) from indent of second character's icon box (267)
+        - 32 -> indent of first/third character's icon box
+        - 137 -> indent of second/fourth character's icon box
         - 96 -> character icon box width without its borders
 
     Height calculations:
