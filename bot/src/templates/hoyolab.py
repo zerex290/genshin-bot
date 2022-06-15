@@ -121,7 +121,7 @@ def format_stats(stats: PartialGenshinUserStats) -> str:
 
 
 def _get_formatted_daily_reward_name(reward: ClaimedDailyReward) -> str:
-    return Rewards[reward.name.upper().replace(' ', '_').replace("'s", "")].value
+    return Rewards[reward.name.upper().replace(' ', '_').replace("'S", "")].value
 
 
 def format_daily_rewards(rewards: Sequence[ClaimedDailyReward]) -> str:
