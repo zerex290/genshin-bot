@@ -296,14 +296,14 @@ class WeaponParser(HoneyImpactParser):
             '[following-sibling::span[contains(text(), "Refine")]]'
         )
 
-        information: list[mdl.weapons.ProgressionRow] = []
+        progressions: list[mdl.weapons.Progression] = []
         second_stat = await self._xpath(
             tree,
             '//div[@class="wrappercont"]//td[text()="Secondary Stat"]/following-sibling::td/text()'
         )
         for row in await self._xpath(table[1], './tr[position()>1]'):
-            information.append(
-                mdl.weapons.ProgressionRow(
+            progressions.append(
+                mdl.weapons.Progression(
                     (await self._xpath(row, './td[1]/text()'))[0],
                     'Атака',
                     (await self._xpath(row, './td[2]/text()'))[0],
@@ -311,22 +311,20 @@ class WeaponParser(HoneyImpactParser):
                     (await self._xpath(row, './td[3]/text()'))[0]
                 )
             )
-        progression = mdl.weapons.Progression(information)
-        return tpl.weapons.format_progression(progression)
+        return tpl.weapons.format_progression(progressions)
 
     async def get_refinement(self, name: str, weapon_type: str) -> str:
         tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
         table = await self._xpath(
             tree, '//div[@class="wrappercont"]//span[contains(text(), "(Refine)")]/following-sibling::table[1]'
         )
-        information: list[mdl.weapons.RefinementRow] = []
+        refinements: list[mdl.weapons.Refinement] = []
         for row in await self._xpath(table[-1], './tr[position()>1]'):
             level, *description = (await self._xpath(row, './/text()'))
             level = re.search(r'\d', level)[0]
             description = ''.join(description)
-            information.append(mdl.weapons.RefinementRow(level, description))
-        refinement = mdl.weapons.Refinement(information)
-        return tpl.weapons.format_refinement(refinement)
+            refinements.append(mdl.weapons.Refinement(level, description))
+        return tpl.weapons.format_refinement(refinements)
 
     async def get_story(self, name: str, weapon_type: str) -> str:
         tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
@@ -413,10 +411,10 @@ class EnemyParser(HoneyImpactParser):
         table = await self._xpath(tree, '//div[@class="scrollwrapper"]/table')
         stats = await self._xpath(table[0], './tr[position()>1]') if table else []
 
-        information: list[mdl.enemies.ProgressionRow] = []
+        progressions: list[mdl.enemies.Progression] = []
         for stat in stats:
-            information.append(
-                mdl.enemies.ProgressionRow(
+            progressions.append(
+                mdl.enemies.Progression(
                     (await self._xpath(stat, './td[1]/text()'))[0][2:],
                     (await self._xpath(stat, './td[2]/text()'))[0],
                     (await self._xpath(stat, './td[3]/text()'))[0],
@@ -432,8 +430,7 @@ class EnemyParser(HoneyImpactParser):
                     (await self._xpath(stat, './td[13]/text()'))[0]
                 )
             )
-        progression = mdl.enemies.Progression(information)
-        return tpl.enemies.format_progression(progression)
+        return tpl.enemies.format_progression(progressions)
 
 
 class BookParser(HoneyImpactParser):

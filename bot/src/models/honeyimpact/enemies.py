@@ -11,7 +11,7 @@ class Information:
 
 
 @dataclass()
-class ProgressionRow:
+class Progression:
     level: str | Any
 
     one_player_hp: int | Any
@@ -29,8 +29,3 @@ class ProgressionRow:
     four_player_hp: int | Any
     four_player_atk: int | Any
     four_player_def: int | Any
-
-
-@dataclass()
-class Progression:
-    information: list[ProgressionRow]

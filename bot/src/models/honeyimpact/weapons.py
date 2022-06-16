@@ -21,7 +21,7 @@ class Ability:
 
 
 @dataclass()
-class ProgressionRow:
+class Progression:
     level: str | Any
     primary_stat_title: str | Any
     primary_stat_value: int | Any
@@ -30,16 +30,6 @@ class ProgressionRow:
 
 
 @dataclass()
-class Progression:
-    information: list[ProgressionRow]
-
-
-@dataclass()
-class RefinementRow:
+class Refinement:
     level: str | Any
     description: str | Any
-
-
-@dataclass()
-class Refinement:
-    information: list[RefinementRow]

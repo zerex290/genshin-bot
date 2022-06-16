@@ -23,21 +23,21 @@ def format_ability(ability: weapons.Ability) -> str:
     return formatted_ability
 
 
-def format_progression(progression: weapons.Progression) -> str:
+def format_progression(progressions: list[weapons.Progression]) -> str:
     formatted_progression = ['🏹Прогрессия оружия:']
-    for row in progression.information:
+    for p in progressions:
         formatted_progression.append(
-            f"• Лв: {row.level} / {row.primary_stat_title}: {row.primary_stat_value} / "
-            f"{row.secondary_stat_title}: {row.secondary_stat_value}"
+            f"• Лв: {p.level} / {p.primary_stat_title}: {p.primary_stat_value} / "
+            f"{p.secondary_stat_title}: {p.secondary_stat_value}"
         )
     return '\n'.join(formatted_progression)
 
 
-def format_refinement(refinement: weapons.Refinement) -> str:
+def format_refinement(refinements: list[weapons.Refinement]) -> str:
     formatted_refinement = ['⚒Пробуждение оружия:']
-    for row in refinement.information:
+    for r in refinements:
         formatted_refinement.append(
-            f"• Лв {row.level}: {row.description}"
+            f"• Лв {r.level}: {r.description}"
         )
     return '\n'.join(formatted_refinement)
 
