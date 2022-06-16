@@ -1,11 +1,9 @@
 from typing import Optional
-from os import sep
 
 import genshin
 from genshin.errors import InvalidCookies, GenshinException
 
 from bot.utils.postgres import PostgresConnection
-from bot.config.dependencies.paths import DAILY_MATERIALS, ASCENSION, BOSS_MATERIALS, BOOKS, DUNGEONS
 
 
 class GenshinClient:
@@ -56,25 +54,3 @@ async def get_genshin_account_by_id(
             SELECT {', '.join(columns)} FROM genshin_accounts WHERE user_id = {user_id};
         """)
         return dict(account) if account else None
-
-
-class Paths:
-    @staticmethod
-    def get_daily_materials_path(weekday: int) -> str:
-        return f"{DAILY_MATERIALS}{sep}{weekday}.png"
-
-    @staticmethod
-    def get_ascension_path(character: str) -> str:
-        return f"{ASCENSION}{sep}{character}.png"
-
-    @staticmethod
-    def get_boss_materials_path() -> str:
-        return BOSS_MATERIALS
-
-    @staticmethod
-    def get_books_path() -> str:
-        return BOOKS
-
-    @staticmethod
-    def get_domains_path() -> str:
-        return DUNGEONS
