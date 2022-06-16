@@ -1,7 +1,7 @@
 import traceback
 from os import sep
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Literal
 from json.decoder import JSONDecodeError
 
 import aiohttp
@@ -25,13 +25,12 @@ async def download(url: str, download_path: str, filename: str, suffix: str) -> 
                 return download_path + sep + filename + '.' + suffix
 
 
-async def upload(api: API, uploader_type: str, *args, **kwargs) -> Optional[str]:
-    """
-    :param api: Bot or User api
-    :param uploader_type: Can be "photo_messages", "document_messages", "photo_wall", "document_wall" or "video".
-    :param args: Positional arguments for vkbottle uploaders
-    :return: Formatted attachment string or None
-    """
+async def upload(
+        api: API,
+        uploader_type: Literal['photo_messages', 'document_messages', 'photo_wall', 'document_wall', 'video'],
+        *args,
+        **kwargs
+) -> Optional[str]:
     uploader_types = {
         'photo_messages': PhotoMessageUploader(api).upload,
         'document_messages': DocMessagesUploader(api).upload,
