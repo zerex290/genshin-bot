@@ -258,14 +258,14 @@ async def manage_resin_notifications(message: Message, options: tuple[str, ...])
 async def get_traveler_diary(message: Message, options: tuple[str, ...]) -> None:
     async with GenshinDataValidator(message, 'Diary') as validator:
         match options:
-            case ('-[error]', ) | ('-п', ):
+            case ('-[error]',) | ('-п',):
                 await message.answer(hints.Diary.slots.value[options[0]])
-            case ('-у', ):
+            case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, False, True, True)
                 validator.check_account_exists(account, True)
                 await message.answer(await _get_formatted_diary(account))
-            case ('-[default]', ):
+            case ('-[default]',):
                 account = await get_genshin_account_by_id(message.from_id, False, True, True)
                 validator.check_account_exists(account)
                 await message.answer(await _get_formatted_diary(account))
