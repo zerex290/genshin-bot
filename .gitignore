@@ -11,7 +11,7 @@ time_meter.py
 **__pycache__/
 *.sh
 
-# External reqiured for work directories
+# External directories required for work
 environment.zip
 ascension/
 books/
