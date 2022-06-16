@@ -25,7 +25,7 @@ async def _get_username(user_id: int) -> str:
         return dict(username)['first_name']
 
 
-def _get_keyboard_menu(user_id: int) -> str:
+def _get_menu_keyboard(user_id: int) -> str:
     keyboard = (
         Keyboard(one_time=False, inline=True)
         .add(
@@ -79,7 +79,7 @@ async def _get_certain_shortcut(user_id: int, shortcut: str) -> dict[str, str | 
         return dict(shortcut)
 
 
-async def _get_user_shortcuts(user_id: int) -> str:
+async def _get_shortcuts(user_id: int) -> str:
     async with PostgresConnection() as connection:
         shortcuts = await connection.fetch(
             f"SELECT shortcut FROM genshin_db_shortcuts WHERE user_id = {user_id};"
@@ -110,7 +110,7 @@ def _change_keyboard_owner(keyboard: MessagesKeyboard, user_id: int) -> Messages
 
 
 @bp.on.message(CommandRule(('гдб',), options=('-п', '-аш', '-дш', '-ш')))
-async def send_genshin_database(message: Message, options: tuple[str, ...]) -> None:
+async def get_genshin_database(message: Message, options: tuple[str, ...]) -> None:
     async with GenshinDBValidator(message) as validator:
         match options:
             case ('-[error]',) | ('-п',):
@@ -121,10 +121,10 @@ async def send_genshin_database(message: Message, options: tuple[str, ...]) -> N
                     await message.answer(
                         message=f"Доброго времени суток, {await _get_username(message.from_id)}!",
                         attachment=await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png'),
-                        keyboard=_get_keyboard_menu(message.from_id)
+                        keyboard=_get_menu_keyboard(message.from_id)
                     )
                     return None
-                await validator.check_shortcut_exists(shortcut, message.from_id)
+                await validator.check_shortcut_exist(shortcut, message.from_id)
                 shortcut = await _get_certain_shortcut(message.from_id, shortcut)
                 await message.answer(
                     message=shortcut['message'],
@@ -144,12 +144,12 @@ async def send_genshin_database(message: Message, options: tuple[str, ...]) -> N
             case ('-дш',):
                 shortcut = message.text[message.text.find('-дш') + 3:].lstrip()
                 validator.check_shortcut_specified(shortcut)
-                await validator.check_shortcut_exists(shortcut, message.from_id)
+                await validator.check_shortcut_exist(shortcut, message.from_id)
                 await _remove_shortcut(message.from_id, shortcut)
                 await message.answer(f"Шорткат '{shortcut}' был успешно удален!")
             case ('-ш',):
                 await validator.check_shortcuts_created(message.from_id)
-                await message.answer('Список ваших шорткатов:\n' + await _get_user_shortcuts(message.from_id))
+                await message.answer('Список ваших шорткатов:\n' + await _get_shortcuts(message.from_id))
             case _:
                 raise IncompatibleOptions(options)
 
@@ -159,7 +159,7 @@ async def return_to_menu(event: MessageEvent, payload: dict[str, str | int]) -> 
     await event.edit_message(
         f"Доброго времени суток, {await _get_username(payload['user_id'])}!",
         attachment=await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png'),
-        keyboard=_get_keyboard_menu(payload['user_id'])
+        keyboard=_get_menu_keyboard(payload['user_id'])
     )
 
 

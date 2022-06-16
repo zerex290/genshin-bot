@@ -1,4 +1,12 @@
-__all__ = ('GENSHIN_IMPACT', 'ART_STYLE', 'CLOTHING', 'JEWELRY', 'EMOTIONS', 'BODY')
+__all__ = (
+    'GENSHIN_IMPACT',
+    'ART_STYLE',
+    'CLOTHING',
+    'JEWELRY',
+    'EMOTIONS',
+    'BODY'
+)
+
 
 GENSHIN_IMPACT = {
     'геншин': 'genshin_impact',

@@ -13,7 +13,7 @@ from bot.utils.files import download, upload
 from bot.utils.genshin import get_genshin_account_by_id
 from bot.utils.postgres import has_postgres_data
 from bot.src.types.sankaku import MediaType, Rating, TagType
-from bot.src.templates.artposting import format_post_message, format_source
+from bot.src.templates.artposting import format_post_message, format_post_source
 from bot.config.dependencies.paths import FILECACHE
 from bot.config.dependencies.group import ID
 
@@ -127,7 +127,7 @@ class PostUploader:
                     owner_id=ID,
                     donut_paid_duration=-1 if donut else None,
                     attachments=[attachment],
-                    copyright=format_source(post.source) if post.source else None,
+                    copyright=format_post_source(post.source) if post.source else None,
                     message=format_post_message(donut, post.tags)
                 )
                 async with PostgresConnection() as connection:

@@ -13,7 +13,7 @@ __all__ = (
     'AccountLinkValidator',
     'AccountUnlinkValidator',
     'GenshinDataValidator',
-    'RedeemCodeValidator',
+    'CodeValidator',
     'ResinNotifyValidator',
     'SpiralAbyssValidator'
 )
@@ -48,7 +48,7 @@ class AccountUnlinkValidator(BaseValidator):
     @staticmethod
     async def check_account_linked(user_id: int) -> None:
         if not await has_postgres_data(f"SELECT * FROM genshin_accounts WHERE user_id = {user_id};"):
-            raise AccountNotExists
+            raise AccountNotExist
 
 
 class GenshinDataValidator(BaseValidator):
@@ -65,14 +65,14 @@ class GenshinDataValidator(BaseValidator):
             raise ReplyMessageError(self._datatype)
 
     @staticmethod
-    def check_account_exists(account: Optional[dict[str, str | int]], for_other_user: bool = False) -> None:
+    def check_account_exist(account: Optional[dict[str, str | int]], for_other_user: bool = False) -> None:
         if not account:
             raise AccountNotFound(for_other_user)
 
 
-class RedeemCodeValidator(GenshinDataValidator):
+class CodeValidator(GenshinDataValidator):
     @staticmethod
-    def check_redeem_specified(codes: list[str]) -> None:
+    def check_code_specified(codes: list[str]) -> None:
         if not codes:
             raise RedeemCodeNotSpecified
 

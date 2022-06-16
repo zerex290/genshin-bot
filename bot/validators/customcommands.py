@@ -33,7 +33,7 @@ async def _check_availability(api: API, chat_id: int, user_id: int) -> bool:
 class CreationValidator(BaseValidator):
     async def check_availability(self, chat_id: int, user_id: int) -> None:
         if not await _check_availability(self._message.ctx_api, chat_id, user_id):
-            raise ManipulationError
+            raise ActionError
 
     @staticmethod
     def check_command_specified(name: str) -> None:
@@ -43,7 +43,7 @@ class CreationValidator(BaseValidator):
     @staticmethod
     async def check_command_new(name: str, chat_id: int) -> None:
         if await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = '{name}' AND chat_id = {chat_id};"):
-            raise CommandAlreadyExists(name)
+            raise CommandAlreadyExist(name)
 
     @staticmethod
     def check_command_not_reserved(name: str) -> None:
@@ -53,13 +53,13 @@ class CreationValidator(BaseValidator):
     @staticmethod
     def check_additions_specified(additions: list) -> None:
         if not any(additions):
-            raise AdditionNotSpecified
+            raise AdditionsNotSpecified
 
 
 class DeletionValidator(BaseValidator):
     async def check_availability(self, chat_id: int, user_id: int) -> None:
         if not await _check_availability(self._message.ctx_api, chat_id, user_id):
-            raise ManipulationError
+            raise ActionError
 
     @staticmethod
     def check_command_specified(name: str) -> None:
@@ -67,14 +67,14 @@ class DeletionValidator(BaseValidator):
             raise CommandNotSpecified
 
     @staticmethod
-    async def check_command_exists(name: str, chat_id: int):
+    async def check_command_exist(name: str, chat_id: int):
         if not await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = '{name}' AND chat_id = {chat_id};"):
-            raise CommandNotExists
+            raise CommandNotExist
 
 
 class ViewValidator(BaseValidator):
     @staticmethod
-    def check_created(custom_commands: list[CustomCommand]) -> None:
+    def check_commands_created(custom_commands: list[CustomCommand]) -> None:
         if not custom_commands:
             raise CommandsNotCreated
 
@@ -84,11 +84,11 @@ class ViewValidator(BaseValidator):
             raise AvailabilityError
 
     @staticmethod
-    async def check_not_public(chat_id: int) -> None:
+    async def check_actions_not_public(chat_id: int) -> None:
         if await has_postgres_data(f"SELECT * FROM chats WHERE ffa_commands = true AND chat_id = {chat_id};"):
-            raise AlreadyPublic
+            raise ActionsAlreadyPublic
 
     @staticmethod
-    async def check_not_restricted(chat_id: int) -> None:
+    async def check_actions_not_restricted(chat_id: int) -> None:
         if await has_postgres_data(f"SELECT * FROM chats WHERE ffa_commands = false AND chat_id = {chat_id};"):
-            raise AlreadyRestricted
+            raise ActionsAlreadyRestricted

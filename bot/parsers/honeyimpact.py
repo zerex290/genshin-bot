@@ -38,11 +38,13 @@ class HoneyImpactParser:
         self._headers = honeyimpact.HEADERS
         self._attributes = honeyimpact.ATTRIBUTES
 
-    def _set_headers(self) -> dict[str, str]:
+    @property
+    def headers(self) -> dict[str, str]:
         headers = self._headers.copy()
         return headers
 
-    def _set_attributes(self) -> dict[str, str]:
+    @property
+    def attributes(self) -> dict[str, str]:
         attributes = self._attributes.copy()
         attributes['lang'] = self.lang
         return attributes
@@ -51,7 +53,7 @@ class HoneyImpactParser:
     async def _compile_html(self, page_url: str) -> Optional[HtmlElement]:
         loop = asyncio.get_running_loop()
         async with aiohttp.ClientSession() as session:
-            async with session.get(page_url, headers=self._set_headers(), params=self._set_attributes()) as response:
+            async with session.get(page_url, headers=self.headers, params=self.attributes) as response:
                 if response.ok:
                     html_element = await response.text()
                     return await loop.run_in_executor(None, html.document_fromstring, html_element)

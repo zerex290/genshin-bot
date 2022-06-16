@@ -3,8 +3,8 @@ from bot.errors import GenshinBotException
 
 __all__ = (
     'ShortcutNotSpecified',
-    'ShortcutAlreadyExists',
-    'ShortcutNotExists',
+    'ShortcutAlreadyExist',
+    'ShortcutNotExist',
     'ReplyMessageError',
     'ReplyMessageKeyboardError',
     'ShortcutsNotCreated'
@@ -15,12 +15,12 @@ class ShortcutNotSpecified(GenshinBotException):
     _msg = 'Вы не указали название для шортката!'
 
 
-class ShortcutAlreadyExists(GenshinBotException):
+class ShortcutAlreadyExist(GenshinBotException):
     def __init__(self, name: str) -> None:
         self.__class__._msg = f"У вас уже существует шорткат '{name}'!"
 
 
-class ShortcutNotExists(GenshinBotException):
+class ShortcutNotExist(GenshinBotException):
     def __init__(self, name: str) -> None:
         self.__class__._msg = f"Не найден шорткат с именем '{name}'!"
 

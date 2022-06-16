@@ -85,7 +85,7 @@ async def _get_formatted_diary(account: dict[str, str | int]) -> str:
             return f"Необработанная ошибка: {e}\nПросьба сообщить о ней в личные сообщения группы!"
 
 
-async def _get_formatted_spiral_abyss(account: dict[str, str | int], validator: SpiralAbyssValidator) -> tuple[str, str] | str:
+async def _get_formatted_abyss(account: dict[str, str | int], validator: SpiralAbyssValidator) -> tuple[str, str] | str:
     async with GenshinClient(ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
         try:
             abyss = await client.get_genshin_spiral_abyss(account['uid'])
@@ -145,11 +145,11 @@ async def get_notes(message: Message, options: tuple[str, ...]) -> None:
             case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
-                validator.check_account_exists(account, True)
+                validator.check_account_exist(account, True)
                 await message.answer(await _get_formatted_notes(account))
             case ('-[default]',):
                 account = await get_genshin_account_by_id(message.from_id, True, True, True)
-                validator.check_account_exists(account)
+                validator.check_account_exist(account)
                 await message.answer(await _get_formatted_notes(account))
             case _:
                 raise IncompatibleOptions(options)
@@ -164,25 +164,25 @@ async def get_stats(message: Message, options: tuple[str, ...]) -> None:
             case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
-                validator.check_account_exists(account, True)
+                validator.check_account_exist(account, True)
                 await message.answer(await _get_formatted_stats(account))
             case ('-[default]',):
                 account = await get_genshin_account_by_id(message.from_id, True, True, True)
-                validator.check_account_exists(account)
+                validator.check_account_exist(account)
                 await message.answer(await _get_formatted_stats(account))
             case _:
                 raise IncompatibleOptions(options)
 
 
 @bp.on.message(CommandRule(('награды',), options=('-п',)))
-async def get_claimed_rewards(message: Message, options: tuple[str, ...]) -> None:
+async def get_rewards(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.Rewards.slots.value:
         await message.answer(hints.Rewards.slots.value[options[0]])
         return
 
     async with GenshinDataValidator(message, 'Rewards') as validator:
         account = await get_genshin_account_by_id(message.from_id, False, True, True)
-        validator.check_account_exists(account)
+        validator.check_account_exist(account)
         formatted_rewards = await _get_formatted_rewards(account)
         if isinstance(formatted_rewards, tuple):
             formatted_rewards, attachment = formatted_rewards
@@ -192,16 +192,16 @@ async def get_claimed_rewards(message: Message, options: tuple[str, ...]) -> Non
 
 
 @bp.on.message(CommandRule(('пром',), options=('-п',)))
-async def activate_redeem_code(message: Message, options: tuple[str, ...]) -> None:
+async def redeem_code(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.RedeemCode.slots.value:
         await message.answer(hints.RedeemCode.slots.value[options[0]])
         return
 
-    async with RedeemCodeValidator(message, 'Redeem') as validator:
+    async with CodeValidator(message, 'Redeem') as validator:
         account = await get_genshin_account_by_id(message.from_id, True, True, True, True)
-        validator.check_account_exists(account)
+        validator.check_account_exist(account)
         codes = message.text.lstrip('!пром').strip().split()
-        validator.check_redeem_specified(codes)
+        validator.check_code_specified(codes)
         await message.answer(await _get_formatted_redeem_codes(account, codes))
 
 
@@ -252,11 +252,11 @@ async def get_traveler_diary(message: Message, options: tuple[str, ...]) -> None
             case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, False, True, True)
-                validator.check_account_exists(account, True)
+                validator.check_account_exist(account, True)
                 await message.answer(await _get_formatted_diary(account))
             case ('-[default]',):
                 account = await get_genshin_account_by_id(message.from_id, False, True, True)
-                validator.check_account_exists(account)
+                validator.check_account_exist(account)
                 await message.answer(await _get_formatted_diary(account))
             case _:
                 raise IncompatibleOptions(options)
@@ -271,9 +271,9 @@ async def get_spiral_abyss(message: Message, options: tuple[str, ...]) -> None:
             case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
-                validator.check_account_exists(account, True)
+                validator.check_account_exist(account, True)
 
-                formatted_abyss = await _get_formatted_spiral_abyss(account, validator)
+                formatted_abyss = await _get_formatted_abyss(account, validator)
                 if isinstance(formatted_abyss, tuple):
                     formatted_abyss, attachment = formatted_abyss
                 else:
@@ -281,8 +281,8 @@ async def get_spiral_abyss(message: Message, options: tuple[str, ...]) -> None:
                 await message.answer(formatted_abyss, attachment)
             case ('-[default]',):
                 account = await get_genshin_account_by_id(message.from_id, True, True, True)
-                validator.check_account_exists(account)
-                formatted_abyss = await _get_formatted_spiral_abyss(account, validator)
+                validator.check_account_exist(account)
+                formatted_abyss = await _get_formatted_abyss(account, validator)
                 if isinstance(formatted_abyss, tuple):
                     formatted_abyss, attachment = formatted_abyss
                 else:

@@ -22,7 +22,7 @@ bp = Blueprint('DefaultCommands')
 
 
 @bp.on.message(CommandRule(('команды',), options=('-п',)))
-async def get_guide(message: Message, options: tuple[str, ...]) -> None:
+async def get_commands_article(message: Message, options: tuple[str, ...]) -> None:
     await message.answer(hints.Guide.slots.value[options[0]])
 
 
@@ -138,7 +138,7 @@ def _get_all_tags() -> dict[str, str]:
     return all_tags
 
 
-def _gather_available_tags(options: tuple[str, ...]) -> dict[str, str]:
+def _get_tag_groups(options: tuple[str, ...]) -> dict[str, str]:
     gathered_tags = {}
     tag_groups = {
         '-г': tags.GENSHIN_IMPACT,
@@ -156,15 +156,15 @@ def _gather_available_tags(options: tuple[str, ...]) -> dict[str, str]:
     return gathered_tags
 
 
-def _choose_available_tags(available_tags: dict[str, str]) -> list[str]:
-    chosen_tags = []
+def _randomize_tags(available_tags: dict[str, str]) -> list[str]:
+    randomized_tags = []
     for _ in range(0, random.randint(1, len(available_tags) // 2)):
         if not available_tags:
             continue
         tag = random.choice(tuple(available_tags))
-        chosen_tags.append(tag)
+        randomized_tags.append(tag)
         del available_tags[tag]
-    return chosen_tags
+    return randomized_tags
 
 
 @bp.on.message(CommandRule(('рандомтег',), options=('-п', '-г', '-ср', '-о', '-у', '-э', '-т', '-с')))
@@ -174,9 +174,9 @@ async def get_random_tags(message: Message, options: tuple[str, ...]) -> None:
             case ('-[error]',) | ('-п',):
                 await message.answer(hints.RandomTag.slots.value[options[0]])
             case ('-[default]',):
-                await message.answer('\n'.join(_choose_available_tags(_get_all_tags())))
+                await message.answer('\n'.join(_randomize_tags(_get_all_tags())))
             case _ if '-п' not in options:
-                await message.answer('\n'.join(_choose_available_tags(_gather_available_tags(options))))
+                await message.answer('\n'.join(_randomize_tags(_get_tag_groups(options))))
             case _ if '-п' in options:
                 raise IncompatibleOptions(options)
 
@@ -188,25 +188,25 @@ async def get_random_picture(message: Message, options: tuple[str, ...]) -> None
         return None
 
     cases = {1: 'е', 2: 'я', 3: 'я', 4: 'я'}
-    query = message.text.lstrip('!пик').split()
+    text = message.text.lstrip('!пик').split()
     async with RandomPictureValidator(message) as validator:
-        validator.check_pictures_specified(query)
-        validator.check_pictures_quantity(int(query[0]))
+        validator.check_pictures_specified(text)
+        validator.check_pictures_quantity(int(text[0]))
         all_tags = _get_all_tags()
-        chosen_tags = tuple([all_tags.get(tag, tag) for tag in query[1:]]) if len(query) > 1 else ()
+        chosen_tags = tuple([all_tags.get(tag, tag) for tag in text[1:]]) if len(text) > 1 else ()
         validator.check_tags_quantity(chosen_tags)
         attachments = []
         parser = SankakuParser(tags=chosen_tags)
         async for post in parser.iter_posts():
-            if len(attachments) >= int(query[0]):
+            if len(attachments) >= int(text[0]):
                 break
             if post.file_mediatype != MediaType.IMAGE:
                 continue
-            file = await download(post.file_url, FILECACHE, str(post.id), post.file_suffix)
-            if not file:
+            picture = await download(post.file_url, FILECACHE, str(post.id), post.file_suffix)
+            if not picture:
                 continue
-            attachments.append(await upload(bp.api, 'photo_messages', file))
-            os.remove(file)
+            attachments.append(await upload(bp.api, 'photo_messages', picture))
+            os.remove(picture)
         await message.answer(
             f"По вашему запросу найдено {len(attachments)} изображени{cases.get(len(attachments), 'й')}!",
             ','.join(attachments)

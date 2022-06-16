@@ -8,7 +8,7 @@ __all__ = (
     'NotEnoughCookies',
     'CookieSyntaxError',
     'InvalidAccountCookies',
-    'AccountNotExists',
+    'AccountNotExist',
     'AccountNotFound',
     'ReplyMessageError',
     'RedeemCodeNotSpecified',
@@ -35,7 +35,7 @@ class InvalidAccountCookies(GenshinBotException):
     _msg = 'Указанные игровые данные не являются действительными!'
 
 
-class AccountNotExists(GenshinBotException):
+class AccountNotExist(GenshinBotException):
     _msg = 'Ваших данных нет в базе!'
 
 

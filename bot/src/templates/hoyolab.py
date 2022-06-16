@@ -10,7 +10,7 @@ from bot.src.types.genshin import Characters, ElementSymbols, Regions, Rewards, 
 from bot.src.types.uncategorized import MonthIntegers, Months
 
 
-def _get_estimated_recovery_time(object_recovery_time: datetime.datetime) -> str:
+def _format_recovery_time(object_recovery_time: datetime.datetime) -> str:
     current_time = get_current_timestamp(3)
 
     if object_recovery_time is None:
@@ -38,25 +38,25 @@ def format_notes(notes: Notes) -> str:
         expeditions.append(
             f"{expedition_status}"
             f"{Characters[e.character.name.upper().replace(' ', '_')].value}: "
-            f"🕑Осталось: {_get_estimated_recovery_time(e.completion_time)}\n"
+            f"🕑Осталось: {_format_recovery_time(e.completion_time)}\n"
         )
 
     formatted_notes = (
         f"🖼Игровые заметки в реальном времени:\n"
         f"🌙Смола: {notes.current_resin}, "
-        f"🔃До восполнения: {_get_estimated_recovery_time(notes.resin_recovery_time)}\n"
+        f"🔃До восполнения: {_format_recovery_time(notes.resin_recovery_time)}\n"
         f"🎁Выполненные дейлики: {notes.completed_commissions}, "
         f"❓Собраны ли награды: {'Да' if notes.claimed_commission_reward else 'Нет'}\n"
         f"💹Скидки на боссов: {notes.remaining_resin_discounts}\n"
         f"💰Монеты обители: {notes.current_realm_currency}/{notes.max_realm_currency}, "
-        f"⌛До восполнения: {_get_estimated_recovery_time(notes.realm_currency_recovery_time)}\n"
-        f"☢Откат преобразователя: {_get_estimated_recovery_time(notes.transformer_recovery_time)}\n"
+        f"⌛До восполнения: {_format_recovery_time(notes.realm_currency_recovery_time)}\n"
+        f"☢Откат преобразователя: {_format_recovery_time(notes.transformer_recovery_time)}\n"
         f"🔰Начатые экспедиции: {len(notes.expeditions)}\n"
     ) + ''.join(expeditions)
     return formatted_notes
 
 
-def _get_formatted_exploration_rewards(exploration: Exploration, region_en: str) -> str:
+def _format_explorations(exploration: Exploration, region_en: str) -> str:
     match region_en:
         case 'Enkanomiya':
             return ''
@@ -73,7 +73,6 @@ def _get_formatted_exploration_rewards(exploration: Exploration, region_en: str)
         case 'The Chasm: Underground Mines':
             return f"💎Ур. Адъюванта: {exploration.offerings[0].level}"
         case _:
-            print(exploration.name)
             return 'Ошибка: регион не был обработан!'
 
 
@@ -94,7 +93,7 @@ def format_stats(stats: PartialGenshinUserStats) -> str:
             explorations.append(
                 f"🌐{e.explored}% "
                 f"{Regions[e.name.upper().replace(':', '').replace(' ', '_')].value} "
-                f"{_get_formatted_exploration_rewards(e, e.name)}\n"
+                f"{_format_explorations(e, e.name)}\n"
             )
 
     formatted_stats = (
@@ -120,7 +119,7 @@ def format_stats(stats: PartialGenshinUserStats) -> str:
     return formatted_stats
 
 
-def _get_formatted_daily_reward_name(reward: ClaimedDailyReward) -> str:
+def _format_daily_reward_name(reward: ClaimedDailyReward) -> str:
     return Rewards[reward.name.upper().replace(' ', '_').replace("'S", "")].value
 
 
@@ -132,7 +131,7 @@ def format_daily_rewards(rewards: Sequence[ClaimedDailyReward]) -> str:
         f"🖼Информация о наградах на сайте:\n"
         f"🏆Собрано наград всего: {len(rewards)}\n"
         f"🏅Собрано наград за этот месяц: {len(current_month_rewards)}\n"
-        f"🎖Последняя собранная награда: {_get_formatted_daily_reward_name(current_month_rewards[0])}"
+        f"🎖Последняя собранная награда: {_format_daily_reward_name(current_month_rewards[0])}"
     )
     return formatted_rewards
 
