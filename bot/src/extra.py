@@ -111,7 +111,7 @@ class PostUploader:
 
     async def make_post(self, api: API,  donut: bool = False):
         while True:
-            parser = SankakuParser(tags=self._get_tags(donut), rating=Rating.Q if donut else Rating.S)
+            parser = SankakuParser(tags=self._get_tags(donut), rating=Rating.E if donut else Rating.S)
             async for post in parser.iter_posts(self.MINIMUM_DONUT_FAV_COUNT if donut else self.MINIMUM_FAV_COUNT):
                 if post.file_mediatype == MediaType.VIDEO:
                     continue
