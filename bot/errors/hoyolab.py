@@ -1,3 +1,5 @@
+from typing import Literal
+
 from bot.errors import GenshinBotException
 
 
@@ -46,7 +48,7 @@ class AccountNotFound(GenshinBotException):
 
 
 class ReplyMessageError(GenshinBotException):
-    def __init__(self, datatype: str) -> None:
+    def __init__(self, datatype: Literal['Notes', 'Stats', 'Rewards', 'Redeem', 'Diary', 'SpiralAbyss']) -> None:
         datatypes = {
             'Notes': 'просмотра его игровых заметок',
             'Stats': 'просмотра его игровой статистики',

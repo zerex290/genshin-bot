@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 
 from vkbottle.bot import Message
 from vkbottle_types.objects import MessagesForeignMessage
@@ -52,10 +52,11 @@ class AccountUnlinkValidator(BaseValidator):
 
 
 class GenshinDataValidator(BaseValidator):
-    def __init__(self, message: Message, datatype: str) -> None:
-        """
-        :param datatype: Can be 'Notes', 'Stats', 'Rewards' or 'Diary'
-        """
+    def __init__(
+            self,
+            message: Message,
+            datatype: Literal['Notes', 'Stats', 'Rewards', 'Redeem', 'Diary', 'SpiralAbyss']
+    ) -> None:
         super().__init__(message)
         self._datatype = datatype
 
