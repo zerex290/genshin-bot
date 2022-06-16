@@ -1,5 +1,6 @@
 import asyncio
 import os
+from random import randint
 
 from vkbottle.bot import Blueprint, Message
 
@@ -47,7 +48,10 @@ async def _get_formatted_rewards(account: dict[str, str | int]) -> tuple[str, st
     async with GenshinClient(ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
         try:
             rewards = await client.claimed_rewards(game=Game.GENSHIN.value)
-            return tpl.hoyolab.format_daily_rewards(rewards), rewards[0].icon
+            icon = await download(rewards[0].icon, FILECACHE, f"reward_{randint(0, 10000)}", 'png')
+            attachment = await upload(bp.api, 'photo_messages', icon)
+            os.remove(icon)
+            return tpl.hoyolab.format_daily_rewards(rewards), attachment
         except InvalidCookies:
             return 'Ошибка: указанные игровые данные больше не действительны!'
         except GenshinException as e:
@@ -62,21 +66,9 @@ async def _get_formatted_redeem_codes(account: dict[str, str | int], codes: list
                 await client.redeem_code(code, account['uid'])
                 response.append(f"Успешно активирован промокод {code}!")
             except InvalidCookies:
-                response.append('Ошибка: указанные игровые данные больше недействительны!')
+                return 'Ошибка: указанные игровые данные больше недействительны!'
             except GenshinException as e:
-                match e.retcode:
-                    case -2003 | -2004:
-                        response.append(f"Ошибка активации промокода {code}: промокод не является действительным!")
-                    case -2001:
-                        response.append(f"Ошибка активации промокода {code}: срок действия промокода истек!")
-                    case -2021:
-                        response.append(f"Ошибка активации промокода {code}: ваш ранг приключений меньше 10!")
-                    case -2017 | -2018:
-                        response.append(f"Ошибка активации промокода {code}: данный промокод уже был активирован!")
-                    case _:
-                        response.append(
-                            f"Необработанная ошибка: {e}\nПросьба сообщить о ней в личные сообщения группы!"
-                        )
+                response.append(f"Ошибка активации промокода {code}: {e}")
             if len(codes) > 1:
                 await asyncio.sleep(5)  #: required cooldown time to successfully activate redeem codes
         return '\n'.join(response)
@@ -98,9 +90,9 @@ async def _get_formatted_spiral_abyss(account: dict[str, str | int], validator: 
         try:
             abyss = await client.get_genshin_spiral_abyss(account['uid'])
             validator.check_abyss_unlocked(abyss.unlocked)
-            abyss_image_path = await get_abyss_image(abyss)
-            attachment = await upload(bp.api, 'photo_messages', abyss_image_path)
-            os.remove(abyss_image_path)
+            abyss_image = await get_abyss_image(abyss)
+            attachment = await upload(bp.api, 'photo_messages', abyss_image)
+            os.remove(abyss_image)
             return tpl.hoyolab.format_spiral_abyss(abyss), attachment
         except InvalidCookies:
             return 'Ошибка: указанные игровые данные больше недействительны!'
@@ -193,10 +185,7 @@ async def get_claimed_rewards(message: Message, options: tuple[str, ...]) -> Non
         validator.check_account_exists(account)
         formatted_rewards = await _get_formatted_rewards(account)
         if isinstance(formatted_rewards, tuple):
-            formatted_rewards, icon = formatted_rewards
-            icon = await download(icon, FILECACHE, f"id{message.from_id}_reward", 'png')
-            attachment = await upload(bp.api, 'photo_messages', icon)
-            os.remove(icon)
+            formatted_rewards, attachment = formatted_rewards
         else:
             attachment = None
         await message.answer(formatted_rewards, attachment)
