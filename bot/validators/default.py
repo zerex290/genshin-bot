@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import Optional
 
 from vkbottle_types.objects import MessagesForeignMessage, MessagesMessageAttachment
 
@@ -19,7 +19,7 @@ __all__ = (
 
 class ChoiceValidator(BaseValidator):
     @staticmethod
-    def check_choice_options_specified(choice_options: List[str]) -> None:
+    def check_choice_options_specified(choice_options: list[str]) -> None:
         if not choice_options:
             raise ChoiceOptionsNotSpecified
 
@@ -62,19 +62,19 @@ class TimerValidator(BaseValidator):
 
 class AttachmentForwardValidator(BaseValidator):
     @staticmethod
-    def check_attachments(attachments: Optional[List[MessagesMessageAttachment]]) -> None:
+    def check_attachments(attachments: Optional[list[MessagesMessageAttachment]]) -> None:
         if not attachments:
             raise AttachmentError
 
     @staticmethod
-    def check_attachment_response(response: List[str]) -> None:
+    def check_attachment_response(response: list[str]) -> None:
         if not response:
             raise AttachmentTypeError
 
 
 class RandomPictureValidator(BaseValidator):
     @staticmethod
-    def check_pictures_specified(query: List[str]) -> None:
+    def check_pictures_specified(query: list[str]) -> None:
         if not query or not query[0].isdigit():
             raise PictureQuantityNotSpecified
 
@@ -84,6 +84,6 @@ class RandomPictureValidator(BaseValidator):
             raise PictureQuantityOverflow
 
     @staticmethod
-    def check_tags_quantity(tags: Tuple[str, ...]) -> None:
+    def check_tags_quantity(tags: tuple[str, ...]) -> None:
         if len(tags) > 3:
             raise TagQuantityOverflow

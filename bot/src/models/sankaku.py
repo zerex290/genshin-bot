@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Any
+from typing import Optional, Any
 from datetime import datetime
 
 from bot.src.types.sankaku import Rating, TagType, MediaType
@@ -79,7 +79,7 @@ class Post:
     redirect_to_signup: bool
 
     sequence: Any
-    tags: List[Tag]
+    tags: list[Tag]
 
     @property
     def file_mediatype(self) -> MediaType:

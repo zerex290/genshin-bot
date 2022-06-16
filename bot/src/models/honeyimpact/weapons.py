@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Any
+from typing import Any
 
 
 @dataclass()
@@ -31,7 +31,7 @@ class ProgressionRow:
 
 @dataclass()
 class Progression:
-    information: List[ProgressionRow]
+    information: list[ProgressionRow]
 
 
 @dataclass()
@@ -42,4 +42,4 @@ class RefinementRow:
 
 @dataclass()
 class Refinement:
-    information: List[RefinementRow]
+    information: list[RefinementRow]

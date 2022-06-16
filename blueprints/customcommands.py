@@ -1,6 +1,6 @@
 import os
 import datetime
-from typing import Tuple, List, Optional
+from typing import Optional
 
 from vkbottle.bot import Blueprint, Message
 from vkbottle_types.objects import MessagesMessageAttachment
@@ -21,7 +21,7 @@ bp = Blueprint('UserCommands')
 
 
 @bp.on.chat_message(CommandRule(('комы',), options=('-п', '-с', '-общ', '-огр')))
-async def view_custom_commands(message: Message, options: Tuple[str, ...]) -> None:
+async def view_custom_commands(message: Message, options: tuple[str, ...]) -> None:
     async with ViewValidator(message) as validator:
         match options:
             case ('-[error]',) | ('-п',):
@@ -59,7 +59,7 @@ async def view_custom_commands(message: Message, options: Tuple[str, ...]) -> No
 
 @bp.on.chat_message(CustomCommandRule())
 async def send_custom_command(message: Message, command: CustomCommand) -> None:
-    attachments: List[str] = []
+    attachments: list[str] = []
     if command.document_id:
         attachments.append(command.document_id)
     if command.audio_id:
@@ -75,7 +75,7 @@ async def send_custom_command(message: Message, command: CustomCommand) -> None:
 
 
 @bp.on.chat_message(CommandRule(('делком',), options=('-п',)))
-async def delete_custom_command(message: Message, options: Tuple[str, ...]) -> None:
+async def delete_custom_command(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.CommandDeletion.slots.value:
         await message.answer(hints.CommandDeletion.slots.value[options[0]])
         return None
@@ -146,7 +146,7 @@ async def _insert(
 
 
 @bp.on.chat_message(CommandRule(('аддком',), options=('-п',)))
-async def add_custom_command(message: Message, options: Tuple[str, ...]) -> None:
+async def add_custom_command(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.CommandDeletion.slots.value:
         await message.answer(hints.CommandCreation.slots.value[options[0]])
         return None

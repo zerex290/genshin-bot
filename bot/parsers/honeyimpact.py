@@ -2,7 +2,7 @@ import asyncio
 import re
 import os
 import random
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import aiohttp
 import aiofiles
@@ -38,11 +38,11 @@ class HoneyImpactParser:
         self._headers = honeyimpact.HEADERS
         self._attributes = honeyimpact.ATTRIBUTES
 
-    def _set_headers(self) -> Dict[str, str]:
+    def _set_headers(self) -> dict[str, str]:
         headers = self._headers.copy()
         return headers
 
-    def _set_attributes(self) -> Dict[str, str]:
+    def _set_attributes(self) -> dict[str, str]:
         attributes = self._attributes.copy()
         attributes['lang'] = self.lang
         return attributes
@@ -57,7 +57,7 @@ class HoneyImpactParser:
                     return await loop.run_in_executor(None, html.document_fromstring, html_element)
 
     @staticmethod
-    async def _xpath(html_element: Optional[HtmlElement], query: str) -> List[HtmlElement | str | int]:
+    async def _xpath(html_element: Optional[HtmlElement], query: str) -> list[HtmlElement | str | int]:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, html_element.xpath, query) if html_element is not None else []
 
@@ -78,7 +78,7 @@ class CharacterParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_characters(self) -> Dict[str, dict] | None:
+    async def get_characters(self) -> dict[str, dict] | None:
         characters = {e.value: {} for e in Elements}
         urls = (self.base_url + self.RELEASED, self.base_url + self.BETA)
 
@@ -238,7 +238,7 @@ class WeaponParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_weapons(self) -> Dict[str, dict] | None:
+    async def get_weapons(self) -> dict[str, dict] | None:
         weapons = {w.value: {} for w in Weapons}
 
         for weapon_type in weapons:
@@ -296,7 +296,7 @@ class WeaponParser(HoneyImpactParser):
             '[following-sibling::span[contains(text(), "Refine")]]'
         )
 
-        information: List[mdl.weapons.ProgressionRow] = []
+        information: list[mdl.weapons.ProgressionRow] = []
         second_stat = await self._xpath(
             tree,
             '//div[@class="wrappercont"]//td[text()="Secondary Stat"]/following-sibling::td/text()'
@@ -319,7 +319,7 @@ class WeaponParser(HoneyImpactParser):
         table = await self._xpath(
             tree, '//div[@class="wrappercont"]//span[contains(text(), "(Refine)")]/following-sibling::table[1]'
         )
-        information: List[mdl.weapons.RefinementRow] = []
+        information: list[mdl.weapons.RefinementRow] = []
         for row in await self._xpath(table[-1], './tr[position()>1]'):
             level, *description = (await self._xpath(row, './/text()'))
             level = re.search(r'\d', level)[0]
@@ -341,7 +341,7 @@ class ArtifactParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_artifacts(self) -> Dict[str, dict] | None:
+    async def get_artifacts(self) -> dict[str, dict] | None:
         tree = await self._compile_html(self.base_url + 'db/artifact/')
         if tree is None:
             return None
@@ -376,7 +376,7 @@ class EnemyParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_enemies(self) -> Dict[str, dict] | None:
+    async def get_enemies(self) -> dict[str, dict] | None:
         tree = await self._compile_html(self.base_url + 'db/enemy/')
         if tree is None:
             return None
@@ -413,7 +413,7 @@ class EnemyParser(HoneyImpactParser):
         table = await self._xpath(tree, '//div[@class="scrollwrapper"]/table')
         stats = await self._xpath(table[0], './tr[position()>1]') if table else []
 
-        information: List[mdl.enemies.ProgressionRow] = []
+        information: list[mdl.enemies.ProgressionRow] = []
         for stat in stats:
             information.append(
                 mdl.enemies.ProgressionRow(
@@ -440,13 +440,13 @@ class BookParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_books(self) -> Dict[str, dict] | None:
+    async def get_books(self) -> dict[str, dict] | None:
         tree = await self._compile_html(self.base_url)
         if tree is None:
             return None
         table = await self._xpath(tree, '//div/span[text() = "Книги"]/../following-sibling::div[1]/a')
 
-        books: Dict[str, dict] = {}
+        books: dict[str, dict] = {}
         for book in table:
             name = ''.join(await self._xpath(book, './/text()'))
             link = f"{self.base_url}{book.get('href').rstrip(f'?lang={self.lang}')[1:]}"
@@ -472,7 +472,7 @@ class BookParser(HoneyImpactParser):
         os.remove(f"{FILECACHE}{os.sep}{name}-{volume}.txt")
         return attachment
 
-    async def get_information(self, peer_id: int, api: API, name: str, volume: str) -> Tuple[str, str]:
+    async def get_information(self, peer_id: int, api: API, name: str, volume: str) -> tuple[str, str]:
         tree = await self._compile_html(json.load('books')[name][f"{volume}"][0])
 
         story = await self._xpath(tree, '//span[text() = "Item Story"]/following-sibling::table//text()')

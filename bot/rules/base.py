@@ -1,5 +1,4 @@
 import re
-from typing import Dict, Tuple
 from itertools import groupby
 
 from vkbottle.bot import Message, MessageEvent
@@ -20,15 +19,15 @@ __all__ = (
 class CommandRule(ABCRule[Message]):
     def __init__(
             self,
-            commands: Tuple[str, ...],
+            commands: tuple[str, ...],
             prefix: str = '!',
-            options: Tuple[str, ...] = tuple(),
+            options: tuple[str, ...] = tuple(),
     ) -> None:
         self.commands = commands
         self.prefix = prefix
         self.options = options
 
-    async def check(self, event: Message) -> bool | Dict[str, Tuple[str, ...]]:
+    async def check(self, event: Message) -> bool | dict[str, tuple[str, ...]]:
         for command in self.commands:
             if not event.text.lower().startswith(self.prefix + command):
                 continue
@@ -49,15 +48,15 @@ class CommandRule(ABCRule[Message]):
 class AdminRule(ABCRule[Message]):
     def __init__(
             self,
-            commands: Tuple[str, ...] = ('exec', 'execpg'),
+            commands: tuple[str, ...] = ('exec', 'execpg'),
             prefix: str = '!',
-            admins: Tuple[int, ...] = ()
+            admins: tuple[int, ...] = ()
     ) -> None:
         self.commands = commands
         self.prefix = prefix
         self.admins = admins
 
-    async def check(self, event: Message) -> bool | Dict[str, bool]:
+    async def check(self, event: Message) -> bool | dict[str, bool]:
         if not any([event.text.lower().startswith(self.prefix + command) for command in self.commands]):
             return False
         if event.from_id not in self.admins:
@@ -70,7 +69,7 @@ class CustomCommandRule(ABCRule[Message]):
     def __init__(self, prefix: str = '!!') -> None:
         self.prefix = prefix
 
-    async def check(self, event: Message) -> bool | Dict[str, CustomCommand]:
+    async def check(self, event: Message) -> bool | dict[str, CustomCommand]:
         if not event.text.startswith(self.prefix):
             return False
         custom_commands: list[CustomCommand] = await get_custom_commands(event.peer_id)
@@ -83,10 +82,10 @@ class CustomCommandRule(ABCRule[Message]):
 
 
 class EventRule(ABCRule[MessageEvent]):
-    def __init__(self, payload_type: Tuple[str, ...]) -> None:
+    def __init__(self, payload_type: tuple[str, ...]) -> None:
         self.payload_types = payload_type
 
-    async def check(self, event: MessageEvent) -> Dict[str, dict] | bool:
+    async def check(self, event: MessageEvent) -> dict[str, dict] | bool:
         if event.payload['type'] not in self.payload_types:
             return False
         if not event.payload['user_id'] == event.user_id:

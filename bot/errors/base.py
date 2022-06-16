@@ -1,6 +1,3 @@
-from typing import Tuple
-
-
 __all__ = (
     'GenshinBotException',
     'IncompatibleOptions'
@@ -16,5 +13,5 @@ class GenshinBotException(Exception):
 
 
 class IncompatibleOptions(GenshinBotException):
-    def __init__(self, options: Tuple[str, ...]) -> None:
+    def __init__(self, options: tuple[str, ...]) -> None:
         self.__class__._msg = f"Переданы несовместимые опции: {' '.join(options)}!"

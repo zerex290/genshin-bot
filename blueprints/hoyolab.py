@@ -1,6 +1,5 @@
 import asyncio
 import os
-from typing import Tuple, Dict, List
 
 from vkbottle.bot import Blueprint, Message
 
@@ -22,7 +21,7 @@ from bot.config.dependencies.paths import FILECACHE
 bp = Blueprint('HoYoLabCommands')
 
 
-async def _get_formatted_notes(account: Dict[str, str | int]) -> str:
+async def _get_formatted_notes(account: dict[str, str | int]) -> str:
     async with GenshinClient(ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
         try:
             notes = await client.get_genshin_notes(account['uid'])
@@ -33,7 +32,7 @@ async def _get_formatted_notes(account: Dict[str, str | int]) -> str:
             return f"Необработанная ошибка: {e}\nПросьба сообщить о ней в личные сообщения группы!"
 
 
-async def _get_formatted_stats(account: Dict[str, str | int]) -> str:
+async def _get_formatted_stats(account: dict[str, str | int]) -> str:
     async with GenshinClient(ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
         try:
             stats = await client.get_partial_genshin_user(account['uid'])
@@ -44,7 +43,7 @@ async def _get_formatted_stats(account: Dict[str, str | int]) -> str:
             return f"Необработанная ошибка: {e}\nПросьба сообщить о ней в личные сообщения группы!"
 
 
-async def _get_formatted_rewards(account: Dict[str, str | int]) -> Tuple[str, str] | str:
+async def _get_formatted_rewards(account: dict[str, str | int]) -> tuple[str, str] | str:
     async with GenshinClient(ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
         try:
             rewards = await client.claimed_rewards(game=Game.GENSHIN.value)
@@ -55,9 +54,9 @@ async def _get_formatted_rewards(account: Dict[str, str | int]) -> Tuple[str, st
             return f"Необработанная ошибка: {e}\nПросьба сообщить о ней в личные сообщения группы!"
 
 
-async def _get_formatted_redeem_codes(account: Dict[str, str | int], codes: List[str]) -> str:
+async def _get_formatted_redeem_codes(account: dict[str, str | int], codes: list[str]) -> str:
     async with GenshinClient(account_id=account['ltuid'], cookie_token=account['cookie_token']) as client:
-        response: List[str] = []
+        response: list[str] = []
         for code in codes:
             try:
                 await client.redeem_code(code, account['uid'])
@@ -83,7 +82,7 @@ async def _get_formatted_redeem_codes(account: Dict[str, str | int], codes: List
         return '\n'.join(response)
 
 
-async def _get_formatted_diary(account: Dict[str, str | int]) -> str:
+async def _get_formatted_diary(account: dict[str, str | int]) -> str:
     async with GenshinClient(ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
         try:
             diary = await client.get_diary()
@@ -110,7 +109,7 @@ async def _get_formatted_spiral_abyss(account: dict[str, str | int], validator: 
 
 
 @bp.on.message(CommandRule(('линк',), options=('-п',)))
-async def link_genshin_account(message: Message, options: Tuple[str, ...]) -> None:
+async def link_genshin_account(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.AccountLink.slots.value:
         await message.answer(hints.AccountLink.slots.value[options[0]])
         return None
@@ -133,7 +132,7 @@ async def link_genshin_account(message: Message, options: Tuple[str, ...]) -> No
 
 
 @bp.on.message(CommandRule(('анлинк',), options=('-п',)))
-async def unlink_genshin_account(message: Message, options: Tuple[str, ...]) -> None:
+async def unlink_genshin_account(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.AccountUnlink.slots.value:
         await message.answer(hints.AccountUnlink.slots.value[options[0]])
         return
@@ -146,7 +145,7 @@ async def unlink_genshin_account(message: Message, options: Tuple[str, ...]) -> 
 
 
 @bp.on.message(CommandRule(('заметки',), options=('-п', '-у')))
-async def get_notes(message: Message, options: Tuple[str, ...]) -> None:
+async def get_notes(message: Message, options: tuple[str, ...]) -> None:
     async with GenshinDataValidator(message, 'Notes') as validator:
         match options:
             case ('-[error]',) | ('-п',):
@@ -165,7 +164,7 @@ async def get_notes(message: Message, options: Tuple[str, ...]) -> None:
 
 
 @bp.on.message(CommandRule(('статы',), options=('-п', '-у')))
-async def get_stats(message: Message, options: Tuple[str, ...]) -> None:
+async def get_stats(message: Message, options: tuple[str, ...]) -> None:
     async with GenshinDataValidator(message, 'Stats') as validator:
         match options:
             case ('-[error]',) | ('-п',):
@@ -184,7 +183,7 @@ async def get_stats(message: Message, options: Tuple[str, ...]) -> None:
 
 
 @bp.on.message(CommandRule(('награды',), options=('-п',)))
-async def get_claimed_rewards(message: Message, options: Tuple[str, ...]) -> None:
+async def get_claimed_rewards(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.Rewards.slots.value:
         await message.answer(hints.Rewards.slots.value[options[0]])
         return
@@ -204,7 +203,7 @@ async def get_claimed_rewards(message: Message, options: Tuple[str, ...]) -> Non
 
 
 @bp.on.message(CommandRule(('пром',), options=('-п',)))
-async def activate_redeem_code(message: Message, options: Tuple[str, ...]) -> None:
+async def activate_redeem_code(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.RedeemCode.slots.value:
         await message.answer(hints.RedeemCode.slots.value[options[0]])
         return
@@ -218,7 +217,7 @@ async def activate_redeem_code(message: Message, options: Tuple[str, ...]) -> No
 
 
 @bp.on.chat_message(CommandRule(('резинноут',), options=('-п', '-выкл', '-вкл')))
-async def manage_resin_notifications(message: Message, options: Tuple[str, ...]) -> None:
+async def manage_resin_notifications(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.ResinNotifications.slots.value and len(options) == 1:
         await message.answer(hints.ResinNotifications.slots.value[options[0]])
         return
@@ -256,7 +255,7 @@ async def manage_resin_notifications(message: Message, options: Tuple[str, ...])
 
 
 @bp.on.message(CommandRule(('дневник',), options=('-п', '-у')))
-async def get_traveler_diary(message: Message, options: Tuple[str, ...]) -> None:
+async def get_traveler_diary(message: Message, options: tuple[str, ...]) -> None:
     async with GenshinDataValidator(message, 'Diary') as validator:
         match options:
             case ('-[error]', ) | ('-п', ):
@@ -275,7 +274,7 @@ async def get_traveler_diary(message: Message, options: Tuple[str, ...]) -> None
 
 
 @bp.on.message(CommandRule(('бездна',), options=('-п', '-у')))
-async def get_spiral_abyss(message: Message, options: Tuple[str, ...]) -> None:
+async def get_spiral_abyss(message: Message, options: tuple[str, ...]) -> None:
     async with SpiralAbyssValidator(message, 'SpiralAbyss') as validator:
         match options:
             case ('-[error]',) | ('-п',):

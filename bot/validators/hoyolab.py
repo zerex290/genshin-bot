@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import Optional
 
 from vkbottle.bot import Message
 from vkbottle_types.objects import MessagesForeignMessage
@@ -26,12 +26,12 @@ class AccountLinkValidator(BaseValidator):
             raise AccountAlreadyLinked
 
     @staticmethod
-    def check_cookie_amount(cookies: List[str]) -> None:
+    def check_cookie_amount(cookies: list[str]) -> None:
         if not cookies or len(cookies) != 4:
             raise NotEnoughCookies
 
     @staticmethod
-    def check_cookie_syntax(cookies: List[str]) -> None:
+    def check_cookie_syntax(cookies: list[str]) -> None:
         try:
             cookies = {c.lower().split('=')[0]: c.split('=')[1] for c in cookies}
             assert {'ltuid', 'ltoken', 'uid', 'cookie_token'} == set(cookies)
@@ -39,7 +39,7 @@ class AccountLinkValidator(BaseValidator):
             raise CookieSyntaxError
 
     @staticmethod
-    async def check_cookies_valid(cookies: Dict[str, str]) -> None:
+    async def check_cookies_valid(cookies: dict[str, str]) -> None:
         if not await is_genshin_account(**cookies):
             raise InvalidAccountCookies
 
@@ -64,14 +64,14 @@ class GenshinDataValidator(BaseValidator):
             raise ReplyMessageError(self._datatype)
 
     @staticmethod
-    def check_account_exists(account: Optional[Dict[str, str | int]], for_other_user: bool = False) -> None:
+    def check_account_exists(account: Optional[dict[str, str | int]], for_other_user: bool = False) -> None:
         if not account:
             raise AccountNotFound(for_other_user)
 
 
 class RedeemCodeValidator(GenshinDataValidator):
     @staticmethod
-    def check_redeem_specified(codes: List[str]) -> None:
+    def check_redeem_specified(codes: list[str]) -> None:
         if not codes:
             raise RedeemCodeNotSpecified
 

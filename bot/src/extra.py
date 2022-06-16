@@ -1,7 +1,7 @@
 import asyncio
 import os
 import random
-from typing import List, Dict, Tuple, Optional
+from typing import Optional
 
 from vkbottle import API, Bot, VKAPIError
 
@@ -63,7 +63,7 @@ async def collect_login_bonus() -> None:
             await asyncio.sleep(24*3600 - time.minute*60)
 
 
-async def _get_users() -> List[Dict[str, str | int]]:
+async def _get_users() -> list[dict[str, str | int]]:
     async with PostgresConnection() as connection:
         users = await connection.fetch('''
             SELECT first_name, uic.user_id, chat_id FROM users u JOIN users_in_chats uic 
@@ -73,7 +73,7 @@ async def _get_users() -> List[Dict[str, str | int]]:
         return [dict(user) for user in users]
 
 
-async def _get_user_resin(account: Dict[str, str | int]) -> Optional[int]:
+async def _get_user_resin(account: dict[str, str | int]) -> Optional[int]:
     async with GenshinClient(exc_catch=True, ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
         return (await client.get_genshin_notes(account['uid'])).current_resin
 
@@ -98,11 +98,11 @@ async def notify_about_resin_replenishment(bot: Bot) -> None:
 
 class PostUploader:
     THEMATIC: bool = False
-    THEMATIC_TAGS: Tuple[str, ...] = ()
+    THEMATIC_TAGS: tuple[str, ...] = ()
     MINIMUM_DONUT_FAV_COUNT: int = 500
     MINIMUM_FAV_COUNT: int = 500
 
-    def _get_tags(self, donut: bool) -> Tuple[str, ...]:
+    def _get_tags(self, donut: bool) -> tuple[str, ...]:
         if not self.THEMATIC:
             tags = ('genshin_impact', '-loli') if donut else ('genshin_impact',)
         else:

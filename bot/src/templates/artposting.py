@@ -1,5 +1,4 @@
 import re
-from typing import List
 
 from bot.src.models.sankaku import TagType, Tag
 from bot.config.dependencies.group import SHORTNAME
@@ -10,7 +9,7 @@ def _prettify_tag(tag: str) -> str:
     return tag[:tag.find('_(')] if tag.find('_(') != -1 else tag
 
 
-def format_post_message(donut: bool, tags: List[Tag]) -> str:
+def format_post_message(donut: bool, tags: list[Tag]) -> str:
     match donut:
         case True:
             character = [_prettify_tag(tag.name_en) for tag in tags if tag.type == TagType.CHARACTER]

@@ -1,5 +1,5 @@
 import datetime
-from typing import Dict, List, Tuple, Optional, AsyncGenerator
+from typing import Optional, AsyncGenerator
 
 import aiohttp
 
@@ -17,7 +17,7 @@ class SankakuParser:
             self,
             rating: Rating = Rating.S,
             order: Order = Order.RANDOM,
-            tags: Tuple[str, ...] = ()
+            tags: tuple[str, ...] = ()
     ) -> None:
         self._url = sankaku.URL
         self._headers = sankaku.HEADERS
@@ -27,18 +27,18 @@ class SankakuParser:
         self._order = order.value
         self._tags = (*tags, self._rating, self._order)
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         headers = self._headers.copy()
         return headers
 
-    def _set_attributes(self, next_: str) -> Dict[str, str]:
+    def _set_attributes(self, next_: str) -> dict[str, str]:
         attributes = self._attributes.copy()
         attributes['tags'] += ' '.join(self._tags)
         attributes['next'] = next_
         return attributes
 
     @catch_aiohttp_errors
-    async def _get_json(self, next_: str) -> Tuple[List[Dict[str, str | int]], Optional[str]]:
+    async def _get_json(self, next_: str) -> tuple[list[dict[str, str | int]], Optional[str]]:
         headers = self._get_headers()
         attributes = self._set_attributes(next_)
         async with aiohttp.ClientSession() as session:
@@ -55,7 +55,7 @@ class SankakuParser:
         return Author(**author)
 
     @staticmethod
-    def _compile_tags(post: dict) -> List[Tag]:
+    def _compile_tags(post: dict) -> list[Tag]:
         tags = []
         post_tags = post['tags']
         for tag in post_tags:

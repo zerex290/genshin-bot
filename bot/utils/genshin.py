@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional
 from os import sep
 
 import genshin
@@ -45,7 +45,7 @@ async def get_genshin_account_by_id(
         ltuid: bool = False,
         ltoken: bool = False,
         cookie_token: bool = False
-) -> Optional[Dict[str, int | str]]:
+) -> Optional[dict[str, int | str]]:
     async with PostgresConnection() as connection:
         columns = []
         parameters = {'uid': uid, 'ltuid': ltuid, 'ltoken': ltoken, 'cookie_token': cookie_token}
