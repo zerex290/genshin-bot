@@ -4,7 +4,7 @@ from bot.validators import BaseValidator
 from bot.src.constants import COMMANDS
 from bot.utils.postgres import has_postgres_data
 from bot.errors.customcommands import *
-from bot.src.models.customcommands import ChatCustomCommands
+from bot.src.models.customcommands import CustomCommand
 
 
 __all__ = (
@@ -74,7 +74,7 @@ class DeletionValidator(BaseValidator):
 
 class ViewValidator(BaseValidator):
     @staticmethod
-    def check_created(custom_commands: ChatCustomCommands) -> None:
+    def check_created(custom_commands: list[CustomCommand]) -> None:
         if not custom_commands:
             raise CommandsNotCreated
 

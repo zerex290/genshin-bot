@@ -13,7 +13,7 @@ from bot.utils.files import download, upload
 from bot.utils.postgres import has_postgres_data
 from bot.src.types.help import customcommands as hints
 from bot.config.dependencies.paths import FILECACHE
-from bot.src.models.customcommands import CustomCommand, ChatCustomCommands
+from bot.src.models.customcommands import CustomCommand
 from bot.validators.customcommands import *
 
 
@@ -27,7 +27,7 @@ async def view_custom_commands(message: Message, options: Tuple[str, ...]) -> No
             case ('-[error]',) | ('-п',):
                 await message.answer(hints.CommandList.slots.value[options[0]])
             case ('-[default]',):
-                custom_commands: ChatCustomCommands = await get_custom_commands(message.peer_id)
+                custom_commands: list[CustomCommand] = await get_custom_commands(message.peer_id)
                 validator.check_created(custom_commands)
                 await message.answer(
                     'Список пользовательских команд:\n' + '\n'.join(command.name for command in custom_commands)

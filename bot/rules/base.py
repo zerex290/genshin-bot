@@ -6,7 +6,7 @@ from vkbottle.bot import Message, MessageEvent
 from vkbottle.dispatch.rules import ABCRule
 
 from bot.utils import get_custom_commands
-from bot.src.models.customcommands import CustomCommand, ChatCustomCommands
+from bot.src.models.customcommands import CustomCommand
 
 
 __all__ = (
@@ -73,7 +73,7 @@ class CustomCommandRule(ABCRule[Message]):
     async def check(self, event: Message) -> bool | Dict[str, CustomCommand]:
         if not event.text.startswith(self.prefix):
             return False
-        custom_commands: ChatCustomCommands = await get_custom_commands(event.peer_id)
+        custom_commands: list[CustomCommand] = await get_custom_commands(event.peer_id)
         if not custom_commands:
             return False
         requested_command = event.text.partition(' ')[0].lstrip(self.prefix)
