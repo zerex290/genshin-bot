@@ -120,7 +120,10 @@ def format_stats(stats: PartialGenshinUserStats) -> str:
 
 
 def _format_daily_reward_name(reward: ClaimedDailyReward) -> str:
-    return Rewards[reward.name.upper().replace(' ', '_').replace("'S", "")].value
+    if ord(reward.name[0]) > 122:  #: 122 is unicode position of 'z' symbol
+        return reward.name
+    else:
+        return Rewards[reward.name.upper().replace(' ', '_').replace("'S", "")].value
 
 
 def format_daily_rewards(rewards: Sequence[ClaimedDailyReward]) -> str:
