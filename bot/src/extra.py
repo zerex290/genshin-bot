@@ -104,9 +104,9 @@ class PostUploader:
 
     def _get_tags(self, donut: bool) -> tuple[str, ...]:
         if not self.THEMATIC:
-            tags = ('genshin_impact', '-loli') if donut else ('genshin_impact',)
+            tags = ('genshin_impact', '-loli', '-shota') if donut else ('genshin_impact',)
         else:
-            tags = (*self.THEMATIC_TAGS, '-loli') if donut else self.THEMATIC_TAGS
+            tags = (*self.THEMATIC_TAGS, '-loli', '-shota') if donut else self.THEMATIC_TAGS
         return tags
 
     async def make_post(self, api: API,  donut: bool = False):
