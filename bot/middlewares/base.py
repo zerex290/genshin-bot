@@ -123,37 +123,40 @@ class ChatUsersUpdateMiddleware(BaseMiddleware[Message]):
 
 
 class CommandGuesserMiddleware(BaseMiddleware[Message]):
-    def _format_query(self) -> str:
-        query = re.sub(r'-\s', '-', self.event.text)
-        for c in COMMANDS:
-            command = ''.join(keyboard.LATIN.get(symbol, symbol) for symbol in c)
-            if re.match(fr"!{command}\S", query):
-                query = query.replace(f"!{command}", f"!{command} ")
+    def _format_text(self) -> str:
+        text = re.sub(r'-\s', '-', self.event.text)
+        for C in COMMANDS:
+            command = ''.join(keyboard.LATIN.get(symbol, symbol) for symbol in C)
+            if re.match(fr"!{command}\S", text):
+                text = text.replace(f"!{command}", f"!{command} ")
                 break
-        command = query.split(maxsplit=1)[0].lstrip('!')
-        options = re.findall(r'\s-\S+', query)
+            elif re.match(fr"!{C}\S", text):
+                text = text.replace(f"!{C}", f"!{C} ")
+                break
+        command = text.split(maxsplit=1)[0].lstrip('!')
+        options = re.findall(r'\s-\S+', text)
         options_converted = [''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in option) for option in options]
-        query = query.replace(f"!{command}", f"!{''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in command)}")
+        text = text.replace(f"!{command}", f"!{''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in command)}")
         for i, option in enumerate(options):
-            query = query.replace(option, options_converted[i])
-        return query
+            text = text.replace(option, options_converted[i])
+        return text
 
     @staticmethod
     def _get_match(command: str, precision: float) -> Optional[str]:
         matches = {}
-        for match in [c for c in COMMANDS if len(c) - 2 <= len(command) <= len(c) + 1]:
+        for match in [C for C in COMMANDS if len(C) - 2 <= len(command) <= len(C) + 1]:
             matches[len(set(match).intersection(command)) / len(match)] = match
         return matches[max(matches)] if matches and max(matches) >= precision else None
 
     async def pre(self) -> None:
         if not self.event.text.startswith('!') or self.event.text.startswith('!!'):
             return None
-        query = self._format_query()
-        command = query.split(maxsplit=1)[0].lstrip('!')
-        match = self._get_match(command, 0.66)
+        text = self._format_text()
+        command = text.split(maxsplit=1)[0].lstrip('!')
+        match = self._get_match(command.lower(), 0.66)
         if not match:
             return None
-        guess = query.replace(f"!{command}", f"!{match}")
+        guess = text.replace(f"!{command}", f"!{match}")
         if self.event.text == guess:
             return None
         if await has_postgres_data(f"SELECT * FROM users WHERE user_id = {self.event.from_id} AND autocorrect = false"):
