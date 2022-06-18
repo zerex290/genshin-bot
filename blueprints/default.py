@@ -105,11 +105,11 @@ async def set_timer(message: Message, options: tuple[str, ...]) -> None:
         validator.check_timer_syntax(countdown)
         await message.answer('Таймер установлен!')
         await sleep(countdown)
-        async with PostgresConnection() as connection:
-            query = await connection.fetchrow(f"SELECT first_name FROM users WHERE user_id = {message.from_id}")
-            first_name = dict(query)['first_name']
-            response = f"@id{message.from_id} ({first_name}), время прошло! {'Пометка: ' + note if note else ''}"
-            await message.answer(response)
+        response = (
+            f"@id{message.from_id} ({(await message.get_user()).first_name}), время прошло! "
+            f"{'Пометка: ' + note if note else ''}"
+        )
+        await message.answer(response)
 
 
 @bp.on.message(CommandRule(('перешли',), options=('-п',)))

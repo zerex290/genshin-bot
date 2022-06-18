@@ -13,7 +13,7 @@ post_uploader = PostUploader()
 
 @bot.group.error_handler.register_undefined_error_handler
 async def log_undefined_errors(error: Exception) -> None:
-    await write_logs(None, None, True, error)
+    await write_logs(error)
 
 
 @bot.group.error_handler.catch
@@ -23,9 +23,8 @@ async def main() -> None:
     bot.group.labeler.message_view.register_middleware(GroupFilterMiddleware)
     bot.group.labeler.message_view.register_middleware(UserRegisterMiddleware)
     bot.group.labeler.message_view.register_middleware(ChatRegisterMiddleware)
-    bot.group.labeler.message_view.register_middleware(ChatUsersUpdateMiddleware)
+    bot.group.labeler.message_view.register_middleware(ChatUserUpdateMiddleware)
     bot.group.labeler.message_view.register_middleware(CommandGuesserMiddleware)
-    bot.group.labeler.message_view.register_middleware(MessageLogMiddleware)
 
     await asyncio.gather(
         bot.group.run_polling(),

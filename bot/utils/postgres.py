@@ -12,10 +12,7 @@ class PostgresConnection:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> bool:
         await self.connection.close()
-        if exc_type:
-            print(f"{exc_type}: {exc_val}")
-            print(exc_tb)
-        return True
+        return False
 
 
 async def has_postgres_data(query: str) -> bool:

@@ -7,15 +7,12 @@ async def create_pg_tables(connection):
     chats = (f"""
         CREATE TABLE chats (
             chat_id int PRIMARY KEY,
-            member_count int NOT NULL,
             ffa_commands boolean NOT NULL DEFAULT true
         );
     """)
     users = (f"""
         CREATE TABLE users (
             user_id int PRIMARY KEY,
-            first_name varchar(50) NOT NULL,
-            last_name varchar(50) NOT NULL,
             autocorrect boolean NOT NULL DEFAULT false,
             CONSTRAINT is_user CHECK (user_id >= 0)
         );
@@ -24,8 +21,6 @@ async def create_pg_tables(connection):
         CREATE TABLE users_in_chats (
             user_id int REFERENCES users(user_id),
             chat_id int REFERENCES chats(chat_id),
-            join_date timestamptz NOT NULL,
-            invited_by int NOT NULL,
             resin_notifications boolean NOT NULL DEFAULT false,
             notification_number int NOT NULL DEFAULT 0,
             PRIMARY KEY (user_id, chat_id),

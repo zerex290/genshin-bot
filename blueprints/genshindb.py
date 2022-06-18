@@ -19,12 +19,6 @@ from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION
 bp = Blueprint('GenshinDatabase')
 
 
-async def _get_username(user_id: int) -> str:
-    async with PostgresConnection() as connection:
-        username = await connection.fetchrow(f"SELECT first_name FROM users WHERE user_id = {user_id};")
-        return dict(username)['first_name']
-
-
 def _get_menu_keyboard(user_id: int) -> str:
     keyboard = (
         Keyboard(one_time=False, inline=True)
@@ -119,7 +113,7 @@ async def get_genshin_database(message: Message, options: tuple[str, ...]) -> No
                 shortcut = message.text.lstrip('!гдб').lstrip()
                 if not shortcut:
                     await message.answer(
-                        message=f"Доброго времени суток, {await _get_username(message.from_id)}!",
+                        message=f"Доброго времени суток, {(await message.get_user()).first_name}!",
                         attachment=await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png'),
                         keyboard=_get_menu_keyboard(message.from_id)
                     )
@@ -157,7 +151,7 @@ async def get_genshin_database(message: Message, options: tuple[str, ...]) -> No
 @bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('menu',)))
 async def return_to_menu(event: MessageEvent, payload: dict[str, str | int]) -> None:
     await event.edit_message(
-        f"Доброго времени суток, {await _get_username(payload['user_id'])}!",
+        f"Доброго времени суток, {(await event.ctx_api.users.get([payload['user_id']]))[0].first_name}!",
         attachment=await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png'),
         keyboard=_get_menu_keyboard(payload['user_id'])
     )

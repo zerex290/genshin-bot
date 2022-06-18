@@ -47,19 +47,8 @@ async def upload(
     return attachment
 
 
-async def write_logs(event, handlers, is_error: bool = False, error: Optional[BaseException] = None) -> None:
+async def write_logs(error: Exception) -> None:
     dt = datetime.now()
     async with aiofiles.open(f"{LOGS}{sep}{dt.strftime('%B %Y')}.txt", 'a', encoding='utf-8') as log:
-        if not is_error:
-            await log.write(
-                f"{dt.strftime('%d.%m.%y - %H:%M:%S')}: {handlers[0]}\n"
-                f"Chat id: {event.peer_id}\n"
-                f"User id: {event.from_id}\n"
-                f"Message: {event.text}\n"
-                f"Attachments ({len(event.attachments)}): {[a.type.value for a in event.attachments]}\n\n"
-            )
-        else:
-            await log.write(
-                f"{dt.strftime('%d.%m.%y - %H:%M:%S')}: {error.__class__.__name__}\n"
-                f"{traceback.format_exc()}\n\n"
-            )
+        exc_type = error.__class__.__name__
+        await log.write(f"{dt.strftime('%d %B %Y - %H:%M:%S')}: {exc_type}\n{traceback.format_exc()}\n{'-'*79}\n\n")
