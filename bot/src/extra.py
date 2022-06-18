@@ -89,7 +89,7 @@ async def _update_notification_number(chat_id: int, user_id: int) -> None:
 async def _reset_notification_number(chat_id: int, user_id: int) -> None:
     async with PostgresConnection() as connection:
         await connection.execute(f"""
-            UPDATE users_in_chats SET notification_number = 1 
+            UPDATE users_in_chats SET notification_number = 0 
             WHERE chat_id = {chat_id} AND user_id = {user_id};
         """)
 
@@ -125,7 +125,7 @@ async def notify_about_resin_replenishment(bot: Bot) -> None:
                     pass  #: tba chat remove from users_in_chats
             elif resin >= 150 and user['notification_number'] >= 3:
                 continue
-            elif resin < 150 and user['notification_number'] != 1:
+            elif resin < 150 and user['notification_number'] != 0:
                 await _reset_notification_number(user['chat_id'], user['user_id'])
         await asyncio.sleep(3600)
 
