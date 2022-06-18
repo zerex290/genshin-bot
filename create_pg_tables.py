@@ -27,7 +27,9 @@ async def create_pg_tables(connection):
             join_date timestamptz NOT NULL,
             invited_by int NOT NULL,
             resin_notifications boolean NOT NULL DEFAULT false,
-            PRIMARY KEY (user_id, chat_id)
+            notification_number int NOT NULL DEFAULT 0,
+            PRIMARY KEY (user_id, chat_id),
+            CONSTRAINT notification_limit CHECK (notification_number <= 3)
         );
     """)
     genshin_accounts = (f"""

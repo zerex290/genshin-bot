@@ -66,7 +66,7 @@ async def collect_login_bonus() -> None:
 async def _get_users() -> list[dict[str, str | int]]:
     async with PostgresConnection() as connection:
         users = await connection.fetch('''
-            SELECT first_name, uic.user_id, chat_id FROM users u JOIN users_in_chats uic 
+            SELECT first_name, u.user_id, chat_id, notification_number FROM users u JOIN users_in_chats uic 
             ON u.user_id = uic.user_id 
             WHERE uic.resin_notifications = true;
         ''')
@@ -78,22 +78,56 @@ async def _get_user_resin(account: dict[str, str | int]) -> Optional[int]:
         return (await client.get_genshin_notes(account['uid'])).current_resin
 
 
-async def notify_about_resin_replenishment(bot: Bot) -> None:
+async def _update_notification_number(chat_id: int, user_id: int) -> None:
+    async with PostgresConnection() as connection:
+        await connection.execute(f"""
+            UPDATE users_in_chats SET notification_number = notification_number + 1 
+            WHERE chat_id = {chat_id} AND user_id = {user_id};
+        """)
+
+
+async def _reset_notification_number(chat_id: int, user_id: int) -> None:
+    async with PostgresConnection() as connection:
+        await connection.execute(f"""
+            UPDATE users_in_chats SET notification_number = 1 
+            WHERE chat_id = {chat_id} AND user_id = {user_id};
+        """)
+
+
+def _compile_message(user: dict[str, str | int], resin: int) -> str:
     cases = {1: 'у', 2: 'ы', 3: 'ы', 4: 'ы'}  #: Used to write word "единица" in right cases
+    message = '@id{} ({}), ваша смола достигла отметки в {} единиц{}, поспешите её потратить! ({}/3)'
+    message = message.format(
+        user['user_id'],
+        user['first_name'],
+        resin,
+        cases.get(resin - 150, ''),
+        user['notification_number'] + 1
+    )
+    return message
+
+
+async def notify_about_resin_replenishment(bot: Bot) -> None:
     while True:
         for user in await _get_users():
             resin = await _get_user_resin(await get_genshin_account_by_id(user['user_id'], True, True, True))
-            if isinstance(resin, int) and resin >= 150:
+            if not isinstance(resin, int):
+                continue
+            if resin >= 150 and user['notification_number'] < 3:
                 try:
                     await bot.api.messages.send(
-                        random_id=random.randint(0, 1000),
+                        random_id=random.randint(0, 10000),
                         peer_id=user['chat_id'],
-                        message=f"@id{user['user_id']} ({user['first_name']}), ваша смола достигла отметки в "
-                                f"{resin} единиц{cases.get(resin - 150, '')}, поспешите её потратить!"
+                        message=_compile_message(user, resin)
                     )
+                    await _update_notification_number(user['chat_id'], user['user_id'])
                 except VKAPIError:
                     pass  #: tba chat remove from users_in_chats
-        await asyncio.sleep(1800)
+            elif resin >= 150 and user['notification_number'] >= 3:
+                continue
+            elif resin < 150 and user['notification_number'] != 1:
+                await _reset_notification_number(user['chat_id'], user['user_id'])
+        await asyncio.sleep(3600)
 
 
 class PostUploader:

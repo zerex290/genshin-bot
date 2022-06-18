@@ -33,16 +33,11 @@ async def _insert_into_users(user: UsersUserFull) -> None:
     if await has_postgres_data(f"SELECT user_id FROM users WHERE user_id = {user.id};"):
         return None
     async with PostgresConnection() as connection:
-        await connection.execute(f"""
-                    INSERT INTO users VALUES (
-                        {user.id}, '{user.first_name}', '{user.last_name}', false
-                    );
-                """)
+        await connection.execute(f"INSERT INTO users VALUES ({user.id}, '{user.first_name}', '{user.last_name}');")
 
 
 async def _insert_into_users_in_chats(event, users: list, chat_id: int) -> None:
     chat_id = chat_id
-    resin_notifications = 'false'
     async with PostgresConnection() as connection:
         for user in users:
             if user.member_id >= 0:
@@ -51,9 +46,7 @@ async def _insert_into_users_in_chats(event, users: list, chat_id: int) -> None:
                 user_id = user.member_id
                 await _insert_into_users((await event.ctx_api.users.get([user_id]))[0])
                 await connection.execute(f"""
-                    INSERT INTO users_in_chats VALUES (
-                        {user_id}, {chat_id}, '{join_date}', {invited_by}, '{resin_notifications}'
-                    );
+                    INSERT INTO users_in_chats VALUES ({user_id}, {chat_id}, '{join_date}', {invited_by});
                 """)
 
 
@@ -77,11 +70,7 @@ class ChatRegisterMiddleware(BaseMiddleware[Message]):
             return None
         chat = await self.event.ctx_api.messages.get_conversation_members(self.event.peer_id)
         async with PostgresConnection() as connection:
-            await connection.execute(f"""
-                INSERT INTO chats VALUES (
-                    {self.event.peer_id}, {chat.count}, true
-                );
-            """)
+            await connection.execute(f"INSERT INTO chats VALUES ({self.event.peer_id}, {chat.count});")
         await _insert_into_users_in_chats(self.event, chat.items, self.event.peer_id)
 
 
@@ -105,7 +94,6 @@ class ChatUsersUpdateMiddleware(BaseMiddleware[Message]):
                 chat_id = self.event.peer_id
                 invited_by = None
                 join_date = None
-                resin_notifications = 'false'
                 for user in users:
                     if user.member_id == user_id and user.member_id > 0:
                         invited_by = user.invited_by
@@ -113,9 +101,7 @@ class ChatUsersUpdateMiddleware(BaseMiddleware[Message]):
                 await _insert_into_users((await self.event.ctx_api.users.get([user_id]))[0])
                 async with PostgresConnection() as connection:
                     await connection.execute(f"""
-                        INSERT INTO users_in_chats VALUES (
-                            {user_id}, {chat_id}, '{join_date}', {invited_by}, '{resin_notifications}'
-                        );
+                        INSERT INTO users_in_chats VALUES ({user_id}, {chat_id}, '{join_date}', {invited_by});
                     """)
                     await connection.execute(f"""
                         UPDATE chats SET member_count = member_count + 1 WHERE chat_id = {self.event.peer_id};
