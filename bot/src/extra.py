@@ -66,7 +66,7 @@ async def collect_login_bonus() -> None:
 async def _get_users() -> list[dict[str, str | int]]:
     async with PostgresConnection() as connection:
         users = await connection.fetch('''
-            SELECT first_name, u.user_id, chat_id, notification_number FROM users u JOIN users_in_chats uic 
+            SELECT u.user_id, chat_id, notification_number FROM users u JOIN users_in_chats uic 
             ON u.user_id = uic.user_id 
             WHERE uic.resin_notifications = true;
         ''')
@@ -94,12 +94,12 @@ async def _reset_notification_number(chat_id: int, user_id: int) -> None:
         """)
 
 
-def _compile_message(user: dict[str, str | int], resin: int) -> str:
+def _compile_message(user: dict[str, str | int], first_name: str, resin: int) -> str:
     cases = {1: 'у', 2: 'ы', 3: 'ы', 4: 'ы'}  #: Used to write word "единица" in right cases
     message = '@id{} ({}), ваша смола достигла отметки в {} единиц{}, поспешите её потратить! ({}/3)'
     message = message.format(
         user['user_id'],
-        user['first_name'],
+        first_name,
         resin,
         cases.get(resin - 150, ''),
         user['notification_number'] + 1
@@ -115,10 +115,11 @@ async def notify_about_resin_replenishment(bot: Bot) -> None:
                 continue
             if resin >= 150 and user['notification_number'] < 3:
                 try:
+                    first_name = (await bot.api.users.get([user['user_id']]))[0].first_name
                     await bot.api.messages.send(
                         random_id=random.randint(0, 10000),
                         peer_id=user['chat_id'],
-                        message=_compile_message(user, resin)
+                        message=_compile_message(user, first_name, resin)
                     )
                     await _update_notification_number(user['chat_id'], user['user_id'])
                 except VKAPIError:
