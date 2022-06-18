@@ -76,7 +76,7 @@ class CustomCommandRule(ABCRule[Message]):
         if not custom_commands:
             return False
         requested_command = event.text.partition(' ')[0].lstrip(self.prefix)
-        if requested_command not in custom_commands:
+        if requested_command not in [command.name for command in custom_commands]:
             return False
         return {'command': [command for command in custom_commands if command.name == requested_command][0]}
 

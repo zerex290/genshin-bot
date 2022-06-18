@@ -155,7 +155,7 @@ async def add_custom_command(message: Message, options: tuple[str, ...]) -> None
         await message.answer(hints.CommandCreation.slots.value[options[0]])
         return None
 
-    text = message.text.lstrip('!аддком').split()
+    text = message.text.lstrip('!аддком').split(maxsplit=1)
     async with CreationValidator(message) as validator:
         await validator.check_availability(message.peer_id, message.from_id)
         name = text[0] if text else ''
@@ -165,7 +165,7 @@ async def add_custom_command(message: Message, options: tuple[str, ...]) -> None
         creator_id = message.from_id
         date_added = get_current_timestamp(3)
         times_used = 0
-        msg = ' '.join(text[1:]) if len(text) > 1 else ''
+        msg = text[1] if len(text) > 1 else ''
         document_id = await _get_document_id(name, message.peer_id, message.attachments)
         audio_id = await _get_audio_id(message.attachments)
         photo_id = await _get_photo_id(name, message.peer_id, message.attachments)
