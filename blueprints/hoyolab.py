@@ -205,12 +205,14 @@ async def redeem_code(message: Message, options: tuple[str, ...]) -> None:
         await message.answer(await _get_formatted_redeem_codes(account, codes))
 
 
-@bp.on.chat_message(CommandRule(('резинноут',), options=('-п', '-выкл', '-вкл')))
+@bp.on.message(CommandRule(('резинноут',), options=('-п', '-выкл', '-вкл')))
 async def manage_resin_notifications(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.ResinNotifications.slots.value and len(options) == 1:
         await message.answer(hints.ResinNotifications.slots.value[options[0]])
         return
+
     async with ResinNotifyValidator(message) as validator:
+        validator.check_chat_allowed(message.peer_id)
         await validator.check_account_linked(message.from_id)
         match options:
             case ('-[default]',):

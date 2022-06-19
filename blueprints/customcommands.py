@@ -20,12 +20,15 @@ from bot.validators.customcommands import *
 bp = Blueprint('UserCommands')
 
 
-@bp.on.chat_message(CommandRule(('комы',), options=('-п', '-с', '-общ', '-огр')))
+@bp.on.message(CommandRule(('комы',), options=('-п', '-с', '-общ', '-огр')))
 async def view_custom_commands(message: Message, options: tuple[str, ...]) -> None:
+    if options[0] in hints.CommandList.slots.value:
+        await message.answer(hints.CommandList.slots.value[options[0]])
+        return None
+
     async with ViewValidator(message) as validator:
+        validator.check_chat_allowed(message.peer_id)
         match options:
-            case ('-[error]',) | ('-п',):
-                await message.answer(hints.CommandList.slots.value[options[0]])
             case ('-[default]',):
                 commands: list[CustomCommand] = await get_custom_commands(message.peer_id)
                 validator.check_commands_created(commands)
@@ -74,15 +77,16 @@ async def get_custom_command(message: Message, command: CustomCommand) -> None:
         """)
 
 
-@bp.on.chat_message(CommandRule(('делком',), options=('-п',)))
+@bp.on.message(CommandRule(('делком',), options=('-п',)))
 async def delete_custom_command(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.CommandDeletion.slots.value:
         await message.answer(hints.CommandDeletion.slots.value[options[0]])
         return None
 
-    name = message.text.lstrip('!делком').strip()
     async with DeletionValidator(message) as validator:
+        validator.check_chat_allowed(message.peer_id)
         await validator.check_availability(message.peer_id, message.from_id)
+        name = message.text.lstrip('!делком').strip()
         validator.check_command_specified(name)
         await validator.check_command_exist(name, message.peer_id)
         async with PostgresConnection() as connection:
@@ -149,15 +153,16 @@ async def _insert(
         """)
 
 
-@bp.on.chat_message(CommandRule(('аддком',), options=('-п',)))
+@bp.on.message(CommandRule(('аддком',), options=('-п',)))
 async def add_custom_command(message: Message, options: tuple[str, ...]) -> None:
     if options[0] in hints.CommandDeletion.slots.value:
         await message.answer(hints.CommandCreation.slots.value[options[0]])
         return None
 
-    text = message.text.lstrip('!аддком').split(maxsplit=1)
     async with CreationValidator(message) as validator:
+        validator.check_chat_allowed(message.peer_id)
         await validator.check_availability(message.peer_id, message.from_id)
+        text = message.text.lstrip('!аддком').split(maxsplit=1)
         name = text[0] if text else ''
         validator.check_command_specified(name)
         await validator.check_command_new(name, message.peer_id)

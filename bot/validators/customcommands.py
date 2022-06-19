@@ -1,6 +1,6 @@
 from vkbottle import API
 
-from bot.validators import BaseValidator
+from bot.validators import BaseValidator, ChatValidator
 from bot.src.constants import COMMANDS
 from bot.utils.postgres import has_postgres_data
 from bot.errors.customcommands import *
@@ -30,7 +30,7 @@ async def _check_availability(api: API, chat_id: int, user_id: int) -> bool:
     return True if any(conditions) else False
 
 
-class CreationValidator(BaseValidator):
+class CreationValidator(BaseValidator, ChatValidator):
     async def check_availability(self, chat_id: int, user_id: int) -> None:
         if not await _check_availability(self._message.ctx_api, chat_id, user_id):
             raise ActionError
@@ -56,7 +56,7 @@ class CreationValidator(BaseValidator):
             raise AdditionsNotSpecified
 
 
-class DeletionValidator(BaseValidator):
+class DeletionValidator(BaseValidator, ChatValidator):
     async def check_availability(self, chat_id: int, user_id: int) -> None:
         if not await _check_availability(self._message.ctx_api, chat_id, user_id):
             raise ActionError
@@ -72,7 +72,7 @@ class DeletionValidator(BaseValidator):
             raise CommandNotExist
 
 
-class ViewValidator(BaseValidator):
+class ViewValidator(BaseValidator, ChatValidator):
     @staticmethod
     def check_commands_created(custom_commands: list[CustomCommand]) -> None:
         if not custom_commands:

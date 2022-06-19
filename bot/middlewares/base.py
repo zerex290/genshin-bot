@@ -60,7 +60,7 @@ class ChatUserUpdateMiddleware(BaseMiddleware[Message]):
     async def pre(self) -> None:
         chat_id = self.event.peer_id
         user_id = self.event.from_id
-        if not await has_postgres_data(
+        if chat_id > 2e9 and not await has_postgres_data(
                 f"SELECT * FROM users_in_chats WHERE chat_id = {chat_id} AND user_id = {user_id};"
         ):
             async with PostgresConnection() as connection:

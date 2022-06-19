@@ -1,6 +1,7 @@
 __all__ = (
     'GenshinBotException',
-    'IncompatibleOptions'
+    'IncompatibleOptions',
+    'WrongChatError'
 )
 
 
@@ -15,3 +16,7 @@ class GenshinBotException(Exception):
 class IncompatibleOptions(GenshinBotException):
     def __init__(self, options: tuple[str, ...]) -> None:
         self.__class__._msg = f"Переданы несовместимые опции: {' '.join(options)}!"
+
+
+class WrongChatError(GenshinBotException):
+    _msg = 'Использование данной команды в личных сообщениях группы невозможно!'

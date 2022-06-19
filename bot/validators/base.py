@@ -1,9 +1,12 @@
 from vkbottle.bot import Message
 
-from bot.errors import GenshinBotException
+from bot.errors import GenshinBotException, WrongChatError
 
 
-__all__ = ('BaseValidator',)
+__all__ = (
+    'BaseValidator',
+    'ChatValidator'
+)
 
 
 class BaseValidator:
@@ -20,3 +23,11 @@ class BaseValidator:
             await self._message.answer(exc_val.msg)
             return True
         return False
+
+
+class ChatValidator:
+    """Mixin class"""
+    @staticmethod
+    def check_chat_allowed(chat_id: int) -> None:
+        if chat_id < 2e9:
+            raise WrongChatError

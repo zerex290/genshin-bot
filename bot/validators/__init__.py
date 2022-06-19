@@ -1,4 +1,7 @@
 from .base import *
 
 
-__all__ = ('BaseValidator',)
+__all__ = (
+    'BaseValidator',
+    'ChatValidator'
+)

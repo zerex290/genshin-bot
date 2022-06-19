@@ -3,7 +3,7 @@ from typing import Optional, Literal
 from vkbottle.bot import Message
 from vkbottle_types.objects import MessagesForeignMessage
 
-from bot.validators import BaseValidator
+from bot.validators import BaseValidator, ChatValidator
 from bot.errors.hoyolab import *
 from bot.utils.postgres import has_postgres_data
 from bot.utils.genshin import is_genshin_account
@@ -77,7 +77,7 @@ class CodeValidator(GenshinDataValidator):
             raise RedeemCodeNotSpecified
 
 
-class ResinNotifyValidator(BaseValidator):
+class ResinNotifyValidator(BaseValidator, ChatValidator):
     @staticmethod
     async def check_account_linked(user_id: int) -> None:
         if not await has_postgres_data(f"SELECT * FROM genshin_accounts WHERE user_id = {user_id};"):
