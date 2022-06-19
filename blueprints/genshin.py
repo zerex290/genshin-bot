@@ -7,7 +7,7 @@ from bot.rules import CommandRule
 from bot.errors import IncompatibleOptions
 from bot.validators import BaseValidator
 from bot.utils.files import upload
-from bot.src.types.help import genshin as hints
+from bot.src.manuals import genshin as man
 from bot.config.dependencies.paths import DAILY_MATERIALS, BOSS_MATERIALS, BOOKS, DUNGEONS
 
 
@@ -27,7 +27,7 @@ async def get_daily_materials(message: Message, options: tuple[str, ...]) -> Non
     async with BaseValidator(message):
         match options:
             case ('-[error]',) | ('-п',):
-                await message.answer(hints.DailyMaterials.slots.value[options[0]])
+                await message.answer(man.DailyMaterials.options[options[0]])
             case ('-[default]',):
                 materials = await upload(
                     bp.api, 'photo_messages', os.path.join(DAILY_MATERIALS, f"{datetime.now().weekday()}.png")
@@ -41,8 +41,8 @@ async def get_daily_materials(message: Message, options: tuple[str, ...]) -> Non
 
 @bp.on.message(CommandRule(('таланты',), options=('-п',)))
 async def get_boss_materials(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.BossMaterials.slots.value:
-        await message.answer(hints.BossMaterials.slots.value[options[0]])
+    if options[0] in man.BossMaterials.options:
+        await message.answer(man.BossMaterials.options[options[0]])
         return
 
     boss_materials = await upload(bp.api, 'photo_messages', BOSS_MATERIALS)
@@ -51,8 +51,8 @@ async def get_boss_materials(message: Message, options: tuple[str, ...]) -> None
 
 @bp.on.message(CommandRule(('книги',), options=('-п',)))
 async def get_books(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.Books.slots.value:
-        await message.answer(hints.Books.slots.value[options[0]])
+    if options[0] in man.Books.options:
+        await message.answer(man.Books.options[options[0]])
         return
 
     books = await upload(bp.api, 'photo_messages', BOOKS)
@@ -61,8 +61,8 @@ async def get_books(message: Message, options: tuple[str, ...]) -> None:
 
 @bp.on.message(CommandRule(('данжи',), options=('-п',)))
 async def get_dungeons(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.Domains.slots.value:
-        await message.answer(hints.Domains.slots.value[options[0]])
+    if options[0] in man.Domains.options:
+        await message.answer(man.Domains.options[options[0]])
         return
 
     dungeons = await upload(bp.api, 'photo_messages', DUNGEONS)

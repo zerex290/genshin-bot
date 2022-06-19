@@ -12,7 +12,7 @@ from bot.utils import PostgresConnection, json
 from bot.errors import IncompatibleOptions
 from bot.utils.files import upload
 from bot.validators.genshindb import GenshinDBValidator
-from bot.src.types.help import genshindb as hints
+from bot.src.manuals import genshindb as man
 from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION
 
 
@@ -108,7 +108,7 @@ async def get_genshin_database(message: Message, options: tuple[str, ...]) -> No
     async with GenshinDBValidator(message) as validator:
         match options:
             case ('-[error]',) | ('-п',):
-                await message.answer(hints.GenshinDatabase.slots.value[options[0]])
+                await message.answer(man.GenshinDatabase.options[options[0]])
             case ('-[default]',):
                 shortcut = message.text.lstrip('!гдб').lstrip()
                 if not shortcut:

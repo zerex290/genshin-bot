@@ -1,7 +1,4 @@
-from enum import Enum
-
-
-class Guide(Enum):
+class Guide:
     _default = '''
         \r\nСтатья с подробным описанием всех команд: vk.com/@bot_genshin-commands
         \r\nОсновные команды:
@@ -44,10 +41,10 @@ class Guide(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[default]': _default, '-[error]': _error, '-п': _help}
+    options = {'-[default]': _default, '-[error]': _error, '-п': _help}
 
 
-class Autocorrection(Enum):
+class Autocorrection:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=avtokorrekt
         \r\nОписание: Бот имеет возможность предугадывания и исправления синтаксиса написанной команды. \
@@ -61,10 +58,10 @@ class Autocorrection(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class Choice(Enum):
+class Choice:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=vyberi
         \r\nОписание: При использовании данной команды бот отправит в чат один из предоставленных ему вариантов выбора.
@@ -73,10 +70,10 @@ class Choice(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class Converter(Enum):
+class Converter:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=konvert
         \r\nОписание: При использовании данной команды с прикрепленным текстовым сообщением бот отправит в чат копию \
@@ -86,10 +83,10 @@ class Converter(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class Timer(Enum):
+class Timer:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=taymer
         \r\nОписание: При использовании данной команды бот установит таймер на заданное время, по истечении которого \
@@ -102,10 +99,10 @@ class Timer(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class Attachments(Enum):
+class Attachments:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=pereshli
         \r\nОписание: При использовании этой команды с прикрепленным изображением бот отправит в чат прикрепленную \
@@ -116,10 +113,10 @@ class Attachments(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class RandomTag(Enum):
+class RandomTag:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=randomteg
         \r\nОписание: При использовании данной команды бот отправит в чат случайное количество тегов-псевдонимов для \
@@ -136,10 +133,10 @@ class RandomTag(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class RandomPicture(Enum):
+class RandomPicture:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=pik
         \r\nОписание: При использовании данной команды бот отправит в чат до 10 изображений по заданным тегам.
@@ -152,4 +149,4 @@ class RandomPicture(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}

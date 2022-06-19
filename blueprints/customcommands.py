@@ -11,7 +11,7 @@ from bot.utils import get_custom_commands, get_current_timestamp
 from bot.errors import IncompatibleOptions
 from bot.utils.files import download, upload
 from bot.utils.postgres import has_postgres_data
-from bot.src.types.help import customcommands as hints
+from bot.src.manuals import customcommands as man
 from bot.config.dependencies.paths import FILECACHE
 from bot.src.models.customcommands import CustomCommand
 from bot.validators.customcommands import *
@@ -22,8 +22,8 @@ bp = Blueprint('UserCommands')
 
 @bp.on.message(CommandRule(('комы',), options=('-п', '-с', '-общ', '-огр')))
 async def view_custom_commands(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.CommandList.slots.value:
-        await message.answer(hints.CommandList.slots.value[options[0]])
+    if options[0] in man.CommandList.options and len(options) == 1:
+        await message.answer(man.CommandList.options[options[0]])
         return None
 
     async with ViewValidator(message) as validator:
@@ -42,8 +42,6 @@ async def view_custom_commands(message: Message, options: tuple[str, ...]) -> No
                     await message.answer('В чате манипуляции с пользовательскими командами являются ограниченными!')
                 else:
                     await message.answer('В чате манипуляции с пользовательскими командами являются общедоступными!')
-            case ('-общ', '-огр') | ('-огр', '-общ'):
-                raise IncompatibleOptions(options)
             case ('-общ',):
                 await validator.check_privileges(message.ctx_api, message.peer_id, message.from_id)
                 await validator.check_actions_not_public(message.peer_id)
@@ -58,6 +56,8 @@ async def view_custom_commands(message: Message, options: tuple[str, ...]) -> No
                         f"UPDATE chats SET ffa_commands = false WHERE chat_id = {message.peer_id};"
                     )
                 await message.answer('Манипуляции с пользовательскими командами теперь являются ограниченными!')
+            case _:
+                raise IncompatibleOptions(options)
 
 
 @bp.on.chat_message(CustomCommandRule())
@@ -79,8 +79,8 @@ async def get_custom_command(message: Message, command: CustomCommand) -> None:
 
 @bp.on.message(CommandRule(('делком',), options=('-п',)))
 async def delete_custom_command(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.CommandDeletion.slots.value:
-        await message.answer(hints.CommandDeletion.slots.value[options[0]])
+    if options[0] in man.CommandDeletion.options:
+        await message.answer(man.CommandDeletion.options[options[0]])
         return None
 
     async with DeletionValidator(message) as validator:
@@ -155,8 +155,8 @@ async def _insert(
 
 @bp.on.message(CommandRule(('аддком',), options=('-п',)))
 async def add_custom_command(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.CommandDeletion.slots.value:
-        await message.answer(hints.CommandCreation.slots.value[options[0]])
+    if options[0] in man.CommandDeletion.options:
+        await message.answer(man.CommandCreation.options[options[0]])
         return None
 
     async with CreationValidator(message) as validator:

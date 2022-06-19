@@ -14,7 +14,7 @@ from bot.utils import PostgresConnection, GenshinClient
 from bot.utils.files import download, upload
 from bot.utils.genshin import get_genshin_account_by_id
 from bot.imageprocessing.abyss import get_abyss_image
-from bot.src.types.help import hoyolab as hints
+from bot.src.manuals import hoyolab as man
 from bot.validators.hoyolab import *
 from bot.config.dependencies.paths import FILECACHE
 
@@ -102,8 +102,8 @@ async def _get_formatted_abyss(account: dict[str, str | int], validator: SpiralA
 
 @bp.on.message(CommandRule(('линк',), options=('-п',)))
 async def link_genshin_account(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.AccountLink.slots.value:
-        await message.answer(hints.AccountLink.slots.value[options[0]])
+    if options[0] in man.AccountLink.options:
+        await message.answer(man.AccountLink.options[options[0]])
         return None
 
     async with AccountLinkValidator(message) as validator:
@@ -125,8 +125,8 @@ async def link_genshin_account(message: Message, options: tuple[str, ...]) -> No
 
 @bp.on.message(CommandRule(('анлинк',), options=('-п',)))
 async def unlink_genshin_account(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.AccountUnlink.slots.value:
-        await message.answer(hints.AccountUnlink.slots.value[options[0]])
+    if options[0] in man.AccountUnlink.options:
+        await message.answer(man.AccountUnlink.options[options[0]])
         return
 
     async with AccountUnlinkValidator(message) as validator:
@@ -141,7 +141,7 @@ async def get_notes(message: Message, options: tuple[str, ...]) -> None:
     async with GenshinDataValidator(message, 'Notes') as validator:
         match options:
             case ('-[error]',) | ('-п',):
-                await message.answer(hints.Notes.slots.value[options[0]])
+                await message.answer(man.Notes.options[options[0]])
             case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
@@ -160,7 +160,7 @@ async def get_stats(message: Message, options: tuple[str, ...]) -> None:
     async with GenshinDataValidator(message, 'Stats') as validator:
         match options:
             case ('-[error]',) | ('-п',):
-                await message.answer(hints.Stats.slots.value[options[0]])
+                await message.answer(man.Stats.options[options[0]])
             case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
@@ -176,8 +176,8 @@ async def get_stats(message: Message, options: tuple[str, ...]) -> None:
 
 @bp.on.message(CommandRule(('награды',), options=('-п',)))
 async def get_rewards(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.Rewards.slots.value:
-        await message.answer(hints.Rewards.slots.value[options[0]])
+    if options[0] in man.Rewards.options:
+        await message.answer(man.Rewards.options[options[0]])
         return
 
     async with GenshinDataValidator(message, 'Rewards') as validator:
@@ -193,8 +193,8 @@ async def get_rewards(message: Message, options: tuple[str, ...]) -> None:
 
 @bp.on.message(CommandRule(('пром',), options=('-п',)))
 async def redeem_code(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.RedeemCode.slots.value:
-        await message.answer(hints.RedeemCode.slots.value[options[0]])
+    if options[0] in man.RedeemCode.options:
+        await message.answer(man.RedeemCode.options[options[0]])
         return
 
     async with CodeValidator(message, 'Redeem') as validator:
@@ -207,8 +207,8 @@ async def redeem_code(message: Message, options: tuple[str, ...]) -> None:
 
 @bp.on.message(CommandRule(('резинноут',), options=('-п', '-выкл', '-вкл')))
 async def manage_resin_notifications(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.ResinNotifications.slots.value and len(options) == 1:
-        await message.answer(hints.ResinNotifications.slots.value[options[0]])
+    if options[0] in man.ResinNotifications.options and len(options) == 1:
+        await message.answer(man.ResinNotifications.options[options[0]])
         return
 
     async with ResinNotifyValidator(message) as validator:
@@ -250,7 +250,7 @@ async def get_traveler_diary(message: Message, options: tuple[str, ...]) -> None
     async with GenshinDataValidator(message, 'Diary') as validator:
         match options:
             case ('-[error]',) | ('-п',):
-                await message.answer(hints.Diary.slots.value[options[0]])
+                await message.answer(man.Diary.options[options[0]])
             case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, False, True, True)
@@ -269,7 +269,7 @@ async def get_spiral_abyss(message: Message, options: tuple[str, ...]) -> None:
     async with SpiralAbyssValidator(message, 'SpiralAbyss') as validator:
         match options:
             case ('-[error]',) | ('-п',):
-                await message.answer(hints.SpiralAbyss.slots.value[options[0]])
+                await message.answer(man.SpiralAbyss.options[options[0]])
             case ('-у',):
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)

@@ -13,7 +13,7 @@ from bot.src.constants import keyboard, tags
 from bot.errors import IncompatibleOptions
 from bot.validators import BaseValidator
 from bot.validators.default import *
-from bot.src.types.help import default as hints
+from bot.src.manuals import default as man
 from bot.src.types.sankaku import MediaType
 from bot.config.dependencies.paths import FILECACHE
 
@@ -23,7 +23,7 @@ bp = Blueprint('DefaultCommands')
 
 @bp.on.message(CommandRule(('команды',), options=('-п',)))
 async def get_commands_article(message: Message, options: tuple[str, ...]) -> None:
-    await message.answer(hints.Guide.slots.value[options[0]])
+    await message.answer(man.Guide.options[options[0]])
 
 
 @bp.on.message(CommandRule(('автокоррект',), options=('-п', '-выкл', '-вкл')))
@@ -31,7 +31,7 @@ async def manage_syntax_autocorrection(message: Message, options: tuple[str, ...
     async with AutocorrectionValidator(message) as validator:
         match options:
             case ('-[error]',) | ('-п',):
-                await message.answer(hints.Autocorrection.slots.value[options[0]])
+                await message.answer(man.Autocorrection.options[options[0]])
             case ('-[default]',):
                 async with PostgresConnection() as connection:
                     autocorrect = await connection.fetchrow(
@@ -59,8 +59,8 @@ async def manage_syntax_autocorrection(message: Message, options: tuple[str, ...
 
 @bp.on.message(CommandRule(('выбери',), options=('-п',)))
 async def choose(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.Choice.slots.value:
-        await message.answer(hints.Choice.slots.value[options[0]])
+    if options[0] in man.Choice.options:
+        await message.answer(man.Choice.options[options[0]])
         return None
 
     async with ChoiceValidator(message) as validator:
@@ -71,8 +71,8 @@ async def choose(message: Message, options: tuple[str, ...]) -> None:
 
 @bp.on.message(CommandRule(('конверт',), options=('-п',)))
 async def convert(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.Converter.slots.value:
-        await message.answer(hints.Converter.slots.value[options[0]])
+    if options[0] in man.Converter.options:
+        await message.answer(man.Converter.options[options[0]])
         return None
 
     async with ConvertValidator(message) as validator:
@@ -93,8 +93,8 @@ def _evaluate_time(time: str) -> Optional[int]:
 
 @bp.on.message(CommandRule(('таймер',), options=('-п',)))
 async def set_timer(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.Timer.slots.value:
-        await message.answer(hints.Timer.slots.value[options[0]])
+    if options[0] in man.Timer.options:
+        await message.answer(man.Timer.options[options[0]])
         return None
 
     text = message.text.lstrip('!таймер')
@@ -114,8 +114,8 @@ async def set_timer(message: Message, options: tuple[str, ...]) -> None:
 
 @bp.on.message(CommandRule(('перешли',), options=('-п',)))
 async def forward_attachments(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.Attachments.slots.value:
-        await message.answer(hints.Attachments.slots.value[options[0]])
+    if options[0] in man.Attachments.options:
+        await message.answer(man.Attachments.options[options[0]])
         return None
 
     async with AttachmentForwardValidator(message) as validator:
@@ -172,7 +172,7 @@ async def get_random_tags(message: Message, options: tuple[str, ...]) -> None:
     async with BaseValidator(message):
         match options:
             case ('-[error]',) | ('-п',):
-                await message.answer(hints.RandomTag.slots.value[options[0]])
+                await message.answer(man.RandomTag.options[options[0]])
             case ('-[default]',):
                 await message.answer('\n'.join(_randomize_tags(_get_all_tags())))
             case _ if '-п' not in options:
@@ -183,8 +183,8 @@ async def get_random_tags(message: Message, options: tuple[str, ...]) -> None:
 
 @bp.on.message(CommandRule(('пик',), options=('-п',)))
 async def get_random_picture(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in hints.RandomPicture.slots.value:
-        await message.answer(hints.RandomPicture.slots.value[options[0]])
+    if options[0] in man.RandomPicture.options:
+        await message.answer(man.RandomPicture.options[options[0]])
         return None
 
     cases = {1: 'е', 2: 'я', 3: 'я', 4: 'я'}

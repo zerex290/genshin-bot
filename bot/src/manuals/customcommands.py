@@ -1,7 +1,4 @@
-from enum import Enum
-
-
-class CommandList(Enum):
+class CommandList:
     _help = '''
     \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=komy
     \r\nОписание: Поведение по умолчанию для данной команды - отображение текущего списка пользовательских команд \
@@ -18,10 +15,10 @@ class CommandList(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class CommandDeletion(Enum):
+class CommandDeletion:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=delkom
         \r\nОписание: Отвечает за удаление пользовательской команды из списка созданных ранее пользовательских команд \
@@ -31,10 +28,10 @@ class CommandDeletion(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class CommandCreation(Enum):
+class CommandCreation:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=addkom
         \r\nОписание: Отвечает за добавление пользовательской команды к списку созданных ранее пользовательских команд \
@@ -45,4 +42,4 @@ class CommandCreation(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}

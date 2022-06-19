@@ -1,7 +1,4 @@
-from enum import Enum
-
-
-class GenshinDatabase(Enum):
+class GenshinDatabase:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=gdb
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с интерактивной базой данных, \
@@ -19,4 +16,4 @@ class GenshinDatabase(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}

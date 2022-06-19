@@ -1,7 +1,4 @@
-from enum import Enum
-
-
-class DailyMaterials(Enum):
+class DailyMaterials:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=farm
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с изображением тех персонажей и \
@@ -20,10 +17,10 @@ class DailyMaterials(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class AscensionMaterials(Enum):
+class AscensionMaterials:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=farm
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с изображением материалов \
@@ -33,10 +30,10 @@ class AscensionMaterials(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class BossMaterials(Enum):
+class BossMaterials:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=talanty
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с изображением материалов \
@@ -46,10 +43,10 @@ class BossMaterials(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class Books(Enum):
+class Books:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=knigi
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с изображением таблицы формата \
@@ -59,10 +56,10 @@ class Books(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class Domains(Enum):
+class Domains:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=danzhi
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с изображением игровых \
@@ -72,4 +69,4 @@ class Domains(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}

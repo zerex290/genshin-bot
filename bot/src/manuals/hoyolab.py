@@ -1,7 +1,4 @@
-from enum import Enum
-
-
-class AccountLink(Enum):
+class AccountLink:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=link
         \r\nОписание: Данная команда позволяет привязать свой игровой аккаунт к базе данных бота. \
@@ -15,10 +12,10 @@ class AccountLink(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class AccountUnlink(Enum):
+class AccountUnlink:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=anlink
         \r\nОписание: Данная команда позволяет отвязать свой игровой аккаунт от базы данных бота.
@@ -27,10 +24,10 @@ class AccountUnlink(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class Notes(Enum):
+class Notes:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=zametki
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с вашими заметками \
@@ -43,10 +40,10 @@ class Notes(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class Stats(Enum):
+class Stats:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=staty
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с вашей внутриигровой \
@@ -59,10 +56,10 @@ class Stats(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class Rewards(Enum):
+class Rewards:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=nagrady
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с информацией о ваших \
@@ -72,10 +69,10 @@ class Rewards(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class RedeemCode(Enum):
+class RedeemCode:
     _help = '''
         \r\nСсылка на команду в статье: hhttps://vk.com/@bot_genshin-commands?anchor=prom
         \r\nОписание: При использовании данной команды бот активирует на вашем игровом аккаунте указанные в сообщении \
@@ -88,10 +85,10 @@ class RedeemCode(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class ResinNotifications(Enum):
+class ResinNotifications:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=rezinnout
         \r\nОписание: Бот имеет возможность отмечать в чате пользователя, значение смолы которого достигло или \
@@ -109,10 +106,10 @@ class ResinNotifications(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class Diary(Enum):
+class Diary:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=dnevnik
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с информацией о вашем дневнике \
@@ -125,10 +122,10 @@ class Diary(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
 
 
-class SpiralAbyss(Enum):
+class SpiralAbyss:
     _help = '''
         \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=bezdna
         \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с информацией о вашем прогрессе \
@@ -141,4 +138,4 @@ class SpiralAbyss(Enum):
     \r'''
     _error = f"""Неверно указаны опции команды, ознакомьтесь со справкой:{_help}"""
 
-    slots = {'-[error]': _error, '-п': _help}
+    options = {'-[error]': _error, '-п': _help}
