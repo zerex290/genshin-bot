@@ -33,7 +33,8 @@ class CommandRule(ABCRule[Message]):
                 continue
             if event.text.lower() == self.prefix + command:
                 return {'options': ('-[default]',)}
-            options = tuple([option.lstrip() for option in re.findall(r'\s-\S+', event.text)])
+            filtered_text = re.sub(r'\{[^{}]+}', '', event.text)
+            options = tuple([option.lstrip() for option in re.findall(r'\s-\w+', filtered_text)])
             if options:
                 filtered_options = set(options)
                 if not filtered_options.issubset(self.options):

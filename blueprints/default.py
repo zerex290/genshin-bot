@@ -1,5 +1,6 @@
 import random
 import os
+import re
 from typing import Optional
 from asyncio import sleep
 
@@ -64,7 +65,7 @@ async def choose(message: Message, options: tuple[str, ...]) -> None:
         return None
 
     async with ChoiceValidator(message) as validator:
-        choice_options = message.text.lstrip('!выбери').split('/') if message.text.find('/') != -1 else []
+        choice_options = re.sub(r'^!выбери\s|\{|}', '', message.text).split('/') if message.text.find('/') != -1 else []
         validator.check_choice_options_specified(choice_options)
         await message.answer(random.choice(choice_options))
 
@@ -101,6 +102,7 @@ async def set_timer(message: Message, options: tuple[str, ...]) -> None:
     async with TimerValidator(message) as validator:
         validator.check_timer_specified(text)
         time, note = (text.split('/')[0], text.split('/')[1]) if text.find('/') != -1 else (text, '')
+        note = re.sub(r'[{}]', '', note)
         countdown = _evaluate_time(time)
         validator.check_timer_syntax(countdown)
         await message.answer('Таймер установлен!')

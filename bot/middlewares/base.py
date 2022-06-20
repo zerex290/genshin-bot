@@ -82,7 +82,7 @@ class ChatUserUpdateMiddleware(BaseMiddleware[Message]):
 
 class CommandGuesserMiddleware(BaseMiddleware[Message]):
     def _format_text(self) -> str:
-        text = re.sub(r'-\s', '-', self.event.text)
+        text = self.event.text
         for C in COMMANDS:
             command = ''.join(keyboard.LATIN.get(symbol, symbol) for symbol in C)
             if re.match(fr"!{command}\S", text):
@@ -92,7 +92,8 @@ class CommandGuesserMiddleware(BaseMiddleware[Message]):
                 text = text.replace(f"!{C}", f"!{C} ")
                 break
         command = text.split(maxsplit=1)[0].lstrip('!')
-        options = re.findall(r'\s-\S+', text)
+        filtered_text = re.sub(r'\{[^{}]+}', '', text)
+        options = re.findall(r'\s-\w+', filtered_text)
         options_converted = [''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in option) for option in options]
         text = text.replace(f"!{command}", f"!{''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in command)}")
         for i, option in enumerate(options):

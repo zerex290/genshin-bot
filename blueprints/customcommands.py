@@ -1,4 +1,5 @@
 import os
+import re
 import datetime
 from typing import Optional
 
@@ -162,7 +163,7 @@ async def add_custom_command(message: Message, options: tuple[str, ...]) -> None
     async with CreationValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
         await validator.check_availability(message.peer_id, message.from_id)
-        text = message.text.lstrip('!аддком').split(maxsplit=1)
+        text = re.sub(r'^!аддком\s|\{|}', '', message.text).split(maxsplit=1)
         name = text[0] if text else ''
         validator.check_command_specified(name)
         await validator.check_command_new(name, message.peer_id)

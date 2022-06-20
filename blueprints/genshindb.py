@@ -110,7 +110,7 @@ async def get_genshin_database(message: Message, options: tuple[str, ...]) -> No
             case ('-[error]',) | ('-п',):
                 await message.answer(man.GenshinDatabase.options[options[0]])
             case ('-[default]',):
-                shortcut = message.text.lstrip('!гдб').lstrip()
+                shortcut = re.sub(r'^!гдб\s|\{|}', '', message.text)
                 if not shortcut:
                     await message.answer(
                         message=f"Доброго времени суток, {(await message.get_user()).first_name}!",
@@ -126,7 +126,7 @@ async def get_genshin_database(message: Message, options: tuple[str, ...]) -> No
                     keyboard=shortcut['keyboard']
                 )
             case ('-аш',):
-                shortcut = message.text[message.text.find('-аш') + 3:].lstrip()
+                shortcut = re.sub(r'^\s+|\{|}', '', message.text[message.text.find('-аш') + 3:])
                 validator.check_shortcut_specified(shortcut)
                 await validator.check_shortcut_new(shortcut, message.from_id)
                 validator.check_reply_message(message.reply_message)
@@ -136,7 +136,7 @@ async def get_genshin_database(message: Message, options: tuple[str, ...]) -> No
                 await _create_shortcut(message.from_id, shortcut, msg, photo_id, keyboard.json())
                 await message.answer(f"Шорткат '{shortcut}' был успешно создан!")
             case ('-дш',):
-                shortcut = message.text[message.text.find('-дш') + 3:].lstrip()
+                shortcut = re.sub(r'^\s+|\{|}', '', message.text[message.text.find('-дш') + 3:])
                 validator.check_shortcut_specified(shortcut)
                 await validator.check_shortcut_exist(shortcut, message.from_id)
                 await _remove_shortcut(message.from_id, shortcut)
