@@ -87,7 +87,7 @@ async def delete_custom_command(message: Message, options: tuple[str, ...]) -> N
     async with DeletionValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
         await validator.check_availability(message.peer_id, message.from_id)
-        name = message.text.lstrip('!делком').strip()
+        name = re.sub(r'^!делком\s|\{|}', '', message.text)
         validator.check_command_specified(name)
         await validator.check_command_exist(name, message.peer_id)
         async with PostgresConnection() as connection:
