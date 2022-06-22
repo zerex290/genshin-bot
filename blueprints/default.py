@@ -95,27 +95,24 @@ async def choose(message: Message) -> None:
         await message.answer(random.choice(options))
 
 
-@bp.on.message(CommandRule(['конверт'], ['~~п', '~~ра'], man.Converter))
-async def convert(message: Message, options: list[str]) -> None:
+@bp.on.message(CommandRule(['конверт'], ['~~п'], man.Converter))
+async def convert(message: Message) -> None:
     async with ConvertValidator(message) as validator:
-        match options:
-            case ['~~[default]']:
-                validator.check_reply_message(message.reply_message)
-                validator.check_reply_message_text(message.reply_message.text)
-                converted = ''.join([keyboard.CYRILLIC.get(symbol, symbol) for symbol in message.reply_message.text])
-                await message.answer(converted)
-            case ['~~ра']:
-                validator.check_reply_message(message.reply_message)
-                validator.check_reply_message_text(message.reply_message.text)
-                converted = ''.join([keyboard.LATIN.get(symbol, symbol) for symbol in message.reply_message.text])
-                await message.answer(converted)
-            case _:
-                raise IncompatibleOptions(options)
+        validator.check_reply_message(message.reply_message)
+        validator.check_reply_message_text(message.reply_message.text)
+        text = message.reply_message.text
+        converted = ''.join(
+            keyboard.CYRILLIC.get(s, keyboard.LATIN.get(s, s))
+            if ord(s) < 128
+            else keyboard.LATIN.get(s, keyboard.CYRILLIC.get(s, s))
+            for s in message.reply_message.text
+        )
+        await message.answer(converted)
 
 
 def _evaluate_time(time: str) -> Optional[int]:
     try:
-        time = time.replace('ч', '*3600+').replace('м', '*60+').replace('с', '*1+').strip().rpartition('+')
+        time = re.sub('[xч]', '*3600+', re.sub('[vм]', '*60+', re.sub('[cс]', '*1+', time))).strip().rpartition('+')
         countdown = eval(time[0])
     except (SyntaxError, NameError):
         countdown = None
@@ -128,7 +125,7 @@ async def set_timer(message: Message) -> None:
         text = message.text.lstrip('!таймер')
         validator.check_timer_specified(text)
         time, note = (text.split('/')[0], text.split('/')[1]) if text.find('/') != -1 else (text, '')
-        countdown = _evaluate_time(time)
+        countdown = _evaluate_time(time.lower())
         validator.check_timer_syntax(countdown)
         await message.answer('Таймер установлен!')
         await sleep(countdown)
