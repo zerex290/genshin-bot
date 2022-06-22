@@ -14,8 +14,8 @@ class GenshinBotException(Exception):
 
 
 class IncompatibleOptions(GenshinBotException):
-    def __init__(self, options: tuple[str, ...]) -> None:
-        self.__class__._msg = f"Переданы несовместимые опции: {' '.join(options)}!"
+    def __init__(self, options: list[str]) -> None:
+        self.__class__._msg = f"Переданы несовместимые опции: {', '.join(options)}!"
 
 
 class WrongChatError(GenshinBotException):

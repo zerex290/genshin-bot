@@ -21,35 +21,32 @@ from bot.validators.customcommands import *
 bp = Blueprint('UserCommands')
 
 
-@bp.on.message(CommandRule(('комы',), options=('-п', '-с', '-общ', '-огр')))
-async def view_custom_commands(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in man.CommandList.options and len(options) == 1:
-        await message.answer(man.CommandList.options[options[0]])
-        return None
-
+@bp.on.message(CommandRule(['комы'], ['~~п', '~~с', '~~общ', '~~огр'], man.CommandList))
+async def view_custom_commands(message: Message, options: list[str]) -> None:
     async with ViewValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
         match options:
-            case ('-[default]',):
+            case ['~~[default]']:
                 commands: list[CustomCommand] = await get_custom_commands(message.peer_id)
                 validator.check_commands_created(commands)
                 await message.answer(
                     'Список пользовательских команд:\n' + '\n'.join(command.name for command in commands)
                 )
-            case ('-с',):
-                if not await has_postgres_data(
+            case ['~~с']:
+                status = await has_postgres_data(
                         f"SELECT * FROM chats WHERE ffa_commands = true AND chat_id = {message.peer_id};"
-                ):
-                    await message.answer('В чате манипуляции с пользовательскими командами являются ограниченными!')
-                else:
-                    await message.answer('В чате манипуляции с пользовательскими командами являются общедоступными!')
-            case ('-общ',):
+                )
+                await message.answer(
+                    f"В чате манипуляции с пользовательскими командами "
+                    f"являются {'общедоступными' if status else 'ограниченными'}!"
+                )
+            case ['~~общ']:
                 await validator.check_privileges(message.ctx_api, message.peer_id, message.from_id)
                 await validator.check_actions_not_public(message.peer_id)
                 async with PostgresConnection() as connection:
                     await connection.execute(f"UPDATE chats SET ffa_commands = true WHERE chat_id = {message.peer_id};")
                 await message.answer('Манипуляции с пользовательскими командами теперь являются общедоступными!')
-            case ('-огр',):
+            case ['~~огр']:
                 await validator.check_privileges(message.ctx_api, message.peer_id, message.from_id)
                 await validator.check_actions_not_restricted(message.peer_id)
                 async with PostgresConnection() as connection:
@@ -78,16 +75,12 @@ async def get_custom_command(message: Message, command: CustomCommand) -> None:
         """)
 
 
-@bp.on.message(CommandRule(('делком',), options=('-п',)))
-async def delete_custom_command(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in man.CommandDeletion.options:
-        await message.answer(man.CommandDeletion.options[options[0]])
-        return None
-
+@bp.on.message(CommandRule(['делком'], ['~~п'], man.CommandDeletion))
+async def delete_custom_command(message: Message) -> None:
     async with DeletionValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
         await validator.check_availability(message.peer_id, message.from_id)
-        name = re.sub(r'^!делком\s|\{|}', '', message.text)
+        name = re.sub(r'^!делком\s?', '', message.text)
         validator.check_command_specified(name)
         await validator.check_command_exist(name, message.peer_id)
         async with PostgresConnection() as connection:
@@ -134,7 +127,7 @@ async def _get_photo_id(command_name: str, peer_id: int, attachments: Optional[l
     return ''
 
 
-async def _insert(
+async def _insert_into_database(
         name: str,
         chat_id: int,
         creator_id: int,
@@ -154,16 +147,12 @@ async def _insert(
         """)
 
 
-@bp.on.message(CommandRule(('аддком',), options=('-п',)))
-async def add_custom_command(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in man.CommandDeletion.options:
-        await message.answer(man.CommandCreation.options[options[0]])
-        return None
-
+@bp.on.message(CommandRule(['аддком'], ['~~п'], man.CommandCreation))
+async def add_custom_command(message: Message) -> None:
     async with CreationValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
         await validator.check_availability(message.peer_id, message.from_id)
-        text = re.sub(r'^!аддком\s|\{|}', '', message.text).split(maxsplit=1)
+        text = re.sub(r'^!аддком\s?', '', message.text).split(maxsplit=1)
         name = text[0] if text else ''
         validator.check_command_specified(name)
         await validator.check_command_new(name, message.peer_id)
@@ -176,5 +165,7 @@ async def add_custom_command(message: Message, options: tuple[str, ...]) -> None
         audio_id = await _get_audio_id(message.attachments)
         photo_id = await _get_photo_id(name, message.peer_id, message.attachments)
         validator.check_additions_specified([msg, document_id, audio_id, photo_id])
-        await _insert(name, message.peer_id, creator_id, date_added, times_used, msg, document_id, audio_id, photo_id)
+        await _insert_into_database(
+            name, message.peer_id, creator_id, date_added, times_used, msg, document_id, audio_id, photo_id
+        )
         await message.answer(f"Команда '{name}' была успешно добавлена!")

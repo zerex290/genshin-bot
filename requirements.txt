@@ -1,6 +1,6 @@
 aiohttp
 aiofiles
-vkbottle==4.2.2
+vkbottle
 asyncpg
 genshin
 lxml

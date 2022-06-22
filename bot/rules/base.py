@@ -1,10 +1,11 @@
 import re
-from itertools import groupby
+from typing import Type
 
 from vkbottle.bot import Message, MessageEvent
 from vkbottle.dispatch.rules import ABCRule
 
 from bot.utils import get_custom_commands
+from bot.src.manuals import BaseManual
 from bot.src.models.customcommands import CustomCommand
 
 
@@ -19,30 +20,39 @@ __all__ = (
 class CommandRule(ABCRule[Message]):
     def __init__(
             self,
-            commands: tuple[str, ...],
-            prefix: str = '!',
-            options: tuple[str, ...] = tuple(),
+            commands: list[str],
+            options: list[str],
+            manual: Type[BaseManual],
+            prefix: str = '!'
     ) -> None:
         self.commands = commands
-        self.prefix = prefix
         self.options = options
+        self.manual = manual
+        self.prefix = prefix
 
-    async def check(self, event: Message) -> bool | dict[str, tuple[str, ...]]:
+    def _get_options(self, text: str) -> tuple[list[str], list[str]]:
+        options = []
+        for opt in re.findall(r'\s~~\w+', text):
+            opt = opt.lstrip()
+            if opt not in options:
+                options.append(opt)
+        incorrect_options = [opt for opt in options if opt not in self.options]
+        return options, incorrect_options
+
+    async def check(self, event: Message) -> bool | dict[str, list[str]]:
         for command in self.commands:
             if not event.text.lower().startswith(self.prefix + command):
                 continue
-            if event.text.lower() == self.prefix + command:
-                return {'options': ('-[default]',)}
-            filtered_text = re.sub(r'\{[^{}]+}', '', event.text)
-            options = tuple([option.lstrip() for option in re.findall(r'\s-\w+', filtered_text)])
-            if options:
-                filtered_options = set(options)
-                if not filtered_options.issubset(self.options):
-                    return {'options': ('-[error]',)}
-                elif filtered_options.issubset(self.options):
-                    return {'options': tuple([opt for opt, _ in groupby(options)])}
-            elif not options:
-                return {'options': ('-[default]',)}
+            options, incorrect_options = self._get_options(event.text)
+            match options:
+                case ['~~п']:
+                    await event.answer(self.manual.HELP)
+                case []:
+                    return {'options': ['~~[default]']} if len(self.options) > 1 else True
+                case _ if incorrect_options:
+                    await event.answer(self.manual.with_incorrect_options(incorrect_options))
+                case _ if not incorrect_options:
+                    return {'options': options}
         return False
 
 

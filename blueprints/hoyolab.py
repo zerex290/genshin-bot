@@ -100,12 +100,8 @@ async def _get_formatted_abyss(account: dict[str, str | int], validator: SpiralA
             return f"Необработанная ошибка: {e}\nПросьба сообщить о ней в личные сообщения группы!"
 
 
-@bp.on.message(CommandRule(('линк',), options=('-п',)))
-async def link_genshin_account(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in man.AccountLink.options:
-        await message.answer(man.AccountLink.options[options[0]])
-        return None
-
+@bp.on.message(CommandRule(['линк'], ['~~п'], man.AccountLink))
+async def link_genshin_account(message: Message) -> None:
     async with AccountLinkValidator(message) as validator:
         await validator.check_account_new(message.from_id)
         cookies = message.text.lstrip('!линк').strip().split()
@@ -123,12 +119,8 @@ async def link_genshin_account(message: Message, options: tuple[str, ...]) -> No
         await message.answer('Привязка вашего аккаунта прошла успешно!')
 
 
-@bp.on.message(CommandRule(('анлинк',), options=('-п',)))
-async def unlink_genshin_account(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in man.AccountUnlink.options:
-        await message.answer(man.AccountUnlink.options[options[0]])
-        return
-
+@bp.on.message(CommandRule(['анлинк'], ['~~п'], man.AccountUnlink))
+async def unlink_genshin_account(message: Message) -> None:
     async with AccountUnlinkValidator(message) as validator:
         await validator.check_account_linked(message.from_id)
         async with PostgresConnection() as connection:
@@ -136,18 +128,16 @@ async def unlink_genshin_account(message: Message, options: tuple[str, ...]) -> 
         await message.answer('Ваш игровой аккаунт был успешно отвязан!')
 
 
-@bp.on.message(CommandRule(('заметки',), options=('-п', '-у')))
-async def get_notes(message: Message, options: tuple[str, ...]) -> None:
+@bp.on.message(CommandRule(['заметки'], ['~~п', '~~у'], man.Notes))
+async def get_notes(message: Message, options: list[str]) -> None:
     async with GenshinDataValidator(message, 'Notes') as validator:
         match options:
-            case ('-[error]',) | ('-п',):
-                await message.answer(man.Notes.options[options[0]])
-            case ('-у',):
+            case ['~~у']:
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
                 validator.check_account_exist(account, True)
                 await message.answer(await _get_formatted_notes(account))
-            case ('-[default]',):
+            case ['~~[default]']:
                 account = await get_genshin_account_by_id(message.from_id, True, True, True)
                 validator.check_account_exist(account)
                 await message.answer(await _get_formatted_notes(account))
@@ -155,18 +145,16 @@ async def get_notes(message: Message, options: tuple[str, ...]) -> None:
                 raise IncompatibleOptions(options)
 
 
-@bp.on.message(CommandRule(('статы',), options=('-п', '-у')))
-async def get_stats(message: Message, options: tuple[str, ...]) -> None:
+@bp.on.message(CommandRule(['статы'], ['~~п', '~~у'], man.Stats))
+async def get_stats(message: Message, options: list[str]) -> None:
     async with GenshinDataValidator(message, 'Stats') as validator:
         match options:
-            case ('-[error]',) | ('-п',):
-                await message.answer(man.Stats.options[options[0]])
-            case ('-у',):
+            case ['~~у']:
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
                 validator.check_account_exist(account, True)
                 await message.answer(await _get_formatted_stats(account))
-            case ('-[default]',):
+            case ['~~[default]']:
                 account = await get_genshin_account_by_id(message.from_id, True, True, True)
                 validator.check_account_exist(account)
                 await message.answer(await _get_formatted_stats(account))
@@ -174,12 +162,8 @@ async def get_stats(message: Message, options: tuple[str, ...]) -> None:
                 raise IncompatibleOptions(options)
 
 
-@bp.on.message(CommandRule(('награды',), options=('-п',)))
-async def get_rewards(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in man.Rewards.options:
-        await message.answer(man.Rewards.options[options[0]])
-        return
-
+@bp.on.message(CommandRule(['награды'], ['~~п'], man.Rewards))
+async def get_rewards(message: Message) -> None:
     async with GenshinDataValidator(message, 'Rewards') as validator:
         account = await get_genshin_account_by_id(message.from_id, False, True, True)
         validator.check_account_exist(account)
@@ -191,12 +175,8 @@ async def get_rewards(message: Message, options: tuple[str, ...]) -> None:
         await message.answer(formatted_rewards, attachment)
 
 
-@bp.on.message(CommandRule(('пром',), options=('-п',)))
-async def redeem_code(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in man.RedeemCode.options:
-        await message.answer(man.RedeemCode.options[options[0]])
-        return
-
+@bp.on.message(CommandRule(['пром'], ['~~п'], man.RedeemCode))
+async def redeem_code(message: Message) -> None:
     async with CodeValidator(message, 'Redeem') as validator:
         account = await get_genshin_account_by_id(message.from_id, True, True, True, True)
         validator.check_account_exist(account)
@@ -205,17 +185,13 @@ async def redeem_code(message: Message, options: tuple[str, ...]) -> None:
         await message.answer(await _get_formatted_redeem_codes(account, codes))
 
 
-@bp.on.message(CommandRule(('резинноут',), options=('-п', '-выкл', '-вкл')))
-async def manage_resin_notifications(message: Message, options: tuple[str, ...]) -> None:
-    if options[0] in man.ResinNotifications.options and len(options) == 1:
-        await message.answer(man.ResinNotifications.options[options[0]])
-        return
-
+@bp.on.message(CommandRule(['резинноут'], ['~~п', '~~выкл', '~~вкл'], man.ResinNotifications))
+async def manage_resin_notifications(message: Message, options: list[str]) -> None:
     async with ResinNotifyValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
         await validator.check_account_linked(message.from_id)
         match options:
-            case ('-[default]',):
+            case ['~~[default]']:
                 async with PostgresConnection() as connection:
                     status = dict(await connection.fetchrow(f"""
                         SELECT resin_notifications FROM users_in_chats 
@@ -225,7 +201,7 @@ async def manage_resin_notifications(message: Message, options: tuple[str, ...])
                         f"В текущем чате у вас {'включены' if status['resin_notifications'] else 'выключены'} "
                         f"оповещения о трате смолы!"
                     )
-            case ('-выкл',):
+            case ['~~выкл']:
                 await validator.check_notifications_enabled(message.from_id, message.peer_id)
                 async with PostgresConnection() as connection:
                     await connection.execute(f"""
@@ -233,7 +209,7 @@ async def manage_resin_notifications(message: Message, options: tuple[str, ...])
                         WHERE user_id = {message.from_id} AND chat_id = {message.peer_id};
                     """)
                 await message.answer('Автоматическое напоминание потратить смолу теперь выключено!')
-            case ('-вкл',):
+            case ['~~вкл']:
                 await validator.check_notifications_disabled(message.from_id, message.peer_id)
                 async with PostgresConnection() as connection:
                     await connection.execute(f"""
@@ -245,18 +221,16 @@ async def manage_resin_notifications(message: Message, options: tuple[str, ...])
                 raise IncompatibleOptions(options)
 
 
-@bp.on.message(CommandRule(('дневник',), options=('-п', '-у')))
-async def get_traveler_diary(message: Message, options: tuple[str, ...]) -> None:
+@bp.on.message(CommandRule(['дневник'], ['~~п', '~~у'], man.Diary))
+async def get_traveler_diary(message: Message, options: list[str]) -> None:
     async with GenshinDataValidator(message, 'Diary') as validator:
         match options:
-            case ('-[error]',) | ('-п',):
-                await message.answer(man.Diary.options[options[0]])
-            case ('-у',):
+            case ['~~у']:
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, False, True, True)
                 validator.check_account_exist(account, True)
                 await message.answer(await _get_formatted_diary(account))
-            case ('-[default]',):
+            case ['~~[default]']:
                 account = await get_genshin_account_by_id(message.from_id, False, True, True)
                 validator.check_account_exist(account)
                 await message.answer(await _get_formatted_diary(account))
@@ -264,13 +238,11 @@ async def get_traveler_diary(message: Message, options: tuple[str, ...]) -> None
                 raise IncompatibleOptions(options)
 
 
-@bp.on.message(CommandRule(('бездна',), options=('-п', '-у')))
-async def get_spiral_abyss(message: Message, options: tuple[str, ...]) -> None:
+@bp.on.message(CommandRule(['бездна'], ['~~п', '~~у'], man.SpiralAbyss))
+async def get_spiral_abyss(message: Message, options: list[str]) -> None:
     async with SpiralAbyssValidator(message, 'SpiralAbyss') as validator:
         match options:
-            case ('-[error]',) | ('-п',):
-                await message.answer(man.SpiralAbyss.options[options[0]])
-            case ('-у',):
+            case ['~~у']:
                 validator.check_reply_message(message.reply_message)
                 account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
                 validator.check_account_exist(account, True)
@@ -281,7 +253,7 @@ async def get_spiral_abyss(message: Message, options: tuple[str, ...]) -> None:
                 else:
                     attachment = None
                 await message.answer(formatted_abyss, attachment)
-            case ('-[default]',):
+            case ['~~[default]']:
                 account = await get_genshin_account_by_id(message.from_id, True, True, True)
                 validator.check_account_exist(account)
                 formatted_abyss = await _get_formatted_abyss(account, validator)

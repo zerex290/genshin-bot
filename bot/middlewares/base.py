@@ -92,8 +92,7 @@ class CommandGuesserMiddleware(BaseMiddleware[Message]):
                 text = text.replace(f"!{C}", f"!{C} ")
                 break
         command = text.split(maxsplit=1)[0].lstrip('!')
-        filtered_text = re.sub(r'\{[^{}]+}', '', text)
-        options = re.findall(r'\s-\w+', filtered_text)
+        options = re.findall(r'\s~~\S+', text)
         options_converted = [''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in option) for option in options]
         text = text.replace(f"!{command}", f"!{''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in command)}")
         for i, option in enumerate(options):
