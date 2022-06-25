@@ -35,10 +35,12 @@ class Characters(Enum):
     ALOY = 'Элой'
     GOROU = 'Горо'
     SHENHE = 'Шэнь Хэ'
-    SHINOBU = 'Куки Синобу'
     YELAN = 'Е Лань'
     YEBLAN = 'Еблань'
     HEIZO = 'Хэйдзо'
+
+    SHINOBU = 'Куки Синобу'
+    KUKI_SHINOBU = 'Куки Синобу'
 
     ITTO = 'Итто'
     ARATAKI_ITTO = 'Итто'
