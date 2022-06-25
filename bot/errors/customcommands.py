@@ -11,7 +11,8 @@ __all__ = (
     'CommandAlreadyExist',
     'CommandNotExist',
     'CommandReserved',
-    'AdditionsNotSpecified'
+    'AdditionsNotSpecified',
+    'BotPrivilegesError'
 )
 
 
@@ -55,3 +56,7 @@ class CommandReserved(GenshinBotException):
 
 class AdditionsNotSpecified(GenshinBotException):
     _msg = 'Укажите сообщение и/или прикрепите медиафайл для создания команды!'
+
+
+class BotPrivilegesError(GenshinBotException):
+    _msg = 'Для совершения данного действия боту нужны права администратора в чате!'

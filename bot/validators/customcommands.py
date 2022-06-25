@@ -1,4 +1,6 @@
-from vkbottle import API
+from typing import Optional
+
+from vkbottle import API, VKAPIError
 
 from bot.validators import BaseValidator, ChatValidator
 from bot.src.constants import COMMANDS
@@ -14,12 +16,15 @@ __all__ = (
 )
 
 
-async def _check_privileges(api: API, chat_id: int, user_id: int) -> bool:
-    chat = await api.messages.get_conversation_members(peer_id=chat_id)
-    for user in chat.items:
-        if user.member_id == user_id and any((user.is_owner, user.is_admin)):
-            return True
-    return False
+async def _check_privileges(api: API, chat_id: int, user_id: int) -> Optional[bool]:
+    try:
+        chat = await api.messages.get_conversation_members(peer_id=chat_id)
+        for user in chat.items:
+            if user.member_id == user_id and any((user.is_owner, user.is_admin)):
+                return True
+        return False
+    except VKAPIError[917]:
+        raise BotPrivilegesError
 
 
 async def _check_availability(api: API, chat_id: int, user_id: int) -> bool:
