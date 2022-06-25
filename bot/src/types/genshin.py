@@ -33,13 +33,15 @@ class Characters(Enum):
     YOIMIYA = 'Йоимия'
     SAYU = 'Саю'
     ALOY = 'Элой'
-    ITTO = 'Итто'
     GOROU = 'Горо'
     SHENHE = 'Шэнь Хэ'
     SHINOBU = 'Куки Синобу'
     YELAN = 'Е Лань'
     YEBLAN = 'Еблань'
     HEIZO = 'Хэйдзо'
+
+    ITTO = 'Итто'
+    ARATAKI_ITTO = 'Итто'
 
     HUTAO = 'Ху Тао'
     HU_TAO = 'Ху Тао'
