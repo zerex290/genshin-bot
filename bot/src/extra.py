@@ -73,7 +73,9 @@ async def _get_users() -> list[dict[str, str | int]]:
         return [dict(user) for user in users]
 
 
-async def _get_user_resin(account: dict[str, str | int]) -> Optional[int]:
+async def _get_user_resin(account: Optional[dict[str, str | int]]) -> Optional[int]:
+    if not account:
+        return None
     async with GenshinClient(exc_catch=True, ltuid=account['ltuid'], ltoken=account['ltoken']) as client:
         return (await client.get_genshin_notes(account['uid'])).current_resin
 
