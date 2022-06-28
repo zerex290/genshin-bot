@@ -40,11 +40,16 @@ class AccountNotExist(GenshinBotException):
 
 
 class AccountNotFound(GenshinBotException):
+    _ARTICLE = (
+        'Статья с инструкцией по привязке игрового аккаунта: '
+        'https://vk.com/@bot_genshin-genshin-register-guide'
+    )
+
     def __init__(self, for_other_user: bool) -> None:
         if for_other_user:
-            self.__class__._msg = 'В базе отсутствуют данные указанного игрока!'
+            self.__class__._msg = f"Игровой аккаунт указанного игрока не привязан к базе!\n{self._ARTICLE}"
         else:
-            self.__class__._msg = 'В базе отсутствуют ваши данные!'
+            self.__class__._msg = f"Ваш игровой аккаунт не привязан к базе!\n{self._ARTICLE}"
 
 
 class ReplyMessageError(GenshinBotException):
