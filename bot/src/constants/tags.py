@@ -65,7 +65,12 @@ GENSHIN_IMPACT = {
     'кукисинобу': 'kuki_shinobu',
     'байчжу': 'baizhu_(genshin_impact)',
     'скарамучча': 'scaramouche_(genshin_impact)',
-    'яояо': 'yaoyao_(genshin_impact)'
+    'яояо': 'yaoyao_(genshin_impact)',
+    'хэйдзо': 'shikanoin_heizou',
+    'сайно': 'cyno_(genshin_impact)',
+    'синьора': 'signora_(genshin_impact)',
+    'дори': 'dori_(genshin_impact)',
+    'коллеи': 'collei_(genshin_impact)'
 }
 
 ART_STYLE = {
