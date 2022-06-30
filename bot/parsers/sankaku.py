@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, AsyncGenerator
+from typing import Optional, AsyncIterator
 
 import aiohttp
 
@@ -74,14 +74,14 @@ class SankakuParser:
 
         return Post(**post)
 
-    async def _iter_pages(self) -> AsyncGenerator:
+    async def _iter_pages(self) -> AsyncIterator[list[dict[str, str | int]]]:
         next_ = ''
         while next_ is not None:
             page_data = await self._get_json(next_)
             page, next_ = page_data if page_data is not None else ([], None)
             yield page
 
-    async def iter_posts(self, minimum_fav_count: int = 0) -> AsyncGenerator:
+    async def iter_posts(self, minimum_fav_count: int = 0) -> AsyncIterator[Post]:
         async for page in self._iter_pages():
             for post in page:
                 if not post['file_url']:
