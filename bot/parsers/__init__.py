@@ -8,5 +8,6 @@ __all__ = (
     'WeaponParser',
     'ArtifactParser',
     'EnemyParser',
-    'BookParser'
+    'BookParser',
+    'DomainParser'
 )

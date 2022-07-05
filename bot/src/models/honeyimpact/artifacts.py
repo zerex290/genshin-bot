@@ -2,7 +2,7 @@ from typing import Any
 from dataclasses import dataclass
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Information:
     name: str
     artifact_type: str

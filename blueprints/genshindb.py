@@ -6,13 +6,14 @@ from vkbottle import Keyboard, KeyboardButtonColor, Callback, GroupEventType
 from vkbottle.bot import Blueprint, Message, MessageEvent
 from vkbottle_types.objects import MessagesKeyboard
 
-from bot.parsers import CharacterParser, WeaponParser, ArtifactParser, EnemyParser, BookParser
+from bot.parsers import CharacterParser, WeaponParser, ArtifactParser, EnemyParser, BookParser, DomainParser
 from bot.rules import CommandRule, EventRule
 from bot.utils import PostgresConnection, json
 from bot.errors import IncompatibleOptions
 from bot.utils.files import upload
 from bot.validators.genshindb import GenshinDBValidator
 from bot.src.manuals import genshindb as man
+from bot.imageprocessing.domains import get_domain_image
 from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION
 
 
@@ -44,6 +45,11 @@ def _get_menu_keyboard(user_id: int) -> str:
         .row()
         .add(
             Callback('Книги', {'user_id': user_id, 'type': 'books_type', 'page': 0}),
+            KeyboardButtonColor.PRIMARY
+        )
+        .row()
+        .add(
+            Callback('Подземелья', {'user_id': user_id, 'type': 'domains_type', 'page': 0}),
             KeyboardButtonColor.PRIMARY
         )
     )
@@ -158,7 +164,7 @@ async def return_to_menu(event: MessageEvent, payload: dict[str, str | int]) -> 
 async def _get_attachment_icon(icon_path: str) -> Optional[str]:
     """
     Check if icon exists.
-    If yes, then upload it to vk server and return formatted attachments string.
+    If yes, then upload it to vk server and return formatted attachment string.
     """
     if not os.path.exists(icon_path):
         return None
@@ -168,7 +174,7 @@ async def _get_attachment_icon(icon_path: str) -> Optional[str]:
 @bp.on.raw_event(
     GroupEventType.MESSAGE_EVENT,
     MessageEvent,
-    EventRule(('characters_type', 'weapons_type', 'artifacts_type', 'enemies_type', 'books_type'))
+    EventRule(('characters_type', 'weapons_type', 'artifacts_type', 'enemies_type', 'books_type', 'domains_type'))
 )
 async def get_type_filters(event: MessageEvent, payload: dict[str, str | int]) -> None:
     payload_type = payload['type'].split('_')[0]
@@ -216,7 +222,9 @@ async def get_type_filters(event: MessageEvent, payload: dict[str, str | int]) -
 
 
 @bp.on.raw_event(
-    GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('characters', 'weapons', 'artifacts', 'enemies', 'books'))
+    GroupEventType.MESSAGE_EVENT,
+    MessageEvent,
+    EventRule(('characters', 'weapons', 'artifacts', 'enemies', 'books', 'domains'))
 )
 async def get_filtered_objects(event: MessageEvent, payload: dict[str, str | int]) -> None:
     page = 0
@@ -471,3 +479,30 @@ async def get_book(event: MessageEvent, payload: dict[str, str | int]) -> None:
         attachment=f"{icon},{doc}",
         keyboard=keyboard.get_json()
     )
+
+
+@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('domain',)))
+async def get_domain(event: MessageEvent, payload: dict[str, str | int]) -> None:
+    domain = DomainParser()
+    keyboard = (
+        Keyboard(one_time=False, inline=True)
+        .add(
+            Callback(
+                'К списку подземелий',
+                {'user_id': event.user_id, 'type': 'domains', 'filter': payload['filter'], 'page': payload['page']}
+            ),
+            KeyboardButtonColor.POSITIVE
+        )
+        .row()
+        .add(Callback('Меню', {'user_id': event.user_id, 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
+    )
+
+    message = await domain.get_information(payload['obj'], payload['filter'])
+    attachment = await _get_attachment_icon(
+        await get_domain_image(
+            json.load('domains')[payload['filter']][payload['obj']][-1],
+            await domain.get_monsters(payload['obj'], payload['filter']),
+            await domain.get_drop(payload['obj'], payload['filter'])
+        )
+    )
+    await event.edit_message(message, attachment=attachment, keyboard=keyboard.get_json())

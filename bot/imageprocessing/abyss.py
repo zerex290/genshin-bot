@@ -7,8 +7,7 @@ from typing import Sequence
 from PIL import Image, ImageFont, ImageDraw
 from genshin.models import SpiralAbyss, Floor, Chamber, Battle, AbyssCharacter
 
-from bot.imageprocessing import FONT
-from bot.utils.files import download
+from bot.imageprocessing import FONT, cache_icon
 from bot.config.dependencies.paths import IMAGE_PROCESSING, FILECACHE
 
 
@@ -97,12 +96,6 @@ def _draw_half_text(
         fill=(255, 255, 255),
         anchor='mt'
     )
-
-
-async def _download_character_icon(url: str) -> None:
-    name, suffix = url.rsplit('/', maxsplit=1)[1].split('.')
-    if not os.path.exists(os.path.join(FILECACHE, f"{name}.{suffix}")):
-        await download(url, FILECACHE, name, suffix)
 
 
 def _paste_character(
@@ -205,9 +198,9 @@ def _paste_character_stars(
         - 96 -> character icon box width without its borders
 
     Height calculations:
-        - 400 -> ident between chambers
-        - 218 -> ident of first/second character's icon box
-        - 346 -> ident of third/fourth character's icon box
+        - 400 -> indent between chambers
+        - 218 -> indent of first/second character's icon box
+        - 346 -> indent of third/fourth character's icon box
 
     :param template: Template of the background image
     :param floor_number:  Number of floor in the sequence
@@ -216,7 +209,7 @@ def _paste_character_stars(
     :param character_number:  Number of character in the sequence
     :param character:  One of the four spiral abyss characters used at certain half of battle
     """
-    with Image.open(os.path.join(IMAGE_PROCESSING, 'templates', 'star.png')) as star:
+    with Image.open(os.path.join(IMAGE_PROCESSING, 'templates', 'abyss', 'star.png')) as star:
         ident_x = 32 if character_number % 2 == 0 else 137
         ident_y = 218 - star.height//2 if character_number < 2 else 346 - star.height//2
         for s in range(character.rarity):
@@ -241,20 +234,20 @@ async def _process_image_parts(template: Image.Image, floors: Sequence[Floor]) -
             for b_num, b in enumerate(c.battles):
                 _draw_half_text(draw, f_num, c_num, b_num, b)
                 for ch_num, ch in enumerate(b.characters):
-                    await _download_character_icon(ch.icon)
+                    await cache_icon(ch.icon)
                     _paste_character(template, f_num, c_num, b_num, ch_num, ch)
                     _draw_character_level(draw, f_num, c_num, b_num, ch_num, ch)
                     _paste_character_stars(template, f_num, c_num, b_num, ch_num, ch)
 
 
 async def get_abyss_image(abyss: SpiralAbyss) -> str:
-    """Process image template, save it and return its path
+    """Process abyss image template, save it and return its path
 
     :param abyss: Spiral abyss data of certain user
-    :return: Path of saved image with user data
+    :return: Path to saved image
     """
     path = os.path.join(FILECACHE, f"abyss_{randint(0, 10000)}.png")
-    with Image.open(os.path.join(IMAGE_PROCESSING, 'templates', 'abyss.png')) as template:
+    with Image.open(os.path.join(IMAGE_PROCESSING, 'templates', 'abyss', 'abyss.png')) as template:
         await _process_image_parts(template, abyss.floors)
         template.save(path)
     return path

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Information:
     name: str
     enemy_type: str
@@ -10,7 +10,7 @@ class Information:
     description: str
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Progression:
     level: str | Any
 

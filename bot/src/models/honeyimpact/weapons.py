@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Information:
     name: str | Any
     weapon_type: str | Any
@@ -14,13 +14,13 @@ class Information:
     description: str | Any
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Ability:
     title: str | Any
     description: str | Any
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Progression:
     level: str | Any
     primary_stat_title: str | Any
@@ -29,7 +29,7 @@ class Progression:
     secondary_stat_value: float | Any
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Refinement:
     level: str | Any
     description: str | Any

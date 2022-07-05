@@ -34,6 +34,7 @@ async def parse_genshin_database_objects() -> None:
     artifact = ArtifactParser()
     enemy = EnemyParser()
     book = BookParser()
+    domain = DomainParser()
     while True:
         await asyncio.gather(
             loop.run_in_executor(None, json.dump, await character.get_characters(), 'characters'),
@@ -41,6 +42,7 @@ async def parse_genshin_database_objects() -> None:
             loop.run_in_executor(None, json.dump, await artifact.get_artifacts(), 'artifacts'),
             loop.run_in_executor(None, json.dump, await enemy.get_enemies(), 'enemies'),
             loop.run_in_executor(None, json.dump, await book.get_books(), 'books'),
+            loop.run_in_executor(None, json.dump, await domain.get_domains(), 'domains'),
         )
         await asyncio.sleep(36000)
 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Information:
     name: str
     title: str
@@ -15,8 +15,7 @@ class Information:
     description: str
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Skill:
     title: str
     description: str
-

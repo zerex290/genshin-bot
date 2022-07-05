@@ -132,6 +132,13 @@ class Enemies(Enum):
     UNCATEGORIZED = 'Вне категории'
 
 
+class Domains(Enum):
+    ARTIFACTS = 'Артефакты'
+    WEAPON_ASCENSION_MATERIALS = 'Возвышение оружия'
+    TALENT_LEVEL_UP_MATERIAL = 'Возвышение навыков'
+    TROUNCE_DOMAINS = 'Подземелья наказания'
+
+
 class Elements(Enum):
     PYRO = 'Пиро'
     ANEMO = 'Анемо'

@@ -18,7 +18,7 @@ from bot.src.templates import honeyimpact as tpl
 from bot.src.models import honeyimpact as mdl
 from bot.config.dependencies.paths import FILECACHE
 from bot.src.types.uncategorized import Months
-from bot.src.types.genshin import Characters, Elements, Weapons, Artifacts, Enemies
+from bot.src.types.genshin import Characters, Elements, ElementSymbols, Weapons, Artifacts, Enemies, Domains
 
 
 __all__ = (
@@ -26,7 +26,8 @@ __all__ = (
     'WeaponParser',
     'ArtifactParser',
     'EnemyParser',
-    'BookParser'
+    'BookParser',
+    'DomainParser'
 )
 
 
@@ -65,7 +66,7 @@ class HoneyImpactParser:
 
     @staticmethod
     async def get_icon_attachment(api: API, url: str) -> Optional[str]:
-        file = await download(url, FILECACHE, f"icon{random.randint(0, 10)}", 'png')
+        file = await download(url, FILECACHE, f"icon_{random.randint(0, 10000)}", 'png')
         if file:
             attachment = await upload(api, 'photo_messages', file)
             os.remove(file)
@@ -80,7 +81,7 @@ class CharacterParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_characters(self) -> dict[str, dict] | None:
+    async def get_characters(self) -> Optional[dict[str, dict]]:
         characters = {e.value: {} for e in Elements}
         urls = (self.base_url + self.RELEASED, self.base_url + self.BETA)
 
@@ -240,7 +241,7 @@ class WeaponParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_weapons(self) -> dict[str, dict] | None:
+    async def get_weapons(self) -> Optional[dict[str, dict]]:
         weapons = {w.value: {} for w in Weapons}
 
         for weapon_type in weapons:
@@ -341,7 +342,7 @@ class ArtifactParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_artifacts(self) -> dict[str, dict] | None:
+    async def get_artifacts(self) -> Optional[dict[str, dict]]:
         tree = await self._compile_html(self.base_url + 'db/artifact/')
         if tree is None:
             return None
@@ -376,7 +377,7 @@ class EnemyParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_enemies(self) -> dict[str, dict] | None:
+    async def get_enemies(self) -> Optional[dict[str, dict]]:
         tree = await self._compile_html(self.base_url + 'db/enemy/')
         if tree is None:
             return None
@@ -439,7 +440,7 @@ class BookParser(HoneyImpactParser):
     def __init__(self, lang: str = 'RU') -> None:
         super().__init__(lang)
 
-    async def get_books(self) -> dict[str, dict] | None:
+    async def get_books(self) -> Optional[dict[str, dict]]:
         tree = await self._compile_html(self.base_url)
         if tree is None:
             return None
@@ -488,3 +489,91 @@ class BookParser(HoneyImpactParser):
 
         book = mdl.books.Information(name, volume, story)
         return tpl.books.format_information(book), doc
+
+
+class DomainParser(HoneyImpactParser):
+    def __init__(self, lang: str = 'RU') -> None:
+        super().__init__(lang)
+
+    async def get_domains(self) -> Optional[dict[str, dict]]:
+        tree = await self._compile_html(self.base_url + 'db/domains/')
+        if tree is None:
+            return None
+        table = (await self._xpath(tree, '//div[@class="entry-content clearfix"]/*'))[0]
+
+        domains: dict[str, dict] = {d.value: {} for d in Domains}
+        domain_type = ''
+        for item in table.iter('div', 'span'):
+            if item.get('class') == 'enemy_type':
+                domain_type = (re.sub(r'[- ]', '_', ''.join((await self._xpath(item, './text()'))).upper()))
+            elif item.get('class') == 'char_sea_cont enemy_sea_cont':
+                name = ''.join(await self._xpath(item, './/span[@class="sea_charname"]/text()'))
+                code = re.sub(
+                    r'(\w+\d+)_135.png',
+                    r'/db/dom/\1/',
+                    (await self._xpath(item, './/div[@class="enemy_avatar_cont"]/img/@data-src'))[0].split('/')[-1]
+                )
+                icon_xpath = './/div[@class="enemy_avatar_cont"]//@data-src'
+                icon = f"{self.base_url}{(await self._xpath(item, icon_xpath))[0][1:]}"
+                try:
+                    domains[Domains[domain_type].value][name] = (code, icon)
+                except KeyError:
+                    break
+        return domains
+
+    async def get_information(self, name: str, domain_type: str) -> str:
+        tree = await self._compile_html(self.base_url + json.load('domains')[domain_type][name][0])
+        table = (await self._xpath(tree, '//table[@class="add_stat_table"][2]'))[0]
+
+        disorders = dict(
+            zip(
+                await self._xpath(table, './/td[contains(text(), "Disorder")]/text()'),
+                await self._xpath(table, './/td[contains(text(), "Disorder")]/following-sibling::td[1]/text()')
+            )
+        )
+        disorders = tuple(disorders.values()) if disorders else None
+        elements = set(
+            await self._xpath(table, './/td[contains(text(), "Elements")]/following-sibling::td[1]/img/@data-src')
+        )
+        elements = tuple(
+            ElementSymbols[re.sub(r'(\w+)_35.png', r'\1', element.split('/')[-1]).upper()].value
+            for element in elements
+        )
+        desc = ''.join(
+            await self._xpath(
+                tree,
+                '//table[@class="item_main_table"]//td[contains(text(), "In-game")]/following-sibling::td/text()'
+            )
+        )
+
+        domain = mdl.domains.Information(name, domain_type, elements, disorders, desc)
+        return tpl.domains.format_information(domain)
+
+    async def get_monsters(self, name: str, domain_type: str) -> list[mdl.domains.Monster]:
+        tree = await self._compile_html(self.base_url + json.load('domains')[domain_type][name][0])
+        table = (await self._xpath(tree, '//table[@class="add_stat_table"][2]'))[0]
+
+        monsters = dict(
+            zip(
+                await self._xpath(table, './/td[contains(text(), "Monsters")]/text()'),
+                await self._xpath(table, './/td[contains(text(), "Monsters")]/following-sibling::td[1]')
+            )
+        )
+        monsters = [
+            mdl.domains.Monster(self.base_url, src)
+            for src in await self._xpath(monsters['Monsters'], './/@data-src')
+        ]
+        return monsters
+
+    async def get_drop(self, name: str, domain_type: str) -> list[mdl.domains.Drop]:
+        tree = await self._compile_html(self.base_url + json.load('domains')[domain_type][name][0])
+        table = [
+            td
+            for i, td in enumerate((await self._xpath(tree, '//table[@class="add_stat_table"][1]//td'))[2:])
+            if i % 2 == 0
+        ]
+        drop = [
+            mdl.domains.Drop(self.base_url, (await self._xpath(d, './/@data-src'))[0])
+            for d in table
+        ]
+        return drop
