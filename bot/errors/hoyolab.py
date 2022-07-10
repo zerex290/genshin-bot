@@ -15,6 +15,8 @@ __all__ = (
     'CommandNotAllowed',
     'NotificationsAlreadyEnabled',
     'NotificationsAlreadyDisabled',
+    'NotificationValueInvalid',
+    'NotificationValueRangeInvalid',
     'SpiralAbyssLocked'
 )
 
@@ -79,6 +81,14 @@ class NotificationsAlreadyEnabled(GenshinBotException):
 
 class NotificationsAlreadyDisabled(GenshinBotException):
     _msg = 'В данном чате уже выключено автоматическое напоминание потратить смолу!'
+
+
+class NotificationValueInvalid(GenshinBotException):
+    _msg = 'Заданное минимальное значение смолы не является корректным!'
+
+
+class NotificationValueRangeInvalid(GenshinBotException):
+    _msg = 'Заданное минимальное значение смолы выходит за рамки допустимого диапазона!'
 
 
 class SpiralAbyssLocked(GenshinBotException):

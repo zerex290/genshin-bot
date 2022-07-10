@@ -185,7 +185,7 @@ async def redeem_code(message: Message) -> None:
         await message.answer(await _get_formatted_redeem_codes(account, codes))
 
 
-@bp.on.message(CommandRule(['резинноут'], ['~~п', '~~выкл', '~~вкл'], man.ResinNotifications))
+@bp.on.message(CommandRule(['резинноут'], ['~~п', '~~выкл', '~~вкл', '~~мин'], man.ResinNotifications))
 async def manage_resin_notifications(message: Message, options: list[str]) -> None:
     async with ResinNotifyValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
@@ -193,13 +193,16 @@ async def manage_resin_notifications(message: Message, options: list[str]) -> No
         match options:
             case ['~~[default]']:
                 async with PostgresConnection() as connection:
-                    status = dict(await connection.fetchrow(f"""
-                        SELECT resin_notifications FROM users_in_chats 
+                    data = dict(await connection.fetchrow(f"""
+                        SELECT resin_notifications, notification_value 
+                        FROM users_in_chats 
                         WHERE user_id = {message.from_id} AND chat_id = {message.peer_id};
                     """))
+                    status, value = data['resin_notifications'], data['notification_value']
                     await message.answer(
-                        f"В текущем чате у вас {'включены' if status['resin_notifications'] else 'выключены'} "
-                        f"оповещения о трате смолы!"
+                        f"В текущем чате у вас {'включены' if status else 'выключены'} "
+                        f"упоминания о трате смолы! "
+                        f"{'Минимально необходимое для упоминаний значение равно {}.'.format(value) if status else ''}"
                     )
             case ['~~выкл']:
                 await validator.check_notifications_enabled(message.from_id, message.peer_id)
@@ -217,6 +220,17 @@ async def manage_resin_notifications(message: Message, options: list[str]) -> No
                         WHERE user_id = {message.from_id} AND chat_id = {message.peer_id};
                     """)
                 await message.answer('Автоматическое напоминание потратить смолу теперь включено!')
+            case ['~~мин']:
+                value = message.text[message.text.find('~~мин') + 5:].strip()
+                validator.check_val_is_num(value)
+                value = int(value)
+                validator.check_val_range(value)
+                async with PostgresConnection() as connection:
+                    await connection.execute(f"""
+                        UPDATE users_in_chats SET notification_value = {value} 
+                        WHERE user_id = {message.from_id} AND chat_id = {message.peer_id};
+                    """)
+                await message.answer('Успешно установлено новое минимально необходимое для упоминаний значение смолы!')
             case _:
                 raise IncompatibleOptions(options)
 

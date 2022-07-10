@@ -23,8 +23,10 @@ async def create_pg_tables(connection):
             chat_id int REFERENCES chats(chat_id),
             resin_notifications boolean NOT NULL DEFAULT false,
             notification_number int NOT NULL DEFAULT 0,
+            notification_value int NOT NULL DEFAULT 150,
             PRIMARY KEY (user_id, chat_id),
-            CONSTRAINT notification_limit CHECK (notification_number <= 3)
+            CONSTRAINT notification_limit CHECK (notification_number <= 3),
+            CONSTRAINT notification_value_threshold CHECK (notification_value >= 0 AND notification_value <= 160)
         );
     """)
     genshin_accounts = (f"""

@@ -69,9 +69,9 @@ async def collect_login_bonus() -> None:
 async def _get_users() -> list[dict[str, str | int]]:
     async with PostgresConnection() as connection:
         users = await connection.fetch('''
-            SELECT u.user_id, chat_id, notification_number FROM users u JOIN users_in_chats uic 
-            ON u.user_id = uic.user_id 
-            WHERE uic.resin_notifications = true;
+            SELECT user_id, chat_id, notification_number, notification_value 
+            FROM users_in_chats 
+            WHERE resin_notifications = true;
         ''')
         return [dict(user) for user in users]
 
@@ -118,7 +118,7 @@ async def notify_about_resin_replenishment(bot: Bot) -> None:
             resin = await _get_user_resin(await get_genshin_account_by_id(user['user_id'], True, True, True))
             if not isinstance(resin, int):
                 continue
-            if resin >= 150 and user['notification_number'] < 3:
+            if resin >= user['notification_value'] and user['notification_number'] < 3:
                 try:
                     first_name = (await bot.api.users.get([user['user_id']]))[0].first_name
                     await bot.api.messages.send(
@@ -129,9 +129,9 @@ async def notify_about_resin_replenishment(bot: Bot) -> None:
                     await _update_notification_number(user['chat_id'], user['user_id'])
                 except VKAPIError:
                     pass  #: tba chat remove from users_in_chats
-            elif resin >= 150 and user['notification_number'] >= 3:
+            elif resin >= user['notification_value'] and user['notification_number'] >= 3:
                 continue
-            elif resin < 150 and user['notification_number'] != 0:
+            elif resin < user['notification_value'] and user['notification_number'] != 0:
                 await _reset_notification_number(user['chat_id'], user['user_id'])
         await asyncio.sleep(3600)
 

@@ -92,6 +92,18 @@ class ResinNotifyValidator(BaseValidator, ChatValidator):
             raise NotificationsAlreadyEnabled
 
     @staticmethod
+    def check_val_is_num(value: str) -> None:
+        try:
+            int(value)
+        except ValueError:
+            raise NotificationValueInvalid
+
+    @staticmethod
+    def check_val_range(value: int):
+        if not 0 <= value <= 160:
+            raise NotificationValueRangeInvalid
+
+    @staticmethod
     async def check_notifications_enabled(user_id: int, chat_id: int) -> None:
         if not await has_postgres_data(f"""
                 SELECT * from users_in_chats 
