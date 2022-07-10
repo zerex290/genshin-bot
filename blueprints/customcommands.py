@@ -95,6 +95,7 @@ async def _get_document_id(
         peer_id: int,
         attachments: Optional[list[MessagesMessageAttachment]]
 ) -> str:
+    document_ids: list[str] = []
     for attachment in attachments:
         document = attachment.doc
         if not document:
@@ -103,19 +104,21 @@ async def _get_document_id(
         document = await download(document.url, FILECACHE, f"{command_name}_{peer_id}", document.ext)
         document_id = await upload(bp.api, 'document_messages', title, document, peer_id=peer_id)
         os.remove(document)
-        return document_id
-    return ''
+        document_ids.append(document_id)
+    return ','.join(document_ids)
 
 
 async def _get_audio_id(attachments: Optional[list[MessagesMessageAttachment]]) -> str:
+    audio_ids: list[str] = []
     for attachment in attachments:
         if not attachment.audio:
             continue
-        return f"audio{attachment.audio.owner_id}_{attachment.audio.id}"
-    return ''
+        audio_ids.append(f"audio{attachment.audio.owner_id}_{attachment.audio.id}")
+    return ','.join(audio_ids)
 
 
 async def _get_photo_id(command_name: str, peer_id: int, attachments: Optional[list[MessagesMessageAttachment]]) -> str:
+    photo_ids: list[str] = []
     for attachment in attachments:
         if not attachment.photo:
             continue
@@ -123,8 +126,8 @@ async def _get_photo_id(command_name: str, peer_id: int, attachments: Optional[l
         photo = await download(urls[max(urls)], FILECACHE, f"{command_name}_{peer_id}", 'jpg')
         photo_id = await upload(bp.api, 'photo_messages', photo)
         os.remove(photo)
-        return '_'.join(photo_id.split('_')[:-1])
-    return ''
+        photo_ids.append(photo_id.rsplit('_', maxsplit=1)[0])
+    return ','.join(photo_ids)
 
 
 async def _insert_into_database(

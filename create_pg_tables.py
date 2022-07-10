@@ -46,9 +46,9 @@ async def create_pg_tables(connection):
             date_added timestamptz DEFAULT CURRENT_TIMESTAMP,
             times_used int  NOT NULL DEFAULT 0,
             message text,
-            document_id varchar(40),
-            audio_id varchar(40),
-            photo_id varchar(40),
+            document_id text,
+            audio_id text,
+            photo_id text,
             PRIMARY KEY (name, chat_id),
             CONSTRAINT correctness 
             CHECK (message IS NOT NULL OR document_id IS NOT NULL OR audio_id IS NOT NULL OR photo_id IS NOT NULL)
