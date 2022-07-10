@@ -8,7 +8,7 @@ from vkbottle.bot import Blueprint, Message
 
 from bot.parsers import SankakuParser
 from bot.rules import CommandRule
-from bot.utils import PostgresConnection
+from bot.utils import PostgresConnection, find_restricted_tags
 from bot.utils.postgres import has_postgres_data
 from bot.utils.files import download, upload
 from bot.src.constants import keyboard, tags
@@ -209,6 +209,8 @@ async def _get_random_picture_attachments(chosen_tags: tuple[str, ...], nsfw: bo
     async for post in SankakuParser(tags=chosen_tags, rating=rating).iter_posts():
         if len(attachments) >= limit:
             break
+        if nsfw and find_restricted_tags(post, ('loli', 'shota')):
+            continue
         if post.file_mediatype != MediaType.IMAGE:
             continue
         picture = await download(post.file_url, FILECACHE, str(post.id), post.file_suffix)

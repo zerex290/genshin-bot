@@ -8,12 +8,11 @@ from vkbottle import API, Bot, VKAPIError
 from genshin.types import Game
 
 from bot.parsers import *
-from bot.utils import PostgresConnection, GenshinClient, json, get_current_timestamp
+from bot.utils import PostgresConnection, GenshinClient, json, get_current_timestamp, find_restricted_tags
 from bot.utils.files import download, upload
 from bot.utils.genshin import get_genshin_account_by_id
 from bot.utils.postgres import has_postgres_data
 from bot.src.types.sankaku import MediaType, Rating, TagType
-from bot.src.models.sankaku import Post
 from bot.src.templates.artposting import format_post_message, format_post_source
 from bot.config.dependencies.paths import FILECACHE
 from bot.config.dependencies.group import ID
@@ -146,20 +145,13 @@ class PostUploader:
     def tags(self) -> tuple[str, ...]:
         return ('genshin_impact',) if not self.THEMATIC else self.THEMATIC_TAGS
 
-    @staticmethod
-    def _find_restricted_tags(post: Post, tags: tuple[str, ...]) -> bool:
-        for tag in post.tags:
-            if tag.name_en in tags:
-                return True
-        return False
-
     async def make_post(self, api: API,  donut: bool = False):
         while True:
             parser = SankakuParser(tags=self.tags, rating=Rating.E if donut else Rating.S)
             async for post in parser.iter_posts(self.MINIMUM_DONUT_FAV_COUNT if donut else self.MINIMUM_FAV_COUNT):
                 if post.file_mediatype == MediaType.VIDEO:
                     continue
-                if donut and self._find_restricted_tags(post, ('loli', 'shota', 'penis')):
+                if donut and find_restricted_tags(post, ('loli', 'shota', 'penis')):
                     continue
                 if len([tag for tag in post.tags if tag.type == TagType.CHARACTER]) > 2 and self.THEMATIC:
                     continue
