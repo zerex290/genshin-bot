@@ -203,10 +203,10 @@ def _compile_message(attachments: list[str]) -> str:
     return f"По вашему запросу найдено {len(attachments)} изображени{cases.get(len(attachments), 'й')}!"
 
 
-async def _get_random_picture_attachments(chosen_tags: tuple[str, ...], nsfw: bool, limit: int) -> list[str]:
+async def _get_pictures(chosen_tags: tuple[str, ...], nsfw: bool, limit: int, fav_count: int = 0) -> list[str]:
     attachments: list[str] = []
     rating = Rating.E if nsfw else Rating.S
-    async for post in SankakuParser(tags=chosen_tags, rating=rating).iter_posts():
+    async for post in SankakuParser(tags=chosen_tags, rating=rating).iter_posts(fav_count):
         if len(attachments) >= limit:
             break
         if nsfw and find_restricted_tags(post, ('loli', 'shota')):
@@ -221,20 +221,32 @@ async def _get_random_picture_attachments(chosen_tags: tuple[str, ...], nsfw: bo
     return attachments
 
 
-@bp.on.message(CommandRule(['пик'], ['~~п', '~~нсфв'], man.RandomPicture))
+@bp.on.message(CommandRule(['пик'], ['~~п', '~~нсфв', '~~л'], man.RandomPicture))
 async def get_random_picture(message: Message, options: list[str]) -> None:
     async with RandomPictureValidator(message) as validator:
-        text = re.sub(r'^!пик\s?', '', message.text.lower())
-        if '~~нсфв' in options:
-            text = text.replace('~~нсфв', '').split()
+        text = re.sub(r'^!пик\s?', '', message.text.lower().replace('~~нсфв', ''))
+        nsfw = True if '~~нсфв' in options else False
+        if nsfw:
             await validator.check_user_is_don(bp.api, message.from_id)
-            nsfw = True
-        else:
-            text = text.split()
-            nsfw = False
-        validator.check_pictures_specified(text)
-        validator.check_pictures_quantity(int(text[0]))
-        chosen_tags = tuple(_get_all_tags().get(tag, tag) for tag in text[1:]) if len(text) > 1 else ()
-        validator.check_tags_quantity(chosen_tags)
-        attachments = await _get_random_picture_attachments(chosen_tags, nsfw, int(text[0]))
-        await message.answer(_compile_message(attachments), ','.join(attachments))
+        match options:
+            case ['~~[default]'] | ['~~нсфв']:
+                text = text.split()
+                validator.check_pictures_specified(text)
+                validator.check_pictures_quantity(int(text[0]))
+                chosen_tags = tuple(_get_all_tags().get(tag, tag) for tag in text[1:]) if len(text) > 1 else ()
+                validator.check_tags_quantity(chosen_tags)
+                attachments = await _get_pictures(chosen_tags, nsfw, int(text[0]))
+                await message.answer(_compile_message(attachments), ','.join(attachments))
+            case ['~~нсфв', '~~л'] | ['~~л', '~~нсфв'] | ['~~л']:
+                fav_count = re.search(r'~~л\s\d+', text)
+                validator.check_fav_count_defined(fav_count)
+                text = text.replace(fav_count[0], '').split()
+                fav_count = int(fav_count[0].split()[1])
+                validator.check_pictures_specified(text)
+                validator.check_pictures_quantity(int(text[0]))
+                chosen_tags = tuple(_get_all_tags().get(tag, tag) for tag in text[1:]) if len(text) > 1 else ()
+                validator.check_tags_quantity(chosen_tags)
+                attachments = await _get_pictures(chosen_tags, nsfw, int(text[0]), fav_count)
+                await message.answer(_compile_message(attachments), ','.join(attachments))
+            case _:
+                raise IncompatibleOptions(options)

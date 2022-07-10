@@ -12,6 +12,7 @@ __all__ = (
     'AttachmentError',
     'AttachmentTypeError',
     'UserIsNotDon',
+    'FavCountNotDefined',
     'PictureQuantityNotSpecified',
     'PictureQuantityOverflow',
     'TagQuantityOverflow'
@@ -56,6 +57,10 @@ class AttachmentTypeError(GenshinBotException):
 
 class UserIsNotDon(GenshinBotException):
     _msg = 'Использование данной опции доступно только платным подписчикам группы!'
+
+
+class FavCountNotDefined(GenshinBotException):
+    _msg = 'Вы не указали минимальное количество лайков, которое должно быть у найденных ботом изображений!'
 
 
 class PictureQuantityNotSpecified(GenshinBotException):

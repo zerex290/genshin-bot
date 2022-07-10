@@ -1,4 +1,5 @@
 from typing import Optional
+from re import Match
 
 from vkbottle import API
 from vkbottle_types.objects import MessagesForeignMessage, MessagesMessageAttachment
@@ -80,6 +81,11 @@ class RandomPictureValidator(BaseValidator):
         donuts = await api.groups.get_members(group.SHORTNAME[1:], filter='donut')
         if user_id not in donuts.items:
             raise UserIsNotDon
+
+    @staticmethod
+    def check_fav_count_defined(fav_count: Optional[Match]) -> None:
+        if fav_count is None:
+            raise FavCountNotDefined
 
     @staticmethod
     def check_pictures_specified(query: list[str]) -> None:
