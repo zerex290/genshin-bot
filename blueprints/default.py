@@ -16,7 +16,7 @@ from bot.errors import IncompatibleOptions
 from bot.validators import BaseValidator
 from bot.validators.default import *
 from bot.src.manuals import default as man
-from bot.src.types.sankaku import MediaType
+from bot.src.types.sankaku import MediaType, Rating
 from bot.config.dependencies.paths import FILECACHE
 
 
@@ -100,7 +100,6 @@ async def convert(message: Message) -> None:
     async with ConvertValidator(message) as validator:
         validator.check_reply_message(message.reply_message)
         validator.check_reply_message_text(message.reply_message.text)
-        text = message.reply_message.text
         converted = ''.join(
             keyboard.CYRILLIC.get(s, keyboard.LATIN.get(s, s))
             if ord(s) < 128
@@ -204,24 +203,36 @@ def _compile_message(attachments: list[str]) -> str:
     return f"По вашему запросу найдено {len(attachments)} изображени{cases.get(len(attachments), 'й')}!"
 
 
-@bp.on.message(CommandRule(['пик'], ['~~п'], man.RandomPicture))
-async def get_random_picture(message: Message) -> None:
+async def _get_random_picture_attachments(chosen_tags: tuple[str, ...], nsfw: bool, limit: int) -> list[str]:
+    attachments: list[str] = []
+    rating = Rating.E if nsfw else Rating.S
+    async for post in SankakuParser(tags=chosen_tags, rating=rating).iter_posts():
+        if len(attachments) >= limit:
+            break
+        if post.file_mediatype != MediaType.IMAGE:
+            continue
+        picture = await download(post.file_url, FILECACHE, str(post.id), post.file_suffix)
+        if not picture:
+            continue
+        attachments.append(await upload(bp.api, 'photo_messages', picture))
+        os.remove(picture)
+    return attachments
+
+
+@bp.on.message(CommandRule(['пик'], ['~~п', '~~нсфв'], man.RandomPicture))
+async def get_random_picture(message: Message, options: list[str]) -> None:
     async with RandomPictureValidator(message) as validator:
-        text = message.text.lstrip('!пик').split()
+        text = re.sub(r'^!пик\s?', '', message.text.lower())
+        if '~~нсфв' in options:
+            text = text.replace('~~нсфв', '').split()
+            await validator.check_user_is_don(bp.api, message.from_id)
+            nsfw = True
+        else:
+            text = text.split()
+            nsfw = False
         validator.check_pictures_specified(text)
         validator.check_pictures_quantity(int(text[0]))
         chosen_tags = tuple(_get_all_tags().get(tag, tag) for tag in text[1:]) if len(text) > 1 else ()
         validator.check_tags_quantity(chosen_tags)
-        attachments = []
-        parser = SankakuParser(tags=chosen_tags)
-        async for post in parser.iter_posts():
-            if len(attachments) >= int(text[0]):
-                break
-            if post.file_mediatype != MediaType.IMAGE:
-                continue
-            picture = await download(post.file_url, FILECACHE, str(post.id), post.file_suffix)
-            if not picture:
-                continue
-            attachments.append(await upload(bp.api, 'photo_messages', picture))
-            os.remove(picture)
+        attachments = await _get_random_picture_attachments(chosen_tags, nsfw, int(text[0]))
         await message.answer(_compile_message(attachments), ','.join(attachments))

@@ -1,10 +1,12 @@
 from typing import Optional
 
+from vkbottle import API
 from vkbottle_types.objects import MessagesForeignMessage, MessagesMessageAttachment
 
 from bot.validators import BaseValidator
 from bot.errors.default import *
 from bot.utils.postgres import has_postgres_data
+from bot.config.dependencies import group
 
 
 __all__ = (
@@ -73,6 +75,12 @@ class AttachmentForwardValidator(BaseValidator):
 
 
 class RandomPictureValidator(BaseValidator):
+    @staticmethod
+    async def check_user_is_don(api: API, user_id: int):
+        donuts = await api.groups.get_members(group.SHORTNAME[1:], filter='donut')
+        if user_id not in donuts.items:
+            raise UserIsNotDon
+
     @staticmethod
     def check_pictures_specified(query: list[str]) -> None:
         if not query or not query[0].isdigit():

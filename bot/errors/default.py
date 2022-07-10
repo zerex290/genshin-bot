@@ -11,6 +11,7 @@ __all__ = (
     'TimerSyntaxError',
     'AttachmentError',
     'AttachmentTypeError',
+    'UserIsNotDon',
     'PictureQuantityNotSpecified',
     'PictureQuantityOverflow',
     'TagQuantityOverflow'
@@ -51,6 +52,10 @@ class AttachmentError(GenshinBotException):
 
 class AttachmentTypeError(GenshinBotException):
     _msg = 'Пересылать можно только изображения!'
+
+
+class UserIsNotDon(GenshinBotException):
+    _msg = 'Использование данной опции доступно только платным подписчикам группы!'
 
 
 class PictureQuantityNotSpecified(GenshinBotException):
