@@ -161,6 +161,8 @@ class PostUploader:
                 if not file:
                     continue
                 attachment = await upload(api, 'photo_wall', file)
+                if attachment is None:
+                    continue
                 wall_post = await api.wall.post(
                     owner_id=ID,
                     donut_paid_duration=-1 if donut else None,

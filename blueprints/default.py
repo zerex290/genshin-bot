@@ -216,7 +216,9 @@ async def _get_pictures(chosen_tags: tuple[str, ...], nsfw: bool, limit: int, fa
         picture = await download(post.file_url, FILECACHE, str(post.id), post.file_suffix)
         if not picture:
             continue
-        attachments.append(await upload(bp.api, 'photo_messages', picture))
+        attachment = await upload(bp.api, 'photo_messages', picture)
+        if attachment is not None:
+            attachments.append(attachment)
         os.remove(picture)
     return attachments
 

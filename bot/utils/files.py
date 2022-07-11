@@ -7,7 +7,7 @@ from json.decoder import JSONDecodeError
 import aiohttp
 import aiofiles
 
-from vkbottle import API
+from vkbottle import API, VKAPIError
 from vkbottle import PhotoMessageUploader, DocMessagesUploader, PhotoWallUploader, DocWallUploader, VideoUploader
 
 from bot.utils import catch_aiohttp_errors
@@ -39,11 +39,13 @@ async def upload(
         'video': VideoUploader(api).upload
     }
     attachment = None
-    while not attachment:
+    while attachment is None:
         try:
             attachment = await uploader_types[uploader_type](*args, **kwargs)
         except JSONDecodeError:
             continue
+        except VKAPIError[100]:  #: Uploader errors
+            break
     return attachment
 
 

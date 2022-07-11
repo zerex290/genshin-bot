@@ -104,7 +104,8 @@ async def _get_document_id(
         document = await download(document.url, FILECACHE, f"{command_name}_{peer_id}", document.ext)
         document_id = await upload(bp.api, 'document_messages', title, document, peer_id=peer_id)
         os.remove(document)
-        document_ids.append(document_id)
+        if document_id is not None:
+            document_ids.append(document_id)
     return ','.join(document_ids)
 
 
@@ -126,7 +127,8 @@ async def _get_photo_id(command_name: str, peer_id: int, attachments: Optional[l
         photo = await download(urls[max(urls)], FILECACHE, f"{command_name}_{peer_id}", 'jpg')
         photo_id = await upload(bp.api, 'photo_messages', photo)
         os.remove(photo)
-        photo_ids.append(photo_id.rsplit('_', maxsplit=1)[0])
+        if photo_id is not None:
+            photo_ids.append(photo_id.rsplit('_', maxsplit=1)[0])
     return ','.join(photo_ids)
 
 
