@@ -88,6 +88,11 @@ class RandomPictureValidator(BaseValidator):
             raise FavCountNotDefined
 
     @staticmethod
+    def check_fav_count_range(fav_count: int):
+        if not 0 <= fav_count <= 5000:
+            raise FavCountRangeInvalid
+
+    @staticmethod
     def check_pictures_specified(query: list[str]) -> None:
         if not query or not query[0].isdigit():
             raise PictureQuantityNotSpecified

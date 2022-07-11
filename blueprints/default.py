@@ -244,6 +244,7 @@ async def get_random_picture(message: Message, options: list[str]) -> None:
                 validator.check_fav_count_defined(fav_count)
                 text = text.replace(fav_count[0], '').split()
                 fav_count = int(fav_count[0].split()[1])
+                validator.check_fav_count_range(fav_count)
                 validator.check_pictures_specified(text)
                 validator.check_pictures_quantity(int(text[0]))
                 chosen_tags = tuple(_get_all_tags().get(tag, tag) for tag in text[1:]) if len(text) > 1 else ()

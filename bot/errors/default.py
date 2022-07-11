@@ -13,6 +13,7 @@ __all__ = (
     'AttachmentTypeError',
     'UserIsNotDon',
     'FavCountNotDefined',
+    'FavCountRangeInvalid',
     'PictureQuantityNotSpecified',
     'PictureQuantityOverflow',
     'TagQuantityOverflow'
@@ -61,6 +62,10 @@ class UserIsNotDon(GenshinBotException):
 
 class FavCountNotDefined(GenshinBotException):
     _msg = 'Вы не указали минимальное количество лайков, которое должно быть у найденных ботом изображений!'
+
+
+class FavCountRangeInvalid(GenshinBotException):
+    _msg = 'Заданное кол-во лайков выходит за рамки допустимого диапазона!'
 
 
 class PictureQuantityNotSpecified(GenshinBotException):
