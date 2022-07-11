@@ -28,5 +28,6 @@ class TagType(Enum):
 
 
 class MediaType(Enum):
-    IMAGE = 'image'
-    VIDEO = 'video'
+    IMAGE = 'image'  #: jpeg, png formats
+    ANIMATED_GIF = 'animated_gif'  #: gif format
+    VIDEO = 'video'  #: mp4, webm formats

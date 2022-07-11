@@ -149,7 +149,7 @@ class PostUploader:
         while True:
             parser = SankakuParser(tags=self.tags, rating=Rating.E if donut else Rating.S)
             async for post in parser.iter_posts(self.MINIMUM_DONUT_FAV_COUNT if donut else self.MINIMUM_FAV_COUNT):
-                if post.file_mediatype == MediaType.VIDEO:
+                if post.file_mediatype != MediaType.IMAGE:
                     continue
                 if donut and find_restricted_tags(post, ('loli', 'shota', 'penis')):
                     continue
