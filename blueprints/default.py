@@ -213,7 +213,7 @@ async def _get_pictures(chosen_tags: tuple[str, ...], nsfw: bool, limit: int, fa
             continue
         if post.file_mediatype != MediaType.IMAGE:
             continue
-        picture = await download(post.file_url, FILECACHE, str(post.id), post.file_suffix)
+        picture = await download(post.sample_url, FILECACHE, str(post.id), post.file_suffix)
         if not picture:
             continue
         attachment = await upload(bp.api, 'photo_messages', picture)
