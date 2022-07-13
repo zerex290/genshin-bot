@@ -90,9 +90,11 @@ class Characters(Enum):
     TRAVELER_BOY_ANEMO = 'Итер'
     TRAVELER_BOY_GEO = 'Итер'
     TRAVELER_BOY_ELECTRO = 'Итер'
+    TRAVELER_BOY_DENDRO = 'Итер'
     TRAVELER_GIRL_ANEMO = 'Люмин'
     TRAVELER_GIRL_GEO = 'Люмин'
     TRAVELER_GIRL_ELECTRO = 'Люмин'
+    TRAVELER_GIRL_DENDRO = 'Люмин'
 
     THOMA = 'Тома'
     TOHMA = 'Тома'
