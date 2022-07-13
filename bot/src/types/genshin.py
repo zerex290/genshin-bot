@@ -38,6 +38,9 @@ class Characters(Enum):
     YELAN = 'Е Лань'
     YEBLAN = 'Еблань'
     HEIZO = 'Хэйдзо'
+    DORI = 'Дори'
+    COLLEI = 'Коллеи'
+    TIGHNARI = 'Тигнари'
 
     SHINOBU = 'Куки Синобу'
     KUKI_SHINOBU = 'Куки Синобу'
