@@ -47,8 +47,3 @@ async def get_boss_materials(message: Message) -> None:
 @bp.on.message(CommandRule(['книги'], ['~~п'], man.Books))
 async def get_books(message: Message) -> None:
     await message.answer(attachment=await upload(bp.api, 'photo_messages', BOOKS))
-
-
-@bp.on.message(CommandRule(['данжи'], ['~~п'], man.Dungeons))
-async def get_dungeons(message: Message) -> None:
-    await message.answer(attachment=await upload(bp.api, 'photo_messages', DUNGEONS))
