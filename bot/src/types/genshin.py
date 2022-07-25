@@ -37,10 +37,12 @@ class Characters(Enum):
     SHENHE = 'Шэнь Хэ'
     YELAN = 'Е Лань'
     YEBLAN = 'Еблань'
-    HEIZO = 'Хэйдзо'
     DORI = 'Дори'
     COLLEI = 'Коллеи'
     TIGHNARI = 'Тигнари'
+
+    HEIZO = 'Хэйдзо'
+    SHIKANOIN_HEIZOU = 'Хэйдзо'
 
     SHINOBU = 'Куки Синобу'
     KUKI_SHINOBU = 'Куки Синобу'
