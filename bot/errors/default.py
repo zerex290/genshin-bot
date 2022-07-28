@@ -16,7 +16,7 @@ __all__ = (
     'FavCountRangeInvalid',
     'PictureQuantityNotSpecified',
     'PictureQuantityOverflow',
-    'TagQuantityOverflow'
+    'TagQuantityOverflow',
 )
 
 
@@ -77,4 +77,8 @@ class PictureQuantityOverflow(GenshinBotException):
 
 
 class TagQuantityOverflow(GenshinBotException):
-    _msg = 'Нельзя указать более 3 тегов за раз!'
+    def __init__(self, is_interactive: bool):
+        if is_interactive:
+            self.__class__._msg = 'В интерактивном режиме нельзя указать более 2 тегов за раз!'
+        else:
+            self.__class__._msg = 'Нельзя указать более 3 тегов за раз!'

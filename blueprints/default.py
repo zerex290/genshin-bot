@@ -1,17 +1,19 @@
 import random
 import os
 import re
-from typing import Optional
+from dataclasses import dataclass
+from typing import Optional, ClassVar
 from asyncio import sleep
 
-from vkbottle.bot import Blueprint, Message
+from vkbottle import Keyboard, KeyboardButtonColor, Callback
+from vkbottle.bot import Blueprint, Message, MessageEvent
 
 from bot.parsers import SankakuParser
-from bot.rules import CommandRule
+from bot.rules import CommandRule, EventRule
 from bot.utils import PostgresConnection, find_restricted_tags
 from bot.utils.postgres import has_postgres_data
 from bot.utils.files import download, upload
-from bot.src.constants import keyboard, tags
+from bot.src.constants import keyboard, tags as t
 from bot.errors import IncompatibleOptions
 from bot.validators import BaseValidator
 from bot.validators.default import *
@@ -147,26 +149,26 @@ async def forward_attachments(message: Message) -> None:
 
 def _get_all_tags() -> dict[str, str]:
     all_tags = {}
-    all_tags.update(tags.GENSHIN_IMPACT)
-    all_tags.update(tags.ART_STYLE)
-    all_tags.update(tags.CLOTHING)
-    all_tags.update(tags.JEWELRY)
-    all_tags.update(tags.EMOTIONS)
-    all_tags.update(tags.BODY)
-    all_tags.update(tags.CREATURES)
+    all_tags.update(t.GENSHIN_IMPACT)
+    all_tags.update(t.ART_STYLE)
+    all_tags.update(t.CLOTHING)
+    all_tags.update(t.JEWELRY)
+    all_tags.update(t.EMOTIONS)
+    all_tags.update(t.BODY)
+    all_tags.update(t.CREATURES)
     return all_tags
 
 
 def _get_tag_groups(options: list[str]) -> dict[str, str]:
     gathered_tags = {}
     tag_groups = {
-        '~~г': tags.GENSHIN_IMPACT,
-        '~~ср': tags.ART_STYLE,
-        '~~о': tags.CLOTHING,
-        '~~у': tags.JEWELRY,
-        '~~э': tags.EMOTIONS,
-        '~~т': tags.BODY,
-        '~~с': tags.CREATURES
+        '~~г': t.GENSHIN_IMPACT,
+        '~~ср': t.ART_STYLE,
+        '~~о': t.CLOTHING,
+        '~~у': t.JEWELRY,
+        '~~э': t.EMOTIONS,
+        '~~т': t.BODY,
+        '~~с': t.CREATURES
     }
     for option in options:
         tag_group = tag_groups[option]
@@ -198,58 +200,282 @@ async def get_random_tags(message: Message, options: list[str]) -> None:
                 raise IncompatibleOptions(options)
 
 
-def _compile_message(attachments: list[str]) -> str:
-    cases = {1: 'е', 2: 'я', 3: 'я', 4: 'я'}
-    return f"По вашему запросу найдено {len(attachments)} изображени{cases.get(len(attachments), 'й')}!"
+@dataclass()
+class RandomPictureState:
+    PSEUDONYMS: ClassVar[dict[str, str]] = {v: k for k, v in _get_all_tags().items()}
+    tags: tuple[str, ...]
+    nsfw: bool
+    search_limit: int
+    fav_count: int = 50
+
+    def __repr__(self) -> str:
+        response = [self.tags, self.nsfw, self.search_limit, self.fav_count]
+        return repr(response)
+
+    def __str__(self) -> str:
+        tags = [self.PSEUDONYMS.get(tag, tag) for tag in self.tags]
+        response = (
+            f"⚙Ваши предохраненные настройки:\n"
+            f"🔍Искомое кол-во изображений: {self.search_limit}\n"
+            f"💜Установленное кол-во лайков: {self.fav_count}\n"
+            f"🔞Режим NSFW: {'да' if self.nsfw else 'нет'}"
+        )
+        if tags:
+            response += f"\n📃Теги: {' | '.join(tags)}"
+        return response
 
 
-async def _get_pictures(chosen_tags: tuple[str, ...], nsfw: bool, limit: int, fav_count: int = 0) -> list[str]:
-    attachments: list[str] = []
-    rating = Rating.E if nsfw else Rating.S
-    async for post in SankakuParser(tags=chosen_tags, rating=rating).iter_posts(fav_count):
-        if len(attachments) >= limit:
-            break
-        if nsfw and find_restricted_tags(post, ('loli', 'shota')):
-            continue
-        if post.file_mediatype != MediaType.IMAGE:
-            continue
-        picture = await download(post.sample_url, FILECACHE, str(post.id), post.file_suffix)
-        if not picture:
-            continue
-        attachment = await upload(bp.api, 'photo_messages', picture)
-        if attachment is not None:
-            attachments.append(attachment)
-        os.remove(picture)
-    return attachments
+class RandomPicture:
+    SECTIONS = {
+        'art_style': 'Стиль рисунка',
+        'genshin_impact': 'Геншин',
+        'creatures': 'Существа',
+        'clothing': 'Одежда',
+        'jewelry': 'Украшения',
+        'emotions': 'Эмоции',
+        'body': 'Тело'
+    }
+
+    def __init__(self, message: Message, options: list[str], validator: RandomPictureValidator) -> None:
+        self._message = message
+        self._options = options
+        self._validator = validator
+
+    def _get_fav_count(self) -> int:
+        fav_count = re.search(r'~~л\s\d+', self._message.text)
+        self._validator.check_fav_count_defined(fav_count)
+        fav_count = int(fav_count[0].split()[1])
+        self._validator.check_fav_count_range(fav_count)
+        return fav_count
+
+    @staticmethod
+    def _get_tags(text: list[str]) -> tuple[str, ...]:
+        if len(text) > 1:
+            return tuple(_get_all_tags().get(tag, tag) for tag in text[1:])
+        else:
+            return ()
+
+    @staticmethod
+    def _compile_message(attachment_string: str) -> str:
+        cases = {1: 'е', 2: 'я', 3: 'я', 4: 'я'}
+        attachments = attachment_string.split(',')
+        return f"По вашему запросу найдено {len(attachments)} изображени{cases.get(len(attachments), 'й')}!"
+
+    @staticmethod
+    def get_interactive_keyboard(is_public: bool, user_id: int, state: str, msg_id: int) -> str:
+        kb = Keyboard(inline=is_public)
+        for i, values in enumerate(RandomPicture.SECTIONS.items()):
+            button_type, label = values
+            kb.add(
+                Callback(
+                    label,
+                    {
+                        'user_id': user_id, 'msg_id': msg_id,
+                        'type': button_type, 'state': state
+                    }
+                ),
+                KeyboardButtonColor.PRIMARY
+            )
+            if i % 2 == 0:
+                kb.row()
+        kb.add(
+                Callback(
+                    'Выйти',
+                    {'user_id': user_id, 'msg_id': msg_id, 'type': 'exit'}
+                ),
+                KeyboardButtonColor.NEGATIVE
+            )
+        return kb.get_json()
+
+    @staticmethod
+    async def get_attachments(tags: tuple[str, ...], nsfw: bool, search_limit: int, fav_count: int) -> str:
+        attachments: list[str] = []
+        rating = Rating.E if nsfw else Rating.S
+        async for post in SankakuParser(tags=tags, rating=rating).iter_posts(fav_count):
+            if len(attachments) >= search_limit:
+                break
+            if nsfw and find_restricted_tags(post, ('loli', 'shota')):
+                continue
+            if post.file_mediatype != MediaType.IMAGE:
+                continue
+            picture = await download(post.sample_url, FILECACHE, str(post.id), post.file_suffix)
+            if not picture:
+                continue
+            attachment = await upload(bp.api, 'photo_messages', picture)
+            if attachment is not None:
+                attachments.append(attachment)
+            os.remove(picture)
+        return ','.join(attachments)
+
+    async def _get_state(self, is_interactive: bool) -> RandomPictureState:
+        state = []
+        nsfw = True if '~~нсфв' in self._options else False
+        if nsfw:
+            await self._validator.check_user_is_don(bp.api, self._message.from_id)
+        text = re.sub(r'^!пик\s?|~~нсфв|~~и|~~л\s\d+', '', self._message.text.lower()).split()
+        self._validator.check_pictures_specified(text)
+        self._validator.check_pictures_quantity(int(text[0]))
+        chosen_tags = self._get_tags(text)
+        self._validator.check_tags_quantity(chosen_tags, is_interactive)
+        state.append(chosen_tags)
+        state.append(nsfw)
+        state.append(int(text[0]))
+        if '~~л' in self._options:
+            state.append(self._get_fav_count())
+        return RandomPictureState(*state)
+
+    async def get(self) -> None:
+        state = await self._get_state(False)
+        attachments = await self.get_attachments(*eval(repr(state)))
+        await self._message.answer(self._compile_message(attachments), attachments)
+
+    async def enter_interactive_mode(self) -> None:
+        preload_msg = f"Вы вошли в интерактивный режим! Предзагрузка..."
+        state = await self._get_state(True)
+        msg = await self._message.answer(preload_msg)
+        kb = self.get_interactive_keyboard(
+            self._message.peer_id >= 2e9,
+            self._message.from_id,
+            repr(state),
+            msg.conversation_message_id
+        )
+        await self._message.ctx_api.messages.edit(
+            self._message.peer_id,
+            re.sub(r'\sПред.+', f"\n\n{state}", preload_msg),
+            keyboard=kb,
+            conversation_message_id=msg.conversation_message_id
+        )
 
 
-@bp.on.message(CommandRule(['пик'], ['~~п', '~~нсфв', '~~л'], man.RandomPicture))
+@bp.on.message(CommandRule(['пик'], ['~~п', '~~нсфв', '~~л', '~~и'], man.RandomPicture))
 async def get_random_picture(message: Message, options: list[str]) -> None:
     async with RandomPictureValidator(message) as validator:
-        text = re.sub(r'^!пик\s?', '', message.text.lower().replace('~~нсфв', ''))
-        nsfw = True if '~~нсфв' in options else False
-        if nsfw:
-            await validator.check_user_is_don(bp.api, message.from_id)
-        match options:
-            case ['~~[default]'] | ['~~нсфв']:
-                text = text.split()
-                validator.check_pictures_specified(text)
-                validator.check_pictures_quantity(int(text[0]))
-                chosen_tags = tuple(_get_all_tags().get(tag, tag) for tag in text[1:]) if len(text) > 1 else ()
-                validator.check_tags_quantity(chosen_tags)
-                attachments = await _get_pictures(chosen_tags, nsfw, int(text[0]))
-                await message.answer(_compile_message(attachments), ','.join(attachments))
-            case ['~~нсфв', '~~л'] | ['~~л', '~~нсфв'] | ['~~л']:
-                fav_count = re.search(r'~~л\s\d+', text)
-                validator.check_fav_count_defined(fav_count)
-                text = text.replace(fav_count[0], '').split()
-                fav_count = int(fav_count[0].split()[1])
-                validator.check_fav_count_range(fav_count)
-                validator.check_pictures_specified(text)
-                validator.check_pictures_quantity(int(text[0]))
-                chosen_tags = tuple(_get_all_tags().get(tag, tag) for tag in text[1:]) if len(text) > 1 else ()
-                validator.check_tags_quantity(chosen_tags)
-                attachments = await _get_pictures(chosen_tags, nsfw, int(text[0]), fav_count)
-                await message.answer(_compile_message(attachments), ','.join(attachments))
-            case _:
-                raise IncompatibleOptions(options)
+        picture = RandomPicture(message, options, validator)
+        if '~~п' in options:
+            raise IncompatibleOptions(options)
+        elif '~~и' in options:
+            await picture.enter_interactive_mode()
+        else:
+            await picture.get()
+
+
+@bp.on.raw_event('message_event', MessageEvent, EventRule(('main_menu',)))
+async def return_to_menu(event: MessageEvent, payload: dict[str, str | int]) -> None:
+    state = RandomPictureState(*eval(payload['state']))
+    await event.ctx_api.messages.edit(
+        event.peer_id,
+        str(state),
+        keyboard=RandomPicture.get_interactive_keyboard(
+            event.peer_id >= 2e9,
+            payload['user_id'],
+            repr(state),
+            payload['msg_id']
+        ),
+        conversation_message_id=payload['msg_id']
+    )
+
+
+@bp.on.raw_event('message_event', MessageEvent, EventRule(('exit',)))
+async def exit_from_tags_kb(event: MessageEvent, payload: dict[str, str | int]) -> None:
+    await event.ctx_api.messages.edit(
+        event.peer_id,
+        'Произведен выход из интерактивного режима.',
+        keyboard=Keyboard().get_json(),
+        conversation_message_id=payload['msg_id']
+    )
+
+
+@bp.on.raw_event(
+    'message_event',
+    MessageEvent,
+    EventRule(('art_style', 'genshin_impact', 'creatures', 'clothing', 'jewelry', 'emotions', 'body', 'search'))
+)
+async def get_tag_sections(event: MessageEvent, payload: dict[str, str | int]) -> None:
+    attachments = None
+    if payload['type'] == 'search':
+        payload['type'] = payload['prev']
+        del payload['prev']
+        state = RandomPictureState(*eval(payload['state']))
+        state.tags = (*state.tags, payload['tag'])
+        attachments = await RandomPicture.get_attachments(*eval(repr(state)))
+
+    keyboards = []
+    kb = Keyboard(inline=event.peer_id >= 2e9)
+    tag_group = getattr(t, payload['type'].upper())
+    apl = payload.copy()  #: additional payload
+    apl['prev'] = payload['type']
+    apl['type'] = 'search'
+
+    buttons = 0
+    last = list(tag_group)[-1]
+    for pseudonym, name_en in tag_group.items():
+        apl['tag'] = name_en
+        apl['page'] = len(keyboards)
+        kb.add(Callback(pseudonym, apl.copy()))
+        buttons += 1
+        if buttons % 2 == 0 and buttons % 6 != 0 and pseudonym != last:
+            kb.row()
+        elif buttons % 6 == 0 or pseudonym == last:
+            page = len(keyboards)
+            kb.row()
+            if page != 0:
+                epl = payload.copy()  #: extra payload for page control buttons
+                epl['page'] = page - 1
+                kb.add(Callback('Назад', epl), KeyboardButtonColor.PRIMARY)
+            kb.add(
+                Callback(
+                    'Меню',
+                    {
+                        'user_id': payload['user_id'],
+                        'msg_id': payload['msg_id'],
+                        'type': 'main_menu',
+                        'state': payload['state']
+                    }
+                ),
+                KeyboardButtonColor.POSITIVE
+            )
+            if pseudonym != last:
+                epl = payload.copy()
+                epl['page'] = page + 1
+                kb.add(Callback('Далее', epl), KeyboardButtonColor.PRIMARY)
+            kb.row()
+            kb.add(
+                Callback(
+                    'Выйти',
+                    {
+                        'user_id': payload['user_id'],
+                        'msg_id': payload['msg_id'],
+                        'type': 'exit',
+                    }
+                ),
+                KeyboardButtonColor.NEGATIVE
+            )
+            keyboards.append(kb.get_json())
+            kb = Keyboard(inline=event.peer_id >= 2e9)
+            buttons = 0
+
+    msg = '{}\n📒Текущий раздел: {}\n📄Страница: {}{}{}'
+    msg_params = [
+        RandomPictureState(*eval(payload['state'])),
+        RandomPicture.SECTIONS.get(payload['type'], payload['type']),
+        payload.get('page', 0) + 1
+    ]
+    if payload.get('tag') is not None:
+        msg_params.append(
+            f"\n🕹Последний выбранный тег: "
+            f"{RandomPictureState.PSEUDONYMS.get(payload['tag'], payload['tag'])}"
+        )
+    else:
+        msg_params.append('')
+    if attachments is not None:
+        length = len(attachments.split(',')) if len(attachments) > 0 else 0
+        msg_params.append(f"\n🕯Рез. последнего поиска: {length} изобр.")
+    else:
+        msg_params.append('')
+    await event.ctx_api.messages.edit(
+        event.peer_id,
+        msg.format(*msg_params),
+        attachment=attachments,
+        keyboard=keyboards[payload.get('page', 0)],
+        conversation_message_id=payload['msg_id']
+    )

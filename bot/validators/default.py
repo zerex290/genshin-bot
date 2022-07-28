@@ -103,6 +103,6 @@ class RandomPictureValidator(BaseValidator):
             raise PictureQuantityOverflow
 
     @staticmethod
-    def check_tags_quantity(tags: tuple[str, ...]) -> None:
-        if len(tags) > 3:
-            raise TagQuantityOverflow
+    def check_tags_quantity(tags: tuple[str, ...], is_interactive: bool) -> None:
+        if len(tags) > (2 if is_interactive else 3):
+            raise TagQuantityOverflow(is_interactive)
