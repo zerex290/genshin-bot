@@ -48,32 +48,38 @@ class CommandRule(ABCRule[Message]):
                 case ['~~п']:
                     await event.answer(self.manual.HELP)
                 case []:
-                    return {'options': ['~~[default]']} if len(self.options) > 1 else True
+                    if not len(self.options) > 1:
+                        return True
+                    return {'options': ['~~[default]']}
                 case _ if incorrect_options:
-                    await event.answer(self.manual.with_incorrect_options(incorrect_options))
+                    await event.answer(
+                        self.manual.with_incorrect_options(incorrect_options)
+                    )
                 case _ if not incorrect_options:
                     return {'options': options}
         return False
 
 
 class AdminRule(ABCRule[Message]):
+    DENY_MSG = 'У вас недостаточно прав для использования данной команды!'
+
     def __init__(
             self,
-            commands: tuple[str, ...] = ('exec', 'execpg'),
+            command: str,
+            admins: list[int],
             prefix: str = '!',
-            admins: tuple[int, ...] = ()
     ) -> None:
-        self.commands = commands
-        self.prefix = prefix
+        self.command = command
         self.admins = admins
+        self.prefix = prefix
 
-    async def check(self, event: Message) -> bool | dict[str, bool]:
-        if not any([event.text.lower().startswith(self.prefix + command) for command in self.commands]):
+    async def check(self, event: Message) -> bool:
+        if not event.text.lower().startswith(self.prefix + self.command):
             return False
         if event.from_id not in self.admins:
-            await event.answer('У вас недостаточно прав для использования данной команды!')
+            await event.answer(self.DENY_MSG)
             return False
-        return {'postgres': True if event.text.lower().startswith(f"{self.prefix}execpg") else False}
+        return True
 
 
 class CustomCommandRule(ABCRule[Message]):
@@ -83,17 +89,17 @@ class CustomCommandRule(ABCRule[Message]):
     async def check(self, event: Message) -> bool | dict[str, CustomCommand]:
         if not event.text.startswith(self.prefix):
             return False
-        custom_commands: list[CustomCommand] = await get_custom_commands(event.peer_id)
-        if not custom_commands:
+        cmds = await get_custom_commands(event.peer_id)
+        if not cmds:
             return False
-        requested_command = event.text.partition(' ')[0].lstrip(self.prefix)
-        if requested_command not in [command.name for command in custom_commands]:
+        request_cmd = event.text.partition(' ')[0].lstrip(self.prefix)
+        if request_cmd not in [cmd.name for cmd in cmds]:
             return False
-        return {'command': [command for command in custom_commands if command.name == requested_command][0]}
+        return {'command': [cmd for cmd in cmds if cmd.name == request_cmd][0]}
 
 
 class EventRule(ABCRule[MessageEvent]):
-    def __init__(self, payload_type: tuple[str, ...]) -> None:
+    def __init__(self, payload_type: list[str]) -> None:
         self.payload_types = payload_type
 
     async def check(self, event: MessageEvent) -> dict[str, dict] | bool:

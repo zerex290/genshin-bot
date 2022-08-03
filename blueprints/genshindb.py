@@ -152,7 +152,7 @@ async def get_genshin_database(message: Message, options: list[str]) -> None:
                 raise IncompatibleOptions(options)
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('menu',)))
+@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['menu']))
 async def return_to_menu(event: MessageEvent, payload: dict[str, str | int]) -> None:
     await event.edit_message(
         f"Доброго времени суток, {(await event.ctx_api.users.get([payload['user_id']]))[0].first_name}!",
@@ -174,7 +174,7 @@ async def _get_attachment_icon(icon_path: str) -> Optional[str]:
 @bp.on.raw_event(
     GroupEventType.MESSAGE_EVENT,
     MessageEvent,
-    EventRule(('characters_type', 'weapons_type', 'artifacts_type', 'enemies_type', 'books_type', 'domains_type'))
+    EventRule(['characters_type', 'weapons_type', 'artifacts_type', 'enemies_type', 'books_type', 'domains_type'])
 )
 async def get_type_filters(event: MessageEvent, payload: dict[str, str | int]) -> None:
     payload_type = payload['type'].split('_')[0]
@@ -224,7 +224,7 @@ async def get_type_filters(event: MessageEvent, payload: dict[str, str | int]) -
 @bp.on.raw_event(
     GroupEventType.MESSAGE_EVENT,
     MessageEvent,
-    EventRule(('characters', 'weapons', 'artifacts', 'enemies', 'books', 'domains'))
+    EventRule(['characters', 'weapons', 'artifacts', 'enemies', 'books', 'domains'])
 )
 async def get_filtered_objects(event: MessageEvent, payload: dict[str, str | int]) -> None:
     page = 0
@@ -317,7 +317,7 @@ def _get_object_payload(user_id: int, payload, obj_data: str) -> dict[str, str |
     return payload
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('character',)))
+@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['character']))
 async def get_character(event: MessageEvent, payload: dict[str, str | int]) -> None:
     character = CharacterParser()
     data_types = {
@@ -359,7 +359,7 @@ async def get_character(event: MessageEvent, payload: dict[str, str | int]) -> N
     await event.edit_message(message, attachment=attachment, keyboard=keyboard.get_json())
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('weapon',)))
+@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['weapon']))
 async def get_weapon(event: MessageEvent, payload: dict[str, str | int]) -> None:
     weapon = WeaponParser()
     data_types = {
@@ -397,7 +397,7 @@ async def get_weapon(event: MessageEvent, payload: dict[str, str | int]) -> None
     )
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('artifact',)))
+@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['artifact']))
 async def get_artifact(event: MessageEvent, payload: dict[str, str | int]) -> None:
     artifact = ArtifactParser()
     keyboard = (
@@ -421,7 +421,7 @@ async def get_artifact(event: MessageEvent, payload: dict[str, str | int]) -> No
     )
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('enemie',)))
+@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['enemie']))
 async def get_enemy(event: MessageEvent, payload: dict[str, str | int]) -> None:
     enemy = EnemyParser()
     data_types = {
@@ -456,7 +456,7 @@ async def get_enemy(event: MessageEvent, payload: dict[str, str | int]) -> None:
     )
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('book',)))
+@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['book']))
 async def get_book(event: MessageEvent, payload: dict[str, str | int]) -> None:
     book = BookParser()
     keyboard = (
@@ -481,7 +481,7 @@ async def get_book(event: MessageEvent, payload: dict[str, str | int]) -> None:
     )
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(('domain',)))
+@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['domain']))
 async def get_domain(event: MessageEvent, payload: dict[str, str | int]) -> None:
     domain = DomainParser()
     keyboard = (

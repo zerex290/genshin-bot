@@ -359,7 +359,7 @@ async def get_random_picture(message: Message, options: list[str]) -> None:
             await picture.get()
 
 
-@bp.on.raw_event('message_event', MessageEvent, EventRule(('main_menu',)))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(['main_menu']))
 async def return_to_menu(event: MessageEvent, payload: dict[str, str | int]) -> None:
     state = RandomPictureState(*eval(payload['state']))
     await event.ctx_api.messages.edit(
@@ -375,7 +375,7 @@ async def return_to_menu(event: MessageEvent, payload: dict[str, str | int]) -> 
     )
 
 
-@bp.on.raw_event('message_event', MessageEvent, EventRule(('exit',)))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(['exit']))
 async def exit_from_tags_kb(event: MessageEvent, payload: dict[str, str | int]) -> None:
     await event.ctx_api.messages.edit(
         event.peer_id,
@@ -388,7 +388,7 @@ async def exit_from_tags_kb(event: MessageEvent, payload: dict[str, str | int]) 
 @bp.on.raw_event(
     'message_event',
     MessageEvent,
-    EventRule(('art_style', 'genshin_impact', 'creatures', 'clothing', 'jewelry', 'emotions', 'body', 'search'))
+    EventRule(['art_style', 'genshin_impact', 'creatures', 'clothing', 'jewelry', 'emotions', 'body', 'search'])
 )
 async def get_tag_sections(event: MessageEvent, payload: dict[str, str | int]) -> None:
     attachments = None
