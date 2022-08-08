@@ -4,6 +4,7 @@ from typing import Type
 from vkbottle.bot import Message, MessageEvent
 from vkbottle.dispatch.rules import ABCRule
 
+from blueprints import Options, Payload
 from bot.utils import get_custom_commands
 from bot.src.manuals import BaseManual
 from bot.src.models.customcommands import CustomCommand
@@ -21,7 +22,7 @@ class CommandRule(ABCRule[Message]):
     def __init__(
             self,
             commands: list[str],
-            options: list[str],
+            options: Options,
             manual: Type[BaseManual],
             prefix: str = '!'
     ) -> None:
@@ -39,7 +40,7 @@ class CommandRule(ABCRule[Message]):
         incorrect_options = [opt for opt in options if opt not in self.options]
         return options, incorrect_options
 
-    async def check(self, event: Message) -> bool | dict[str, list[str]]:
+    async def check(self, event: Message) -> bool | dict[str, Options]:
         for command in self.commands:
             if not event.text.lower().startswith(self.prefix + command):
                 continue
@@ -102,7 +103,7 @@ class EventRule(ABCRule[MessageEvent]):
     def __init__(self, payload_type: list[str]) -> None:
         self.payload_types = payload_type
 
-    async def check(self, event: MessageEvent) -> dict[str, dict] | bool:
+    async def check(self, event: MessageEvent) -> dict[str, Payload] | bool:
         if event.payload['type'] not in self.payload_types:
             return False
         if not event.payload['user_id'] == event.user_id:

@@ -8,6 +8,7 @@ from asyncio import sleep
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import Blueprint, Message, MessageEvent
 
+from . import Options, Payload
 from bot.parsers import SankakuParser
 from bot.rules import CommandRule, EventRule
 from bot.utils import PostgresConnection, find_restricted_tags
@@ -63,7 +64,7 @@ async def get_commands_article(message: Message) -> None:
 
 
 @bp.on.message(CommandRule(['автокоррект'], ['~~п', '~~выкл', '~~вкл'], man.Autocorrection))
-async def manage_syntax_autocorrection(message: Message, options: list[str]) -> None:
+async def manage_syntax_autocorrection(message: Message, options: Options) -> None:
     async with AutocorrectionValidator(message) as validator:
         match options:
             case ['~~[default]']:
@@ -189,7 +190,7 @@ def _randomize_tags(available_tags: dict[str, str]) -> list[str]:
 
 
 @bp.on.message(CommandRule(['рандомтег'], ['~~п', '~~г', '~~ср', '~~о', '~~у', '~~э', '~~т', '~~с'], man.RandomTag))
-async def get_random_tags(message: Message, options: list[str]) -> None:
+async def get_random_tags(message: Message, options: Options) -> None:
     async with BaseValidator(message):
         match options:
             case ['~~[default]']:
@@ -201,7 +202,7 @@ async def get_random_tags(message: Message, options: list[str]) -> None:
 
 
 @dataclass()
-class RandomPictureState:
+class _RandomPictureState:
     PSEUDONYMS: ClassVar[dict[str, str]] = {v: k for k, v in _get_all_tags().items()}
     tags: tuple[str, ...]
     nsfw: bool
@@ -236,7 +237,7 @@ class RandomPicture:
         'body': 'Тело'
     }
 
-    def __init__(self, message: Message, options: list[str], validator: RandomPictureValidator) -> None:
+    def __init__(self, message: Message, options: Options, validator: RandomPictureValidator) -> None:
         self._message = message
         self._options = options
         self._validator = validator
@@ -307,7 +308,7 @@ class RandomPicture:
             os.remove(picture)
         return ','.join(attachments)
 
-    async def _get_state(self, is_interactive: bool) -> RandomPictureState:
+    async def _get_state(self, is_interactive: bool) -> _RandomPictureState:
         state = []
         nsfw = True if '~~нсфв' in self._options else False
         if nsfw:
@@ -322,7 +323,7 @@ class RandomPicture:
         state.append(int(text[0]))
         if '~~л' in self._options:
             state.append(self._get_fav_count())
-        return RandomPictureState(*state)
+        return _RandomPictureState(*state)
 
     async def get(self) -> None:
         state = await self._get_state(False)
@@ -348,7 +349,7 @@ class RandomPicture:
 
 
 @bp.on.message(CommandRule(['пик'], ['~~п', '~~нсфв', '~~л', '~~и'], man.RandomPicture))
-async def get_random_picture(message: Message, options: list[str]) -> None:
+async def get_random_picture(message: Message, options: Options) -> None:
     async with RandomPictureValidator(message) as validator:
         picture = RandomPicture(message, options, validator)
         if '~~п' in options:
@@ -360,8 +361,8 @@ async def get_random_picture(message: Message, options: list[str]) -> None:
 
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(['main_menu']))
-async def return_to_menu(event: MessageEvent, payload: dict[str, str | int]) -> None:
-    state = RandomPictureState(*eval(payload['state']))
+async def return_to_menu(event: MessageEvent, payload: Payload) -> None:
+    state = _RandomPictureState(*eval(payload['state']))
     await event.ctx_api.messages.edit(
         event.peer_id,
         str(state),
@@ -376,7 +377,7 @@ async def return_to_menu(event: MessageEvent, payload: dict[str, str | int]) -> 
 
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(['exit']))
-async def exit_from_tags_kb(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def exit_from_tags_kb(event: MessageEvent, payload: Payload) -> None:
     await event.ctx_api.messages.edit(
         event.peer_id,
         'Произведен выход из интерактивного режима.',
@@ -390,12 +391,12 @@ async def exit_from_tags_kb(event: MessageEvent, payload: dict[str, str | int]) 
     MessageEvent,
     EventRule(['art_style', 'genshin_impact', 'creatures', 'clothing', 'jewelry', 'emotions', 'body', 'search'])
 )
-async def get_tag_sections(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def get_tag_sections(event: MessageEvent, payload: Payload) -> None:
     attachments = None
     if payload['type'] == 'search':
         payload['type'] = payload['prev']
         del payload['prev']
-        state = RandomPictureState(*eval(payload['state']))
+        state = _RandomPictureState(*eval(payload['state']))
         state.tags = (*state.tags, payload['tag'])
         attachments = await RandomPicture.get_attachments(*eval(repr(state)))
 
@@ -456,14 +457,14 @@ async def get_tag_sections(event: MessageEvent, payload: dict[str, str | int]) -
 
     msg = '{}\n📒Текущий раздел: {}\n📄Страница: {}{}{}'
     msg_params = [
-        RandomPictureState(*eval(payload['state'])),
+        _RandomPictureState(*eval(payload['state'])),
         RandomPicture.SECTIONS.get(payload['type'], payload['type']),
         payload.get('page', 0) + 1
     ]
     if payload.get('tag') is not None:
         msg_params.append(
             f"\n🕹Последний выбранный тег: "
-            f"{RandomPictureState.PSEUDONYMS.get(payload['tag'], payload['tag'])}"
+            f"{_RandomPictureState.PSEUDONYMS.get(payload['tag'], payload['tag'])}"
         )
     else:
         msg_params.append('')

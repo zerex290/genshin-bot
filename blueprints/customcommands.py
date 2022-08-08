@@ -6,6 +6,7 @@ from typing import Optional
 from vkbottle.bot import Blueprint, Message
 from vkbottle_types.objects import MessagesMessageAttachment
 
+from . import Options
 from bot.utils import PostgresConnection
 from bot.rules import CommandRule, CustomCommandRule
 from bot.utils import get_custom_commands, get_current_timestamp
@@ -22,7 +23,7 @@ bp = Blueprint('UserCommands')
 
 
 @bp.on.message(CommandRule(['комы'], ['~~п', '~~с', '~~общ', '~~огр'], man.CommandList))
-async def view_custom_commands(message: Message, options: list[str]) -> None:
+async def view_custom_commands(message: Message, options: Options) -> None:
     async with ViewValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
         match options:

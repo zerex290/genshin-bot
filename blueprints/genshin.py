@@ -3,6 +3,7 @@ from datetime import datetime
 
 from vkbottle.bot import Blueprint, Message
 
+from . import Options
 from bot.rules import CommandRule
 from bot.errors import IncompatibleOptions
 from bot.validators import BaseValidator
@@ -14,7 +15,7 @@ from bot.config.dependencies.paths import DAILY_MATERIALS, BOSS_MATERIALS, BOOKS
 bp = Blueprint('GenshinCommands')
 
 
-async def _get_material_attachments(options: list[str]) -> str:
+async def _get_material_attachments(options: Options) -> str:
     days = {'~~пн': 0, '~~вт': 1, '~~ср': 2, '~~чт': 3, '~~пт': 4, '~~сб': 5, '~~вс': 6}
     response = []
     for option in options:
@@ -25,7 +26,7 @@ async def _get_material_attachments(options: list[str]) -> str:
 @bp.on.message(
     CommandRule(['фарм'], ['~~п', '~~пн', '~~вт', '~~ср', '~~чт', '~~пт', '~~сб', '~~вс'], man.DailyMaterials)
 )
-async def get_daily_materials(message: Message, options: list[str]) -> None:
+async def get_daily_materials(message: Message, options: Options) -> None:
     async with BaseValidator(message):
         match options:
             case ['~~[default]']:

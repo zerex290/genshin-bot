@@ -6,6 +6,7 @@ from vkbottle import Keyboard, KeyboardButtonColor, Callback, GroupEventType
 from vkbottle.bot import Blueprint, Message, MessageEvent
 from vkbottle_types.objects import MessagesKeyboard
 
+from . import Options, Payload
 from bot.parsers import CharacterParser, WeaponParser, ArtifactParser, EnemyParser, BookParser, DomainParser
 from bot.rules import CommandRule, EventRule
 from bot.utils import PostgresConnection, json
@@ -110,7 +111,7 @@ def _change_keyboard_owner(keyboard: MessagesKeyboard, user_id: int) -> Messages
 
 
 @bp.on.message(CommandRule(['гдб'], ['~~п', '~~аш', '~~дш', '~~ш'], man.GenshinDatabase))
-async def get_genshin_database(message: Message, options: list[str]) -> None:
+async def get_genshin_database(message: Message, options: Options) -> None:
     async with GenshinDBValidator(message) as validator:
         match options:
             case ['~~[default]']:
@@ -153,7 +154,7 @@ async def get_genshin_database(message: Message, options: list[str]) -> None:
 
 
 @bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['menu']))
-async def return_to_menu(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def return_to_menu(event: MessageEvent, payload: Payload) -> None:
     await event.edit_message(
         f"Доброго времени суток, {(await event.ctx_api.users.get([payload['user_id']]))[0].first_name}!",
         attachment=await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png'),
@@ -176,7 +177,7 @@ async def _get_attachment_icon(icon_path: str) -> Optional[str]:
     MessageEvent,
     EventRule(['characters_type', 'weapons_type', 'artifacts_type', 'enemies_type', 'books_type', 'domains_type'])
 )
-async def get_type_filters(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def get_type_filters(event: MessageEvent, payload: Payload) -> None:
     payload_type = payload['type'].split('_')[0]
     page = 0
     buttons = 0
@@ -226,7 +227,7 @@ async def get_type_filters(event: MessageEvent, payload: dict[str, str | int]) -
     MessageEvent,
     EventRule(['characters', 'weapons', 'artifacts', 'enemies', 'books', 'domains'])
 )
-async def get_filtered_objects(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def get_filtered_objects(event: MessageEvent, payload: Payload) -> None:
     page = 0
     buttons = 0
     objects = json.load(payload['type'])[payload['filter']]
@@ -318,7 +319,7 @@ def _get_object_payload(user_id: int, payload, obj_data: str) -> dict[str, str |
 
 
 @bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['character']))
-async def get_character(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def get_character(event: MessageEvent, payload: Payload) -> None:
     character = CharacterParser()
     data_types = {
         'information': ('Основная информация', character.get_information),
@@ -360,7 +361,7 @@ async def get_character(event: MessageEvent, payload: dict[str, str | int]) -> N
 
 
 @bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['weapon']))
-async def get_weapon(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def get_weapon(event: MessageEvent, payload: Payload) -> None:
     weapon = WeaponParser()
     data_types = {
         'information': ('Основная информация', weapon.get_information),
@@ -398,7 +399,7 @@ async def get_weapon(event: MessageEvent, payload: dict[str, str | int]) -> None
 
 
 @bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['artifact']))
-async def get_artifact(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def get_artifact(event: MessageEvent, payload: Payload) -> None:
     artifact = ArtifactParser()
     keyboard = (
         Keyboard(one_time=False, inline=True)
@@ -422,7 +423,7 @@ async def get_artifact(event: MessageEvent, payload: dict[str, str | int]) -> No
 
 
 @bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['enemie']))
-async def get_enemy(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def get_enemy(event: MessageEvent, payload: Payload) -> None:
     enemy = EnemyParser()
     data_types = {
         'information': ('Основная информация', enemy.get_information),
@@ -457,7 +458,7 @@ async def get_enemy(event: MessageEvent, payload: dict[str, str | int]) -> None:
 
 
 @bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['book']))
-async def get_book(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def get_book(event: MessageEvent, payload: Payload) -> None:
     book = BookParser()
     keyboard = (
         Keyboard(one_time=False, inline=True)
@@ -482,7 +483,7 @@ async def get_book(event: MessageEvent, payload: dict[str, str | int]) -> None:
 
 
 @bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['domain']))
-async def get_domain(event: MessageEvent, payload: dict[str, str | int]) -> None:
+async def get_domain(event: MessageEvent, payload: Payload) -> None:
     domain = DomainParser()
     keyboard = (
         Keyboard(one_time=False, inline=True)

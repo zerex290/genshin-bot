@@ -8,6 +8,7 @@ from genshin.types import Game
 from genshin.errors import GenshinException, InvalidCookies
 
 import bot.src.templates as tpl
+from . import Options
 from bot.errors import IncompatibleOptions
 from bot.rules import CommandRule
 from bot.utils import PostgresConnection, GenshinClient
@@ -129,7 +130,7 @@ async def unlink_genshin_account(message: Message) -> None:
 
 
 @bp.on.message(CommandRule(['заметки'], ['~~п', '~~у'], man.Notes))
-async def get_notes(message: Message, options: list[str]) -> None:
+async def get_notes(message: Message, options: Options) -> None:
     async with GenshinDataValidator(message, 'Notes') as validator:
         match options:
             case ['~~у']:
@@ -146,7 +147,7 @@ async def get_notes(message: Message, options: list[str]) -> None:
 
 
 @bp.on.message(CommandRule(['статы'], ['~~п', '~~у'], man.Stats))
-async def get_stats(message: Message, options: list[str]) -> None:
+async def get_stats(message: Message, options: Options) -> None:
     async with GenshinDataValidator(message, 'Stats') as validator:
         match options:
             case ['~~у']:
@@ -186,7 +187,7 @@ async def redeem_code(message: Message) -> None:
 
 
 @bp.on.message(CommandRule(['резинноут'], ['~~п', '~~выкл', '~~вкл', '~~мин'], man.ResinNotifications))
-async def manage_resin_notifications(message: Message, options: list[str]) -> None:
+async def manage_resin_notifications(message: Message, options: Options) -> None:
     async with ResinNotifyValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
         await validator.check_account_linked(message.from_id)
@@ -236,7 +237,7 @@ async def manage_resin_notifications(message: Message, options: list[str]) -> No
 
 
 @bp.on.message(CommandRule(['дневник'], ['~~п', '~~у'], man.Diary))
-async def get_traveler_diary(message: Message, options: list[str]) -> None:
+async def get_traveler_diary(message: Message, options: Options) -> None:
     async with GenshinDataValidator(message, 'Diary') as validator:
         match options:
             case ['~~у']:
@@ -253,7 +254,7 @@ async def get_traveler_diary(message: Message, options: list[str]) -> None:
 
 
 @bp.on.message(CommandRule(['бездна'], ['~~п', '~~у'], man.SpiralAbyss))
-async def get_spiral_abyss(message: Message, options: list[str]) -> None:
+async def get_spiral_abyss(message: Message, options: Options) -> None:
     async with SpiralAbyssValidator(message, 'SpiralAbyss') as validator:
         match options:
             case ['~~у']:
