@@ -1,5 +1,6 @@
 import re
 from typing import Optional
+from functools import lru_cache
 
 from vkbottle import BaseMiddleware
 from vkbottle.bot import Message
@@ -25,13 +26,6 @@ ACTIONS = [
     MessagesMessageActionStatus.CHAT_INVITE_USER_BY_LINK,
     MessagesMessageActionStatus.CHAT_KICK_USER
 ]
-
-
-async def _insert_into_users(user_id: int) -> None:
-    if await has_postgres_data(f"SELECT user_id FROM users WHERE user_id = {user_id};"):
-        return None
-    async with PostgresConnection() as connection:
-        await connection.execute(f"INSERT INTO users VALUES ({user_id});")
 
 
 class GroupFilterMiddleware(BaseMiddleware[Message]):
@@ -83,42 +77,51 @@ class ChatUserUpdateMiddleware(BaseMiddleware[Message]):
 class CommandGuesserMiddleware(BaseMiddleware[Message]):
     def _format_text(self) -> str:
         text = self.event.text
-        for C in COMMANDS:
-            command = ''.join(keyboard.LATIN.get(symbol, symbol) for symbol in C)
-            if re.match(fr"!{command}\S", text):
-                text = text.replace(f"!{command}", f"!{command} ")
-                break
-            elif re.match(fr"!{C}\S", text):
-                text = text.replace(f"!{C}", f"!{C} ")
-                break
-        command = text.split(maxsplit=1)[0].lstrip('!')
-        options = re.findall(r'\s~~\S+', text)
-        options_converted = [''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in option) for option in options]
-        text = text.replace(f"!{command}", f"!{''.join(keyboard.CYRILLIC.get(symbol, symbol) for symbol in command)}")
-        for i, option in enumerate(options):
-            text = text.replace(option, options_converted[i])
+        cmd = text.split(maxsplit=1)[0]
+        opt = re.findall(r'\s~~\S+', text)
+        text = text.replace(cmd, ''.join(keyboard.CYRILLIC.get(s, s) for s in cmd))
+        for o in opt:
+            text = text.replace(o, ''.join(keyboard.CYRILLIC.get(s, s) for s in o))
         return text
 
-    @staticmethod
-    def _get_match(command: str, precision: float) -> Optional[str]:
-        matches = {}
-        for match in [C for C in COMMANDS if len(C) - 2 <= len(command) <= len(C) + 1]:
-            matches[len(set(match).intersection(command)) / len(match)] = match
-        return matches[max(matches)] if matches and max(matches) >= precision else None
+    @lru_cache()
+    def _calc_lev_dist(self, s1: str, s2: str) -> int:
+        if len(s1) == 0 or len(s2) == 0:
+            return len(s1) or len(s2)
+
+        if s1[0] == s2[0]:
+            return self._calc_lev_dist(s1[1:], s2[1:])
+
+        return 1 + min(
+            self._calc_lev_dist(s1[1:], s2),
+            self._calc_lev_dist(s1, s2[1:]),
+            self._calc_lev_dist(s1[1:], s2[1:])
+        )
+
+    def _get_match(self, cmd: str, min_dist: int) -> Optional[str]:
+        matches = {self._calc_lev_dist(cmd, C): C for C in COMMANDS}
+        return matches[min(matches)] if matches and min(matches) <= min_dist else None
 
     async def pre(self) -> None:
         if not self.event.text.startswith('!') or self.event.text.startswith('!!'):
             return None
         text = self._format_text()
         command = text.split(maxsplit=1)[0].lstrip('!')
-        match = self._get_match(command.lower(), 0.66)
+        match = self._get_match(command.lower(), 2)
         if not match:
             return None
-        guess = text.replace(f"!{command}", f"!{match}")
-        if self.event.text == guess:
+        text = text.replace(f"!{command}", f"!{match}")
+        if self.event.text == text:
             return None
         if await has_postgres_data(f"SELECT * FROM users WHERE user_id = {self.event.from_id} AND autocorrect = false"):
-            await self.event.answer(f"Возможно, вы имели ввиду <<{guess}>>?")
-            self.stop(description='Wrong command syntax')
+            await self.event.answer(f"~~Возможно, вы имели ввиду <<{text}>>?")
+            self.stop()
         else:
-            self.event.text = guess
+            self.event.text = text
+
+
+async def _insert_into_users(user_id: int) -> None:
+    if await has_postgres_data(f"SELECT user_id FROM users WHERE user_id = {user_id};"):
+        return None
+    async with PostgresConnection() as connection:
+        await connection.execute(f"INSERT INTO users VALUES ({user_id});")
