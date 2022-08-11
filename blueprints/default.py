@@ -26,6 +26,250 @@ from bot.config.dependencies.paths import FILECACHE
 bp = Blueprint('DefaultCommands')
 
 
+class Autocorrection:
+    def __init__(self, user_id: int) -> None:
+        self.user_id = user_id
+
+    async def get_status(self) -> str:
+        status = await has_postgres_data(
+            f"SELECT * FROM users WHERE user_id = {self.user_id} AND autocorrect = true;"
+        )
+        return f"У вас {'включена' if status else 'выключена'} автокоррекция команд!"
+
+    async def turn_off(self) -> None:
+        async with PostgresConnection() as connection:
+            await connection.execute(
+                f"UPDATE users SET autocorrect = false WHERE user_id = {self.user_id};"
+            )
+
+    async def turn_on(self) -> None:
+        async with PostgresConnection() as connection:
+            await connection.execute(
+                f"UPDATE users SET autocorrect = true WHERE user_id = {self.user_id};"
+            )
+
+
+class Timer:
+    def __init__(self, message: Message, validator: TimerValidator) -> None:
+        self.message = message
+        self.validator = validator
+
+    @staticmethod
+    def _evaluate_time(time: str) -> Optional[int]:
+        try:
+            time = re.sub('[xч]', '*3600+', re.sub('[vм]', '*60+', re.sub('[cс]', '*1+', time))).strip().rpartition('+')
+            countdown = eval(time[0])
+        except (SyntaxError, NameError):
+            countdown = None
+        return countdown
+
+    def _compile_message(self, note: str) -> str:
+        return (
+            f"@id{self.message.from_id} (), время прошло! "
+            f"{'Пометка: ' + note if note else ''}"
+        )
+
+    async def set(self) -> None:
+        text = self.message.text.lstrip('!таймер')
+        self.validator.check_timer_specified(text)
+        time, note = (text.split('/')[0], text.split('/')[1]) if text.find('/') != -1 else (text, '')
+        countdown = self._evaluate_time(time.lower())
+        self.validator.check_timer_syntax(countdown)
+        await self.message.answer('Таймер установлен!')
+        await sleep(countdown)
+        await self.message.answer(self._compile_message(note))
+
+
+class RandomTag:
+    @staticmethod
+    def get_all_tags() -> dict[str, str]:
+        all_tags = {}
+        all_tags.update(t.GENSHIN_IMPACT)
+        all_tags.update(t.ART_STYLE)
+        all_tags.update(t.CLOTHING)
+        all_tags.update(t.JEWELRY)
+        all_tags.update(t.EMOTIONS)
+        all_tags.update(t.BODY)
+        all_tags.update(t.CREATURES)
+        return all_tags
+
+    @staticmethod
+    def get_all_tags_by_groups(options: Options) -> dict[str, str]:
+        gathered_tags = {}
+        tag_groups = {
+            '~~г': t.GENSHIN_IMPACT,
+            '~~ср': t.ART_STYLE,
+            '~~о': t.CLOTHING,
+            '~~у': t.JEWELRY,
+            '~~э': t.EMOTIONS,
+            '~~т': t.BODY,
+            '~~с': t.CREATURES
+        }
+        for option in options:
+            tag_group = tag_groups[option]
+            for tag in tag_group:
+                gathered_tags[tag] = tag_group[tag]
+        return gathered_tags
+
+    @staticmethod
+    def get_randomized_tags(tags: dict[str, str]) -> str:
+        randomized_tags = []
+        for _ in range(0, random.randint(1, len(tags) // 2)):
+            if not tags:
+                continue
+            tag = random.choice(tuple(tags))
+            randomized_tags.append(tag)
+            del tags[tag]
+        return ' | '.join(randomized_tags)
+
+
+@dataclass()
+class _RandomPictureState:
+    PSEUDONYMS: ClassVar[dict[str, str]] = {v: k for k, v in RandomTag.get_all_tags().items()}
+    tags: tuple[str, ...]
+    nsfw: bool
+    search_limit: int
+    fav_count: int = 50
+
+    def __repr__(self) -> str:
+        response = [self.tags, self.nsfw, self.search_limit, self.fav_count]
+        return repr(response)
+
+    def __str__(self) -> str:
+        tags = [self.PSEUDONYMS.get(tag, tag) for tag in self.tags]
+        response = (
+            f"⚙Ваши предохраненные настройки:\n"
+            f"🔍Искомое кол-во изображений: {self.search_limit}\n"
+            f"💜Установленное кол-во лайков: {self.fav_count}\n"
+            f"🔞Режим NSFW: {'да' if self.nsfw else 'нет'}"
+        )
+        if tags:
+            response += f"\n📃Теги: {' | '.join(tags)}"
+        return response
+
+
+class RandomPicture:
+    SECTIONS = {
+        'art_style': 'Стиль рисунка',
+        'genshin_impact': 'Геншин',
+        'creatures': 'Существа',
+        'clothing': 'Одежда',
+        'jewelry': 'Украшения',
+        'emotions': 'Эмоции',
+        'body': 'Тело'
+    }
+
+    def __init__(self, message: Message, options: Options, validator: RandomPictureValidator) -> None:
+        self.message = message
+        self.options = options
+        self.validator = validator
+
+    def _get_fav_count(self) -> int:
+        fav_count = re.search(r'~~л\s\d+', self.message.text)
+        self.validator.check_fav_count_defined(fav_count)
+        fav_count = int(fav_count[0].split()[1])
+        self.validator.check_fav_count_range(fav_count)
+        return fav_count
+
+    @staticmethod
+    def _get_tags(text: list[str]) -> tuple[str, ...]:
+        if len(text) > 1:
+            return tuple(RandomTag.get_all_tags().get(tag, tag) for tag in text[1:])
+        else:
+            return ()
+
+    @staticmethod
+    def _compile_message(attachment_string: str) -> str:
+        cases = {1: 'е', 2: 'я', 3: 'я', 4: 'я'}
+        attachments = attachment_string.split(',')
+        return f"По вашему запросу найдено {len(attachments)} изображени{cases.get(len(attachments), 'й')}!"
+
+    @staticmethod
+    def get_interactive_keyboard(is_public: bool, user_id: int, state: str, msg_id: int) -> str:
+        kb = Keyboard(inline=is_public)
+        for i, values in enumerate(RandomPicture.SECTIONS.items()):
+            button_type, label = values
+            kb.add(
+                Callback(
+                    label,
+                    {
+                        'user_id': user_id, 'msg_id': msg_id,
+                        'type': button_type, 'state': state
+                    }
+                ),
+                KeyboardButtonColor.PRIMARY
+            )
+            if i % 2 == 0:
+                kb.row()
+        kb.add(
+            Callback(
+                'Выйти',
+                {'user_id': user_id, 'msg_id': msg_id, 'type': 'exit'}
+            ),
+            KeyboardButtonColor.NEGATIVE
+        )
+        return kb.get_json()
+
+    @staticmethod
+    async def get_attachments(tags: tuple[str, ...], nsfw: bool, search_limit: int, fav_count: int) -> str:
+        attachments: list[str] = []
+        rating = Rating.E if nsfw else Rating.S
+        async for post in SankakuParser(tags=tags, rating=rating).iter_posts(fav_count):
+            if len(attachments) >= search_limit:
+                break
+            if nsfw and find_restricted_tags(post, ('loli', 'shota')):
+                continue
+            if post.file_mediatype != MediaType.IMAGE:
+                continue
+            picture = await download(post.sample_url, FILECACHE, str(post.id), post.file_suffix)
+            if not picture:
+                continue
+            attachment = await upload(bp.api, 'photo_messages', picture)
+            if attachment is not None:
+                attachments.append(attachment)
+            os.remove(picture)
+        return ','.join(attachments)
+
+    async def _get_state(self, is_interactive: bool) -> _RandomPictureState:
+        state = []
+        nsfw = True if '~~нсфв' in self.options else False
+        if nsfw:
+            await self.validator.check_user_is_don(bp.api, self.message.from_id)
+        text = re.sub(r'^!пик\s?|~~нсфв|~~и|~~л\s\d+', '', self.message.text.lower()).split()
+        self.validator.check_pictures_specified(text)
+        self.validator.check_pictures_quantity(int(text[0]))
+        chosen_tags = self._get_tags(text)
+        self.validator.check_tags_quantity(chosen_tags, is_interactive)
+        state.append(chosen_tags)
+        state.append(nsfw)
+        state.append(int(text[0]))
+        if '~~л' in self.options:
+            state.append(self._get_fav_count())
+        return _RandomPictureState(*state)
+
+    async def get(self) -> None:
+        state = await self._get_state(False)
+        attachments = await self.get_attachments(*eval(repr(state)))
+        await self.message.answer(self._compile_message(attachments), attachments)
+
+    async def enter_interactive_mode(self) -> None:
+        preload_msg = f"Вы вошли в интерактивный режим! Предзагрузка..."
+        state = await self._get_state(True)
+        msg = await self.message.answer(preload_msg)
+        kb = self.get_interactive_keyboard(
+            self.message.peer_id >= 2e9,
+            self.message.from_id,
+            repr(state),
+            msg.conversation_message_id
+        )
+        await self.message.ctx_api.messages.edit(
+            self.message.peer_id,
+            re.sub(r'\sПред.+', f"\n\n{state}", preload_msg),
+            keyboard=kb,
+            conversation_message_id=msg.conversation_message_id
+        )
+
+
 @bp.on.message(CommandRule(['команды'], ['~~п'], man.Guide))
 async def get_commands_article(message: Message) -> None:
     commands = (
@@ -66,25 +310,17 @@ async def get_commands_article(message: Message) -> None:
 @bp.on.message(CommandRule(['автокоррект'], ['~~п', '~~выкл', '~~вкл'], man.Autocorrection))
 async def manage_syntax_autocorrection(message: Message, options: Options) -> None:
     async with AutocorrectionValidator(message) as validator:
+        autocorrection = Autocorrection(message.from_id)
         match options:
             case ['~~[default]']:
-                status = await has_postgres_data(
-                    f"SELECT * FROM users WHERE user_id = {message.from_id} AND autocorrect = true;"
-                )
-                await message.answer(f"У вас {'включена' if status else 'выключена'} автокоррекция команд!")
+                await message.answer(await autocorrection.get_status())
             case ['~~выкл']:
                 await validator.check_autocorrection_already_disabled(message.from_id)
-                async with PostgresConnection() as connection:
-                    await connection.execute(
-                        f"UPDATE users SET autocorrect = false WHERE user_id = {message.from_id};"
-                    )
+                await autocorrection.turn_off()
                 await message.answer('Автокоррекция команд теперь выключена!')
             case ['~~вкл']:
                 await validator.check_autocorrection_already_enabled(message.from_id)
-                async with PostgresConnection() as connection:
-                    await connection.execute(
-                        f"UPDATE users SET autocorrect = true WHERE user_id = {message.from_id};"
-                    )
+                await autocorrection.turn_on()
                 await message.answer('Автокоррекция команд теперь включена!')
             case _:
                 raise IncompatibleOptions(options)
@@ -112,30 +348,10 @@ async def convert(message: Message) -> None:
         await message.answer(converted)
 
 
-def _evaluate_time(time: str) -> Optional[int]:
-    try:
-        time = re.sub('[xч]', '*3600+', re.sub('[vм]', '*60+', re.sub('[cс]', '*1+', time))).strip().rpartition('+')
-        countdown = eval(time[0])
-    except (SyntaxError, NameError):
-        countdown = None
-    return countdown
-
-
 @bp.on.message(CommandRule(['таймер'], ['~~п'], man.Timer))
 async def set_timer(message: Message) -> None:
     async with TimerValidator(message) as validator:
-        text = message.text.lstrip('!таймер')
-        validator.check_timer_specified(text)
-        time, note = (text.split('/')[0], text.split('/')[1]) if text.find('/') != -1 else (text, '')
-        countdown = _evaluate_time(time.lower())
-        validator.check_timer_syntax(countdown)
-        await message.answer('Таймер установлен!')
-        await sleep(countdown)
-        response = (
-            f"@id{message.from_id} ({(await message.get_user()).first_name}), время прошло! "
-            f"{'Пометка: ' + note if note else ''}"
-        )
-        await message.answer(response)
+        await Timer(message, validator).set()
 
 
 @bp.on.message(CommandRule(['перешли'], ['~~п'], man.Attachments))
@@ -148,204 +364,16 @@ async def forward_attachments(message: Message) -> None:
         await message.answer(attachment=','.join(response))
 
 
-def _get_all_tags() -> dict[str, str]:
-    all_tags = {}
-    all_tags.update(t.GENSHIN_IMPACT)
-    all_tags.update(t.ART_STYLE)
-    all_tags.update(t.CLOTHING)
-    all_tags.update(t.JEWELRY)
-    all_tags.update(t.EMOTIONS)
-    all_tags.update(t.BODY)
-    all_tags.update(t.CREATURES)
-    return all_tags
-
-
-def _get_tag_groups(options: list[str]) -> dict[str, str]:
-    gathered_tags = {}
-    tag_groups = {
-        '~~г': t.GENSHIN_IMPACT,
-        '~~ср': t.ART_STYLE,
-        '~~о': t.CLOTHING,
-        '~~у': t.JEWELRY,
-        '~~э': t.EMOTIONS,
-        '~~т': t.BODY,
-        '~~с': t.CREATURES
-    }
-    for option in options:
-        tag_group = tag_groups[option]
-        for tag in tag_group:
-            gathered_tags[tag] = tag_group[tag]
-    return gathered_tags
-
-
-def _randomize_tags(available_tags: dict[str, str]) -> list[str]:
-    randomized_tags = []
-    for _ in range(0, random.randint(1, len(available_tags) // 2)):
-        if not available_tags:
-            continue
-        tag = random.choice(tuple(available_tags))
-        randomized_tags.append(tag)
-        del available_tags[tag]
-    return randomized_tags
-
-
 @bp.on.message(CommandRule(['рандомтег'], ['~~п', '~~г', '~~ср', '~~о', '~~у', '~~э', '~~т', '~~с'], man.RandomTag))
 async def get_random_tags(message: Message, options: Options) -> None:
     async with BaseValidator(message):
         match options:
             case ['~~[default]']:
-                await message.answer('\n'.join(_randomize_tags(_get_all_tags())))
+                await message.answer(RandomTag.get_randomized_tags(RandomTag.get_all_tags()))
             case _ if '~~п' not in options:
-                await message.answer('\n'.join(_randomize_tags(_get_tag_groups(options))))
+                await message.answer(RandomTag.get_randomized_tags(RandomTag.get_all_tags_by_groups(options)))
             case _ if '~~п' in options:
                 raise IncompatibleOptions(options)
-
-
-@dataclass()
-class _RandomPictureState:
-    PSEUDONYMS: ClassVar[dict[str, str]] = {v: k for k, v in _get_all_tags().items()}
-    tags: tuple[str, ...]
-    nsfw: bool
-    search_limit: int
-    fav_count: int = 50
-
-    def __repr__(self) -> str:
-        response = [self.tags, self.nsfw, self.search_limit, self.fav_count]
-        return repr(response)
-
-    def __str__(self) -> str:
-        tags = [self.PSEUDONYMS.get(tag, tag) for tag in self.tags]
-        response = (
-            f"⚙Ваши предохраненные настройки:\n"
-            f"🔍Искомое кол-во изображений: {self.search_limit}\n"
-            f"💜Установленное кол-во лайков: {self.fav_count}\n"
-            f"🔞Режим NSFW: {'да' if self.nsfw else 'нет'}"
-        )
-        if tags:
-            response += f"\n📃Теги: {' | '.join(tags)}"
-        return response
-
-
-class RandomPicture:
-    SECTIONS = {
-        'art_style': 'Стиль рисунка',
-        'genshin_impact': 'Геншин',
-        'creatures': 'Существа',
-        'clothing': 'Одежда',
-        'jewelry': 'Украшения',
-        'emotions': 'Эмоции',
-        'body': 'Тело'
-    }
-
-    def __init__(self, message: Message, options: Options, validator: RandomPictureValidator) -> None:
-        self._message = message
-        self._options = options
-        self._validator = validator
-
-    def _get_fav_count(self) -> int:
-        fav_count = re.search(r'~~л\s\d+', self._message.text)
-        self._validator.check_fav_count_defined(fav_count)
-        fav_count = int(fav_count[0].split()[1])
-        self._validator.check_fav_count_range(fav_count)
-        return fav_count
-
-    @staticmethod
-    def _get_tags(text: list[str]) -> tuple[str, ...]:
-        if len(text) > 1:
-            return tuple(_get_all_tags().get(tag, tag) for tag in text[1:])
-        else:
-            return ()
-
-    @staticmethod
-    def _compile_message(attachment_string: str) -> str:
-        cases = {1: 'е', 2: 'я', 3: 'я', 4: 'я'}
-        attachments = attachment_string.split(',')
-        return f"По вашему запросу найдено {len(attachments)} изображени{cases.get(len(attachments), 'й')}!"
-
-    @staticmethod
-    def get_interactive_keyboard(is_public: bool, user_id: int, state: str, msg_id: int) -> str:
-        kb = Keyboard(inline=is_public)
-        for i, values in enumerate(RandomPicture.SECTIONS.items()):
-            button_type, label = values
-            kb.add(
-                Callback(
-                    label,
-                    {
-                        'user_id': user_id, 'msg_id': msg_id,
-                        'type': button_type, 'state': state
-                    }
-                ),
-                KeyboardButtonColor.PRIMARY
-            )
-            if i % 2 == 0:
-                kb.row()
-        kb.add(
-                Callback(
-                    'Выйти',
-                    {'user_id': user_id, 'msg_id': msg_id, 'type': 'exit'}
-                ),
-                KeyboardButtonColor.NEGATIVE
-            )
-        return kb.get_json()
-
-    @staticmethod
-    async def get_attachments(tags: tuple[str, ...], nsfw: bool, search_limit: int, fav_count: int) -> str:
-        attachments: list[str] = []
-        rating = Rating.E if nsfw else Rating.S
-        async for post in SankakuParser(tags=tags, rating=rating).iter_posts(fav_count):
-            if len(attachments) >= search_limit:
-                break
-            if nsfw and find_restricted_tags(post, ('loli', 'shota')):
-                continue
-            if post.file_mediatype != MediaType.IMAGE:
-                continue
-            picture = await download(post.sample_url, FILECACHE, str(post.id), post.file_suffix)
-            if not picture:
-                continue
-            attachment = await upload(bp.api, 'photo_messages', picture)
-            if attachment is not None:
-                attachments.append(attachment)
-            os.remove(picture)
-        return ','.join(attachments)
-
-    async def _get_state(self, is_interactive: bool) -> _RandomPictureState:
-        state = []
-        nsfw = True if '~~нсфв' in self._options else False
-        if nsfw:
-            await self._validator.check_user_is_don(bp.api, self._message.from_id)
-        text = re.sub(r'^!пик\s?|~~нсфв|~~и|~~л\s\d+', '', self._message.text.lower()).split()
-        self._validator.check_pictures_specified(text)
-        self._validator.check_pictures_quantity(int(text[0]))
-        chosen_tags = self._get_tags(text)
-        self._validator.check_tags_quantity(chosen_tags, is_interactive)
-        state.append(chosen_tags)
-        state.append(nsfw)
-        state.append(int(text[0]))
-        if '~~л' in self._options:
-            state.append(self._get_fav_count())
-        return _RandomPictureState(*state)
-
-    async def get(self) -> None:
-        state = await self._get_state(False)
-        attachments = await self.get_attachments(*eval(repr(state)))
-        await self._message.answer(self._compile_message(attachments), attachments)
-
-    async def enter_interactive_mode(self) -> None:
-        preload_msg = f"Вы вошли в интерактивный режим! Предзагрузка..."
-        state = await self._get_state(True)
-        msg = await self._message.answer(preload_msg)
-        kb = self.get_interactive_keyboard(
-            self._message.peer_id >= 2e9,
-            self._message.from_id,
-            repr(state),
-            msg.conversation_message_id
-        )
-        await self._message.ctx_api.messages.edit(
-            self._message.peer_id,
-            re.sub(r'\sПред.+', f"\n\n{state}", preload_msg),
-            keyboard=kb,
-            conversation_message_id=msg.conversation_message_id
-        )
 
 
 @bp.on.message(CommandRule(['пик'], ['~~п', '~~нсфв', '~~л', '~~и'], man.RandomPicture))

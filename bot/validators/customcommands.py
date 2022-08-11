@@ -80,6 +80,7 @@ class DeletionValidator(BaseValidator, ChatValidator):
 class ViewValidator(BaseValidator, ChatValidator):
     @staticmethod
     def check_commands_created(custom_commands: list[CustomCommand]) -> None:
+        """To be removed"""
         if not custom_commands:
             raise CommandsNotCreated
 

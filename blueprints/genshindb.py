@@ -21,148 +21,120 @@ from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION
 bp = Blueprint('GenshinDatabase')
 
 
-def _get_menu_keyboard(user_id: int) -> str:
-    keyboard = (
-        Keyboard(one_time=False, inline=True)
-        .add(
-            Callback('Персонажи', {'user_id': user_id, 'type': 'characters_type', 'page': 0}),
-            KeyboardButtonColor.PRIMARY
+class GenshinDatabase:
+    SECTIONS = {
+        'characters_type': 'Персонажи',
+        'weapons_type': 'Оружие',
+        'artifacts_type': 'Артефакты',
+        'enemies_type': 'Противники',
+        'books_type': 'Книги',
+        'domains_type': 'Подземелья'
+    }
+
+    def __init__(self, message: Message, validator: GenshinDBValidator) -> None:
+        self.message = message
+        self.validator = validator
+
+    async def _parse_shortcut_data(self) -> tuple[MessagesKeyboard, str, str]:
+        reply_msg = (
+            await self.message.ctx_api.messages.get_by_conversation_message_id(
+                self.message.peer_id, [self.message.reply_message.conversation_message_id]
+            )
+        ).items[0]
+        keyboard = reply_msg.keyboard
+        delattr(keyboard, 'author_id')
+        msg = reply_msg.text.replace("'", '"')
+        photo = reply_msg.attachments[0].photo if reply_msg.attachments else None
+        photo_id = f"photo{photo.owner_id}_{photo.id}" if photo else ''
+        return keyboard, msg, photo_id
+
+    def _change_keyboard_owner(self, keyboard: MessagesKeyboard) -> MessagesKeyboard:
+        for b in keyboard.buttons:
+            b[0]['action']['payload'] = re.sub(
+                r'"user_id":\d+', f'"user_id":{self.message.from_id}', b[0]['action']['payload']
+            )
+        return keyboard
+
+    async def _add_shortcut_to_db(self, shortcut: str, msg: str, photo_id: str, keyboard: MessagesKeyboard) -> None:
+        async with PostgresConnection() as connection:
+            await connection.execute(f"""
+                INSERT INTO genshin_db_shortcuts VALUES (
+                    {self.message.from_id}, '{shortcut}', '{msg}', '{photo_id}', '{keyboard.json()}'
+                );
+            """)
+
+    async def add_shortcut(self) -> str:
+        shortcut = self.message.text[self.message.text.find('~~аш') + 4:].strip()
+        self.validator.check_shortcut_specified(shortcut)
+        await self.validator.check_shortcut_new(shortcut, self.message.from_id)
+        self.validator.check_reply_message(self.message.reply_message)
+        keyboard, msg, photo_id = await self._parse_shortcut_data()
+        self.validator.check_reply_message_keyboard(keyboard)
+        keyboard = self._change_keyboard_owner(keyboard)
+        await self._add_shortcut_to_db(shortcut, msg, photo_id, keyboard)
+        return shortcut
+
+    async def delete_shortcut(self) -> str:
+        shortcut = self.message.text[self.message.text.find('~~дш') + 4:].strip()
+        self.validator.check_shortcut_specified(shortcut)
+        await self.validator.check_shortcut_exist(shortcut, self.message.from_id)
+        async with PostgresConnection() as connection:
+            await connection.execute(f"""
+                DELETE FROM genshin_db_shortcuts WHERE shortcut = '{shortcut}' AND user_id = {self.message.from_id};
+            """)
+        return shortcut
+
+    async def get_user_shortcuts(self) -> str:
+        await self.validator.check_shortcuts_created(self.message.from_id)
+        async with PostgresConnection() as connection:
+            shortcuts = await connection.fetch(
+                f"SELECT shortcut FROM genshin_db_shortcuts WHERE user_id = {self.message.from_id};"
+            )
+            return 'Список ваших шорткатов:\n' + '\n'.join(dict(s)['shortcut'] for s in shortcuts)
+
+    @staticmethod
+    def _get_interactive_keyboard(user_id: int) -> str:
+        kb = Keyboard(inline=True)
+        for i, values in enumerate(GenshinDatabase.SECTIONS.items()):
+            button_type, label = values
+            kb.add(
+                Callback(label, {'user_id': user_id, 'type': button_type, 'page': 0}),  #: remove page later
+                KeyboardButtonColor.PRIMARY
+            )
+            if i + 1 != len(GenshinDatabase.SECTIONS):
+                kb.row()
+        return kb.get_json()
+
+    @staticmethod
+    async def get_main_menu(user_id: int) -> dict[str, str, str]:
+        message = f"Доброго времени суток, {(await bp.api.users.get([user_id]))[0].first_name}!"
+        attachment = await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png')
+        keyboard = GenshinDatabase._get_interactive_keyboard(user_id)
+        return {'message': message, 'attachment': attachment, 'keyboard': keyboard}
+
+    async def _fetch_shortcut_from_db(self, shortcut: str) -> dict[str, str | int]:
+        async with PostgresConnection() as connection:
+            shortcut = await connection.fetchrow(f"""
+                SELECT message, photo_id, keyboard FROM genshin_db_shortcuts 
+                WHERE user_id = {self.message.from_id} AND shortcut = '{shortcut}';
+            """)
+            return dict(shortcut)
+
+    async def get(self) -> None:
+        shortcut = re.sub(r'^!гдб\s?', '', self.message.text)
+        if not shortcut:
+            await self.message.answer(**(await self.get_main_menu(self.message.from_id)))
+            return None
+        await self.validator.check_shortcut_exist(shortcut, self.message.from_id)
+        shortcut = await self._fetch_shortcut_from_db(shortcut)
+        await self.message.answer(
+            message=shortcut['message'],
+            attachment=shortcut['photo_id'] if shortcut['photo_id'] else None,
+            keyboard=shortcut['keyboard']
         )
-        .row()
-        .add(
-            Callback('Оружие', {'user_id': user_id, 'type': 'weapons_type', 'page': 0}),
-            KeyboardButtonColor.PRIMARY
-        )
-        .row()
-        .add(
-            Callback('Артефакты', {'user_id': user_id, 'type': 'artifacts_type', 'page': 0}),
-            KeyboardButtonColor.PRIMARY
-        )
-        .row()
-        .add(
-            Callback('Противники', {'user_id': user_id, 'type': 'enemies_type', 'page': 0}),
-            KeyboardButtonColor.PRIMARY
-        )
-        .row()
-        .add(
-            Callback('Книги', {'user_id': user_id, 'type': 'books_type', 'page': 0}),
-            KeyboardButtonColor.PRIMARY
-        )
-        .row()
-        .add(
-            Callback('Подземелья', {'user_id': user_id, 'type': 'domains_type', 'page': 0}),
-            KeyboardButtonColor.PRIMARY
-        )
-    )
-    return keyboard.get_json()
 
 
-async def _parse_shortcut(message: Message) -> tuple[Optional[MessagesKeyboard], str, str]:
-    reply_message = (
-        await message.ctx_api.messages.get_by_conversation_message_id(
-            message.peer_id, [message.reply_message.conversation_message_id]
-        )
-    ).items[0]
-    keyboard = reply_message.keyboard
-    delattr(keyboard, 'author_id')
-    msg = reply_message.text.replace("'", '"')
-    photo = reply_message.attachments[0].photo if reply_message.attachments else None
-    photo_id = f"photo{photo.owner_id}_{photo.id}" if photo else ''
-    return keyboard, msg, photo_id
-
-
-async def _get_certain_shortcut(user_id: int, shortcut: str) -> dict[str, str | int]:
-    async with PostgresConnection() as connection:
-        shortcut = await connection.fetchrow(f"""
-            SELECT message, photo_id, keyboard FROM genshin_db_shortcuts 
-            WHERE user_id = {user_id} AND shortcut = '{shortcut}';
-        """)
-        return dict(shortcut)
-
-
-async def _get_shortcuts(user_id: int) -> str:
-    async with PostgresConnection() as connection:
-        shortcuts = await connection.fetch(
-            f"SELECT shortcut FROM genshin_db_shortcuts WHERE user_id = {user_id};"
-        )
-        return '\n'.join([dict(s)['shortcut'] for s in shortcuts])
-
-
-async def _create_shortcut(user_id: int, name: str, message: str, photo_id: str, keyboard: str) -> None:
-    async with PostgresConnection() as connection:
-        await connection.execute(f"""
-            INSERT INTO genshin_db_shortcuts VALUES (
-                {user_id}, '{name}', '{message}', '{photo_id}', '{keyboard}'
-            );
-        """)
-
-
-async def _remove_shortcut(user_id: int, name: str) -> None:
-    async with PostgresConnection() as connection:
-        await connection.execute(f"""
-            DELETE FROM genshin_db_shortcuts WHERE shortcut = '{name}' AND user_id = {user_id};
-        """)
-
-
-def _change_keyboard_owner(keyboard: MessagesKeyboard, user_id: int) -> MessagesKeyboard:
-    for b in keyboard.buttons:
-        b[0]['action']['payload'] = re.sub(r'"user_id":\d+', f'"user_id":{user_id}', b[0]['action']['payload'])
-    return keyboard
-
-
-@bp.on.message(CommandRule(['гдб'], ['~~п', '~~аш', '~~дш', '~~ш'], man.GenshinDatabase))
-async def get_genshin_database(message: Message, options: Options) -> None:
-    async with GenshinDBValidator(message) as validator:
-        match options:
-            case ['~~[default]']:
-                shortcut = re.sub(r'^!гдб\s?', '', message.text)
-                if not shortcut:
-                    await message.answer(
-                        message=f"Доброго времени суток, {(await message.get_user()).first_name}!",
-                        attachment=await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png'),
-                        keyboard=_get_menu_keyboard(message.from_id)
-                    )
-                    return None
-                await validator.check_shortcut_exist(shortcut, message.from_id)
-                shortcut = await _get_certain_shortcut(message.from_id, shortcut)
-                await message.answer(
-                    message=shortcut['message'],
-                    attachment=shortcut['photo_id'] if shortcut['photo_id'] else None,
-                    keyboard=shortcut['keyboard']
-                )
-            case ['~~аш']:
-                shortcut = message.text[message.text.find('~~аш') + 4:].strip()
-                validator.check_shortcut_specified(shortcut)
-                await validator.check_shortcut_new(shortcut, message.from_id)
-                validator.check_reply_message(message.reply_message)
-                keyboard, msg, photo_id = await _parse_shortcut(message)
-                validator.check_reply_message_keyboard(keyboard)
-                keyboard = _change_keyboard_owner(keyboard, message.from_id)
-                await _create_shortcut(message.from_id, shortcut, msg, photo_id, keyboard.json())
-                await message.answer(f"Шорткат '{shortcut}' был успешно создан!")
-            case ['~~дш']:
-                shortcut = message.text[message.text.find('~~дш') + 4:].strip()
-                validator.check_shortcut_specified(shortcut)
-                await validator.check_shortcut_exist(shortcut, message.from_id)
-                await _remove_shortcut(message.from_id, shortcut)
-                await message.answer(f"Шорткат '{shortcut}' был успешно удален!")
-            case ['~~ш']:
-                await validator.check_shortcuts_created(message.from_id)
-                await message.answer('Список ваших шорткатов:\n' + await _get_shortcuts(message.from_id))
-            case _:
-                raise IncompatibleOptions(options)
-
-
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['menu']))
-async def return_to_menu(event: MessageEvent, payload: Payload) -> None:
-    await event.edit_message(
-        f"Доброго времени суток, {(await event.ctx_api.users.get([payload['user_id']]))[0].first_name}!",
-        attachment=await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png'),
-        keyboard=_get_menu_keyboard(payload['user_id'])
-    )
-
-
-async def _get_attachment_icon(icon_path: str) -> Optional[str]:
+async def get_attachment_icon(icon_path: str) -> Optional[str]:
     """
     Check if icon exists.
     If yes, then upload it to vk server and return formatted attachment string.
@@ -170,6 +142,30 @@ async def _get_attachment_icon(icon_path: str) -> Optional[str]:
     if not os.path.exists(icon_path):
         return None
     return await upload(bp.api, 'photo_messages', icon_path)
+
+
+@bp.on.message(CommandRule(['гдб'], ['~~п', '~~аш', '~~дш', '~~ш'], man.GenshinDatabase))
+async def get_genshin_database(message: Message, options: Options) -> None:
+    async with GenshinDBValidator(message) as validator:
+        genshin_db = GenshinDatabase(message, validator)
+        match options:
+            case ['~~[default]']:
+                await genshin_db.get()
+            case ['~~аш']:
+                shortcut = await genshin_db.add_shortcut()
+                await message.answer(f"Шорткат '{shortcut}' был успешно создан!")
+            case ['~~дш']:
+                shortcut = await genshin_db.delete_shortcut()
+                await message.answer(f"Шорткат '{shortcut}' был успешно удален!")
+            case ['~~ш']:
+                await message.answer(await genshin_db.get_user_shortcuts())
+            case _:
+                raise IncompatibleOptions(options)
+
+
+@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['menu']))
+async def return_to_menu(event: MessageEvent, payload: Payload) -> None:
+    await event.edit_message(**(await GenshinDatabase.get_main_menu(payload['user_id'])))
 
 
 @bp.on.raw_event(
@@ -218,7 +214,7 @@ async def get_type_filters(event: MessageEvent, payload: Payload) -> None:
     await event.edit_message(
         'Пожалуйста, выберите интересующий вас раздел!',
         keyboard=keyboards[payload['page']],
-        attachment=await _get_attachment_icon(f"{DATABASE_APPEARANCE}{os.sep}{payload_type}.png")
+        attachment=await get_attachment_icon(f"{DATABASE_APPEARANCE}{os.sep}{payload_type}.png")
     )
 
 
@@ -354,7 +350,7 @@ async def get_character(event: MessageEvent, payload: Payload) -> None:
         attachment = await character.get_icon_attachment(bp.api, url)
         message = await data_types[payload['obj_data']][1](payload['obj'], payload['filter'])
     else:
-        attachment = await _get_attachment_icon(f"{ASCENSION}{os.sep}{name_en}.png")
+        attachment = await get_attachment_icon(f"{ASCENSION}{os.sep}{name_en}.png")
         message = f"🖼Материалы возвышения персонажа '{payload['obj']}':"
 
     await event.edit_message(message, attachment=attachment, keyboard=keyboard.get_json())
@@ -499,7 +495,7 @@ async def get_domain(event: MessageEvent, payload: Payload) -> None:
     )
 
     message = await domain.get_information(payload['obj'], payload['filter'])
-    attachment = await _get_attachment_icon(
+    attachment = await get_attachment_icon(
         await get_domain_image(
             json.load('domains')[payload['filter']][payload['obj']][-1],
             await domain.get_monsters(payload['obj'], payload['filter']),

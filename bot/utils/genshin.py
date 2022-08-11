@@ -1,9 +1,14 @@
-from typing import Optional
+from typing import Optional, TypeVar, ParamSpec
+from collections.abc import Callable, Awaitable
 
 import genshin
 from genshin.errors import InvalidCookies, GenshinException
 
 from bot.utils.postgres import PostgresConnection
+
+
+_T = TypeVar('_T')
+_P = ParamSpec('_P')
 
 
 class GenshinClient:
@@ -54,3 +59,14 @@ async def get_genshin_account_by_id(
             SELECT {', '.join(columns)} FROM genshin_accounts WHERE user_id = {user_id};
         """)
         return dict(account) if account else None
+
+
+def catch_hoyolab_errors(func: Callable[_P, Awaitable[_T]]) -> Callable[_P, Awaitable[_T]]:
+    async def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+        try:
+            return await func(*args, **kwargs)
+        except InvalidCookies:
+            return 'Ошибка: указанные игровые данные больше недействительны!'
+        except GenshinException as exc:
+            return f"Необработанная ошибка: {exc}!"
+    return wrapper
