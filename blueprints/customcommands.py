@@ -131,12 +131,12 @@ async def view_custom_commands(message: Message, options: Options) -> None:
                 await message.answer(await commands.get_status())
             case ['~~общ']:
                 await validator.check_privileges(message.ctx_api, message.peer_id, message.from_id)
-                await validator.check_actions_not_public(message.peer_id)
+                await validator.check_actions_restricted(message.peer_id)
                 await commands.make_public()
                 await message.answer('Манипуляции с пользовательскими командами теперь являются общедоступными!')
             case ['~~огр']:
                 await validator.check_privileges(message.ctx_api, message.peer_id, message.from_id)
-                await validator.check_actions_not_restricted(message.peer_id)
+                await validator.check_actions_public(message.peer_id)
                 await commands.make_restricted()
                 await message.answer('Манипуляции с пользовательскими командами теперь являются ограниченными!')
             case _:

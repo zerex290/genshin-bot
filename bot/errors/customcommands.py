@@ -2,25 +2,24 @@ from bot.errors import GenshinBotException
 
 
 __all__ = (
-    'CommandsNotCreated',
-    'AvailabilityError',
+    'BotPrivilegesError',
+    'PrivilegesError',
     'ActionsAlreadyPublic',
     'ActionsAlreadyRestricted',
-    'ActionError',
+    'AvailabilityError',
     'CommandNotSpecified',
     'CommandAlreadyExist',
     'CommandNotExist',
     'CommandReserved',
     'AdditionsNotSpecified',
-    'BotPrivilegesError'
 )
 
 
-class CommandsNotCreated(GenshinBotException):
-    _msg = 'В данном чате не создано ни одной команды!'
+class BotPrivilegesError(GenshinBotException):
+    _msg = 'Для совершения данного действия боту нужны права администратора в чате!'
 
 
-class AvailabilityError(GenshinBotException):
+class PrivilegesError(GenshinBotException):
     _msg = 'Вы не являетесь создателем или администратором чата!'
 
 
@@ -32,7 +31,7 @@ class ActionsAlreadyRestricted(GenshinBotException):
     _msg = 'Манипуляции с пользовательскими командами уже являются ограниченными!'
 
 
-class ActionError(GenshinBotException):
+class AvailabilityError(GenshinBotException):
     _msg = 'В данном чате стоит ограничение на изменение пользовательских команд!'
 
 
@@ -56,7 +55,3 @@ class CommandReserved(GenshinBotException):
 
 class AdditionsNotSpecified(GenshinBotException):
     _msg = 'Укажите сообщение и/или прикрепите медиафайл для создания команды!'
-
-
-class BotPrivilegesError(GenshinBotException):
-    _msg = 'Для совершения данного действия боту нужны права администратора в чате!'

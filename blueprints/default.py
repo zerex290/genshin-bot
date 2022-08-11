@@ -236,10 +236,10 @@ class RandomPicture:
         if nsfw:
             await self.validator.check_user_is_don(bp.api, self.message.from_id)
         text = re.sub(r'^!пик\s?|~~нсфв|~~и|~~л\s\d+', '', self.message.text.lower()).split()
-        self.validator.check_pictures_specified(text)
-        self.validator.check_pictures_quantity(int(text[0]))
+        self.validator.check_picture_quantity_specified(text)
+        self.validator.check_picture_quantity(int(text[0]))
         chosen_tags = self._get_tags(text)
-        self.validator.check_tags_quantity(chosen_tags, is_interactive)
+        self.validator.check_tag_quantity(chosen_tags, is_interactive)
         state.append(chosen_tags)
         state.append(nsfw)
         state.append(int(text[0]))
@@ -315,11 +315,11 @@ async def manage_syntax_autocorrection(message: Message, options: Options) -> No
             case ['~~[default]']:
                 await message.answer(await autocorrection.get_status())
             case ['~~выкл']:
-                await validator.check_autocorrection_already_disabled(message.from_id)
+                await validator.check_autocorrection_enabled(message.from_id)
                 await autocorrection.turn_off()
                 await message.answer('Автокоррекция команд теперь выключена!')
             case ['~~вкл']:
-                await validator.check_autocorrection_already_enabled(message.from_id)
+                await validator.check_autocorrection_disabled(message.from_id)
                 await autocorrection.turn_on()
                 await message.answer('Автокоррекция команд теперь включена!')
             case _:

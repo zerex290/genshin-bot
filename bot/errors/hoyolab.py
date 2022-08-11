@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from bot.errors import GenshinBotException
 
@@ -8,8 +8,8 @@ __all__ = (
     'NotEnoughCookies',
     'CookieSyntaxError',
     'InvalidAccountCookies',
+    'AccountUnlinked',
     'AccountNotExist',
-    'AccountNotFound',
     'ReplyMessageError',
     'RedeemCodeNotSpecified',
     'CommandNotAllowed',
@@ -19,6 +19,9 @@ __all__ = (
     'NotificationValueRangeInvalid',
     'SpiralAbyssLocked'
 )
+
+
+HoYoData: TypeAlias = Literal['Notes', 'Stats', 'Rewards', 'Redeem', 'Diary', 'SpiralAbyss']
 
 
 class AccountAlreadyLinked(GenshinBotException):
@@ -37,11 +40,11 @@ class InvalidAccountCookies(GenshinBotException):
     _msg = 'Указанные игровые данные не являются действительными!'
 
 
-class AccountNotExist(GenshinBotException):
+class AccountUnlinked(GenshinBotException):
     _msg = 'Ваших данных нет в базе!'
 
 
-class AccountNotFound(GenshinBotException):
+class AccountNotExist(GenshinBotException):
     _ARTICLE = (
         'Статья с инструкцией по привязке игрового аккаунта: '
         'https://vk.com/@bot_genshin-genshin-register-guide'
@@ -55,7 +58,7 @@ class AccountNotFound(GenshinBotException):
 
 
 class ReplyMessageError(GenshinBotException):
-    def __init__(self, datatype: Literal['Notes', 'Stats', 'Rewards', 'Redeem', 'Diary', 'SpiralAbyss']) -> None:
+    def __init__(self, datatype: HoYoData) -> None:
         datatypes = {
             'Notes': 'просмотра его игровых заметок',
             'Stats': 'просмотра его игровой статистики',

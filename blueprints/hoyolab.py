@@ -171,7 +171,7 @@ async def unlink_genshin_account(message: Message) -> None:
 
 @bp.on.message(CommandRule(['заметки'], ['~~п', '~~у'], man.Notes))
 async def get_notes(message: Message, options: Options) -> None:
-    async with GenshinDataValidator(message, 'Notes') as validator:
+    async with HoYoLABValidator(message, 'Notes') as validator:
         match options:
             case ['~~у']:
                 validator.check_reply_message(message.reply_message)
@@ -188,7 +188,7 @@ async def get_notes(message: Message, options: Options) -> None:
 
 @bp.on.message(CommandRule(['статы'], ['~~п', '~~у'], man.Stats))
 async def get_stats(message: Message, options: Options) -> None:
-    async with GenshinDataValidator(message, 'Stats') as validator:
+    async with HoYoLABValidator(message, 'Stats') as validator:
         match options:
             case ['~~у']:
                 validator.check_reply_message(message.reply_message)
@@ -205,7 +205,7 @@ async def get_stats(message: Message, options: Options) -> None:
 
 @bp.on.message(CommandRule(['награды'], ['~~п'], man.Rewards))
 async def get_rewards(message: Message) -> None:
-    async with GenshinDataValidator(message, 'Rewards') as validator:
+    async with HoYoLABValidator(message, 'Rewards') as validator:
         account = await get_genshin_account_by_id(message.from_id, False, True, True)
         validator.check_account_exist(account)
         rewards = await Rewards(account).get()
@@ -245,9 +245,9 @@ async def manage_resin_notifications(message: Message, options: Options) -> None
                 await message.answer('Автоматическое напоминание потратить смолу теперь включено!')
             case ['~~мин']:
                 value = message.text[message.text.find('~~мин') + 5:].strip()
-                validator.check_val_is_num(value)
+                validator.check_value_valid(value)
                 value = int(value)
-                validator.check_val_range(value)
+                validator.check_value_range(value)
                 await notifications.set_notification_minimum(value)
                 await message.answer('Успешно установлено новое минимально необходимое для упоминаний значение смолы!')
             case _:
@@ -256,7 +256,7 @@ async def manage_resin_notifications(message: Message, options: Options) -> None
 
 @bp.on.message(CommandRule(['дневник'], ['~~п', '~~у'], man.Diary))
 async def get_traveler_diary(message: Message, options: Options) -> None:
-    async with GenshinDataValidator(message, 'Diary') as validator:
+    async with HoYoLABValidator(message, 'Diary') as validator:
         match options:
             case ['~~у']:
                 validator.check_reply_message(message.reply_message)

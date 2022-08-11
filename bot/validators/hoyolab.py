@@ -1,4 +1,4 @@
-from typing import Optional, Literal
+from typing import Optional, Literal, TypeAlias
 
 from vkbottle.bot import Message
 from vkbottle_types.objects import MessagesForeignMessage
@@ -12,11 +12,14 @@ from bot.utils.genshin import is_genshin_account
 __all__ = (
     'AccountLinkValidator',
     'AccountUnlinkValidator',
-    'GenshinDataValidator',
+    'HoYoLABValidator',
     'CodeValidator',
     'ResinNotifyValidator',
     'SpiralAbyssValidator'
 )
+
+
+HoYoData: TypeAlias = Literal['Notes', 'Stats', 'Rewards', 'Redeem', 'Diary', 'SpiralAbyss']
 
 
 class AccountLinkValidator(BaseValidator):
@@ -33,8 +36,8 @@ class AccountLinkValidator(BaseValidator):
     @staticmethod
     def check_cookie_syntax(cookies: list[str]) -> None:
         try:
-            cookies = {c.lower().split('=')[0]: c.split('=')[1] for c in cookies}
-            assert {'ltuid', 'ltoken', 'uid', 'cookie_token'} == set(cookies)
+            cookies = {c.lower().split('=')[0] for c in cookies}
+            assert {'ltuid', 'ltoken', 'uid', 'cookie_token'} == cookies
         except (IndexError, AssertionError):
             raise CookieSyntaxError
 
@@ -48,14 +51,14 @@ class AccountUnlinkValidator(BaseValidator):
     @staticmethod
     async def check_account_linked(user_id: int) -> None:
         if not await has_postgres_data(f"SELECT * FROM genshin_accounts WHERE user_id = {user_id};"):
-            raise AccountNotExist
+            raise AccountUnlinked
 
 
-class GenshinDataValidator(BaseValidator):
+class HoYoLABValidator(BaseValidator):
     def __init__(
             self,
             message: Message,
-            datatype: Literal['Notes', 'Stats', 'Rewards', 'Redeem', 'Diary', 'SpiralAbyss']
+            datatype: HoYoData
     ) -> None:
         super().__init__(message)
         self._datatype = datatype
@@ -67,10 +70,10 @@ class GenshinDataValidator(BaseValidator):
     @staticmethod
     def check_account_exist(account: Optional[dict[str, str | int]], for_other_user: bool = False) -> None:
         if not account:
-            raise AccountNotFound(for_other_user)
+            raise AccountNotExist(for_other_user)
 
 
-class CodeValidator(GenshinDataValidator):
+class CodeValidator(HoYoLABValidator):
     @staticmethod
     def check_code_specified(codes: list[str]) -> None:
         if not codes:
@@ -92,14 +95,14 @@ class ResinNotifyValidator(BaseValidator, ChatValidator):
             raise NotificationsAlreadyEnabled
 
     @staticmethod
-    def check_val_is_num(value: str) -> None:
+    def check_value_valid(value: str) -> None:
         try:
             int(value)
         except ValueError:
             raise NotificationValueInvalid
 
     @staticmethod
-    def check_val_range(value: int):
+    def check_value_range(value: int):
         if not 0 <= value <= 160:
             raise NotificationValueRangeInvalid
 
@@ -112,7 +115,7 @@ class ResinNotifyValidator(BaseValidator, ChatValidator):
             raise NotificationsAlreadyDisabled
 
 
-class SpiralAbyssValidator(GenshinDataValidator):
+class SpiralAbyssValidator(HoYoLABValidator):
     @staticmethod
     def check_abyss_unlocked(status: bool) -> None:
         if not status:

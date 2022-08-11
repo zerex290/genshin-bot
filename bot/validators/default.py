@@ -29,12 +29,12 @@ class ChoiceValidator(BaseValidator):
 
 class AutocorrectionValidator(BaseValidator):
     @staticmethod
-    async def check_autocorrection_already_enabled(user_id: int) -> None:
+    async def check_autocorrection_disabled(user_id: int) -> None:
         if await has_postgres_data(f"SELECT * FROM users WHERE user_id = {user_id} AND autocorrect = true;"):
             raise AutocorrectionAlreadyEnabled
 
     @staticmethod
-    async def check_autocorrection_already_disabled(user_id: int) -> None:
+    async def check_autocorrection_enabled(user_id: int) -> None:
         if await has_postgres_data(f"SELECT * FROM users WHERE user_id = {user_id} AND autocorrect = false;"):
             raise AutocorrectionAlreadyDisabled
 
@@ -93,16 +93,16 @@ class RandomPictureValidator(BaseValidator):
             raise FavCountRangeInvalid
 
     @staticmethod
-    def check_pictures_specified(query: list[str]) -> None:
+    def check_picture_quantity_specified(query: list[str]) -> None:
         if not query or not query[0].isdigit():
             raise PictureQuantityNotSpecified
 
     @staticmethod
-    def check_pictures_quantity(quantity: int) -> None:
+    def check_picture_quantity(quantity: int) -> None:
         if quantity > 10:
             raise PictureQuantityOverflow
 
     @staticmethod
-    def check_tags_quantity(tags: tuple[str, ...], is_interactive: bool) -> None:
+    def check_tag_quantity(tags: tuple[str, ...], is_interactive: bool) -> None:
         if len(tags) > (2 if is_interactive else 3):
             raise TagQuantityOverflow(is_interactive)
