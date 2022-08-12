@@ -8,7 +8,8 @@ from ..src.extra import *
 from ..utils.files import write_logs
 
 bot = Bot()
-post_uploader = PostUploader()
+post_uploader = PostUploader(bot.user)
+resin_notifier = ResinNotifier(bot.group)
 
 
 @bot.group.error_handler.register_undefined_error_handler
@@ -29,9 +30,9 @@ async def main() -> None:
     await asyncio.gather(
         bot.group.run_polling(),
         collect_login_bonus(),
-        notify_about_resin_replenishment(bot.group),
+        resin_notifier.notify(),
         parse_genshin_database_objects(),
-        post_uploader.make_post(bot.user.api, donut=True),
-        post_uploader.make_post(bot.user.api)
+        post_uploader.make_post(donut=True),
+        post_uploader.make_post()
     )
     await asyncio.sleep(0)  #: Used to fix RuntimeError...
