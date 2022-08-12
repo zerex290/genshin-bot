@@ -8,7 +8,7 @@ from vkbottle.bot import Blueprint, Message
 from genshin.types import Game
 from genshin.errors import GenshinException, InvalidCookies
 
-import bot.src.templates as tpl
+import bot.templates as tpl
 from . import Options
 from bot.errors import IncompatibleOptions
 from bot.rules import CommandRule
@@ -16,7 +16,7 @@ from bot.utils import PostgresConnection, GenshinClient
 from bot.utils.files import download, upload
 from bot.utils.genshin import get_genshin_account_by_id, catch_hoyolab_errors
 from bot.imageprocessing.abyss import get_abyss_image
-from bot.src.manuals import hoyolab as man
+from bot.manuals import hoyolab as man
 from bot.validators.hoyolab import *
 from bot.config.dependencies.paths import FILECACHE
 
@@ -175,11 +175,11 @@ async def get_notes(message: Message, options: Options) -> None:
         match options:
             case ['~~у']:
                 validator.check_reply_message(message.reply_message)
-                account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
+                account = await get_genshin_account_by_id(message.reply_message.from_id)
                 validator.check_account_exist(account, True)
                 await message.answer(await Notes(account).get())
             case ['~~[default]']:
-                account = await get_genshin_account_by_id(message.from_id, True, True, True)
+                account = await get_genshin_account_by_id(message.from_id)
                 validator.check_account_exist(account)
                 await message.answer(await Notes(account).get())
             case _:
@@ -192,11 +192,11 @@ async def get_stats(message: Message, options: Options) -> None:
         match options:
             case ['~~у']:
                 validator.check_reply_message(message.reply_message)
-                account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
+                account = await get_genshin_account_by_id(message.reply_message.from_id)
                 validator.check_account_exist(account, True)
                 await message.answer(await Stats(account).get())
             case ['~~[default]']:
-                account = await get_genshin_account_by_id(message.from_id, True, True, True)
+                account = await get_genshin_account_by_id(message.from_id)
                 validator.check_account_exist(account)
                 await message.answer(await Stats(account).get())
             case _:
@@ -206,7 +206,7 @@ async def get_stats(message: Message, options: Options) -> None:
 @bp.on.message(CommandRule(['награды'], ['~~п'], man.Rewards))
 async def get_rewards(message: Message) -> None:
     async with HoYoLABValidator(message, 'Rewards') as validator:
-        account = await get_genshin_account_by_id(message.from_id, False, True, True)
+        account = await get_genshin_account_by_id(message.from_id)
         validator.check_account_exist(account)
         rewards = await Rewards(account).get()
         if isinstance(rewards, tuple):
@@ -216,10 +216,10 @@ async def get_rewards(message: Message) -> None:
         await message.answer(rewards, attachment)
 
 
-@bp.on.message(CommandRule(['пром'], ['~~п'], man.RedeemCode))
+@bp.on.message(CommandRule(['пром'], ['~~п'], man.Codes))
 async def redeem_code(message: Message) -> None:
     async with CodeValidator(message, 'Redeem') as validator:
-        account = await get_genshin_account_by_id(message.from_id, True, True, True, True)
+        account = await get_genshin_account_by_id(message.from_id)
         validator.check_account_exist(account)
         codes = message.text.lstrip('!пром').strip().split()
         validator.check_code_specified(codes)
@@ -260,11 +260,11 @@ async def get_traveler_diary(message: Message, options: Options) -> None:
         match options:
             case ['~~у']:
                 validator.check_reply_message(message.reply_message)
-                account = await get_genshin_account_by_id(message.reply_message.from_id, False, True, True)
+                account = await get_genshin_account_by_id(message.reply_message.from_id)
                 validator.check_account_exist(account, True)
                 await message.answer(await Diary(account).get())
             case ['~~[default]']:
-                account = await get_genshin_account_by_id(message.from_id, False, True, True)
+                account = await get_genshin_account_by_id(message.from_id)
                 validator.check_account_exist(account)
                 await message.answer(await Diary(account).get())
             case _:
@@ -277,7 +277,7 @@ async def get_spiral_abyss(message: Message, options: Options) -> None:
         match options:
             case ['~~у']:
                 validator.check_reply_message(message.reply_message)
-                account = await get_genshin_account_by_id(message.reply_message.from_id, True, True, True)
+                account = await get_genshin_account_by_id(message.reply_message.from_id)
                 validator.check_account_exist(account, True)
                 abyss = await SpiralAbyss(account, validator).get()
                 if isinstance(abyss, tuple):
@@ -286,7 +286,7 @@ async def get_spiral_abyss(message: Message, options: Options) -> None:
                     attachment = None
                 await message.answer(abyss, attachment)
             case ['~~[default]']:
-                account = await get_genshin_account_by_id(message.from_id, True, True, True)
+                account = await get_genshin_account_by_id(message.from_id)
                 validator.check_account_exist(account)
                 abyss = await SpiralAbyss(account, validator).get()
                 if isinstance(abyss, tuple):

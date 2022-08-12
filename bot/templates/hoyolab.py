@@ -6,8 +6,8 @@ from genshin.models import Notes, Exploration, ClaimedDailyReward, PartialGenshi
 from genshin.models.genshin.chronicle.abyss import SpiralAbyss, AbyssRankCharacter
 
 from bot.utils import get_current_timestamp
-from bot.src.types.genshin import Characters, ElementSymbols, Regions, Rewards, DiaryCategories
-from bot.src.types.uncategorized import MonthIntegers, Months
+from bot.types.genshin import Characters, ElementSymbols, Regions, Rewards, DiaryCategories
+from bot.types.uncategorized import MonthIntegers, Months
 
 
 def _format_recovery_time(object_recovery_time: datetime.datetime) -> str:

@@ -1,4 +1,4 @@
-from bot.src.manuals import BaseManual
+from bot.manuals import BaseManual
 
 
 class DailyMaterials(BaseManual):

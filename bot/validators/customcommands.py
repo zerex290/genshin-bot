@@ -3,7 +3,7 @@ from typing import Optional
 from vkbottle import API, VKAPIError
 
 from bot.validators import BaseValidator, ChatValidator
-from bot.src.constants import COMMANDS
+from bot.constants import COMMANDS
 from bot.utils.postgres import has_postgres_data
 from bot.errors.customcommands import *
 

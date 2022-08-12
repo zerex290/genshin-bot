@@ -14,12 +14,12 @@ from bot.rules import CommandRule, EventRule
 from bot.utils import PostgresConnection, find_restricted_tags
 from bot.utils.postgres import has_postgres_data
 from bot.utils.files import download, upload
-from bot.src.constants import keyboard, tags as t
+from bot.constants import keyboard, tags as t
 from bot.errors import IncompatibleOptions
 from bot.validators import BaseValidator
 from bot.validators.default import *
-from bot.src.manuals import default as man
-from bot.src.types.sankaku import MediaType, Rating
+from bot.manuals import default as man
+from bot.types.sankaku import MediaType, Rating
 from bot.config.dependencies.paths import FILECACHE
 
 

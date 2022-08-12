@@ -11,9 +11,9 @@ from bot.utils import get_custom_commands, get_current_timestamp
 from bot.errors import IncompatibleOptions
 from bot.utils.files import download, upload
 from bot.utils.postgres import has_postgres_data
-from bot.src.manuals import customcommands as man
+from bot.manuals import customcommands as man
 from bot.config.dependencies.paths import FILECACHE
-from bot.src.models.customcommands import CustomCommand
+from bot.models.customcommands import CustomCommand
 from bot.validators.customcommands import *
 
 

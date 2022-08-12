@@ -36,7 +36,6 @@ class Characters(Enum):
     GOROU = 'Горо'
     SHENHE = 'Шэнь Хэ'
     YELAN = 'Е Лань'
-    YEBLAN = 'Еблань'
     DORI = 'Дори'
     COLLEI = 'Коллеи'
     TIGHNARI = 'Тигнари'

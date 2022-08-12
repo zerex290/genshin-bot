@@ -1,6 +1,6 @@
 import re
 
-from bot.src.models.sankaku import TagType, Tag
+from bot.models.sankaku import TagType, Tag
 from bot.config.dependencies.group import SHORTNAME
 
 

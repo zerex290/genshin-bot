@@ -1,4 +1,4 @@
-from bot.src.models.honeyimpact import characters
+from bot.models.honeyimpact import characters
 
 
 def format_information(character: characters.Information) -> str:

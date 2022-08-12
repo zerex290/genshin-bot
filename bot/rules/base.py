@@ -6,8 +6,8 @@ from vkbottle.dispatch.rules import ABCRule
 
 from blueprints import Options, Payload
 from bot.utils import get_custom_commands
-from bot.src.manuals import BaseManual
-from bot.src.models.customcommands import CustomCommand
+from bot.manuals import BaseManual
+from bot.models.customcommands import CustomCommand
 
 
 __all__ = (

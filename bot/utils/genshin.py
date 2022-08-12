@@ -42,21 +42,10 @@ async def is_genshin_account(uid: int, ltoken: str, ltuid: str, cookie_token: st
             return True
 
 
-async def get_genshin_account_by_id(
-        user_id: int,
-        uid: bool = False,
-        ltuid: bool = False,
-        ltoken: bool = False,
-        cookie_token: bool = False
-) -> Optional[dict[str, int | str]]:
+async def get_genshin_account_by_id(user_id: int) -> Optional[dict[str, int | str]]:
     async with PostgresConnection() as connection:
-        columns = []
-        parameters = {'uid': uid, 'ltuid': ltuid, 'ltoken': ltoken, 'cookie_token': cookie_token}
-        for parameter in parameters:
-            if parameters[parameter]:
-                columns.append(parameter)
         account = await connection.fetchrow(f"""
-            SELECT {', '.join(columns)} FROM genshin_accounts WHERE user_id = {user_id};
+            SELECT * FROM genshin_accounts WHERE user_id = {user_id};
         """)
         return dict(account) if account else None
 

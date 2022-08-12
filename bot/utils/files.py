@@ -1,7 +1,7 @@
 import traceback
 from os import sep
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Optional, Literal, TypeAlias
 from json.decoder import JSONDecodeError
 
 import aiohttp
@@ -12,6 +12,9 @@ from vkbottle import PhotoMessageUploader, DocMessagesUploader, PhotoWallUploade
 
 from bot.utils import catch_aiohttp_errors
 from bot.config.dependencies.paths import LOGS
+
+
+UploaderType: TypeAlias = Literal['photo_messages', 'document_messages', 'photo_wall', 'document_wall', 'video']
 
 
 @catch_aiohttp_errors
@@ -27,7 +30,7 @@ async def download(url: str, download_path: str, filename: str, suffix: str) -> 
 
 async def upload(
         api: API,
-        uploader_type: Literal['photo_messages', 'document_messages', 'photo_wall', 'document_wall', 'video'],
+        uploader_type: UploaderType,
         *args,
         **kwargs
 ) -> Optional[str]:

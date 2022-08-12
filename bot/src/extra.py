@@ -12,8 +12,8 @@ from bot.utils import PostgresConnection, GenshinClient, json, get_current_times
 from bot.utils.files import download, upload
 from bot.utils.genshin import get_genshin_account_by_id
 from bot.utils.postgres import has_postgres_data
-from bot.src.types.sankaku import MediaType, Rating, TagType
-from bot.src.templates.artposting import format_post_message, format_post_source
+from bot.types.sankaku import MediaType, Rating, TagType
+from bot.templates.artposting import format_post_message, format_post_source
 from bot.config.dependencies.paths import FILECACHE
 from bot.config.dependencies.group import ID
 
@@ -114,7 +114,7 @@ def _compile_message(user: dict[str, str | int], first_name: str, resin: int) ->
 async def notify_about_resin_replenishment(bot: Bot) -> None:
     while True:
         for user in await _get_users():
-            resin = await _get_user_resin(await get_genshin_account_by_id(user['user_id'], True, True, True))
+            resin = await _get_user_resin(await get_genshin_account_by_id(user['user_id']))
             if not isinstance(resin, int):
                 continue
             if resin >= user['notification_value'] and user['notification_number'] < 3:

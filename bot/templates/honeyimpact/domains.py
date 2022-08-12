@@ -1,4 +1,4 @@
-from bot.src.models.honeyimpact import domains
+from bot.models.honeyimpact import domains
 
 
 def format_information(domain: domains.Information) -> str:

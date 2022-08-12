@@ -1,4 +1,4 @@
-from bot.src.models.honeyimpact import artifacts
+from bot.models.honeyimpact import artifacts
 
 
 def format_information(artifact: artifacts.Information) -> str:

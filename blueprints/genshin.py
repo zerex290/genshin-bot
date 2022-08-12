@@ -8,7 +8,7 @@ from bot.rules import CommandRule
 from bot.errors import IncompatibleOptions
 from bot.validators import BaseValidator
 from bot.utils.files import upload
-from bot.src.manuals import genshin as man
+from bot.manuals import genshin as man
 from bot.config.dependencies.paths import DAILY_MATERIALS, BOSS_MATERIALS, BOOKS
 
 

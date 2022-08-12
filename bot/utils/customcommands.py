@@ -1,5 +1,5 @@
 from bot.utils.postgres import PostgresConnection
-from bot.src.models.customcommands import CustomCommand
+from bot.models.customcommands import CustomCommand
 
 
 async def get_custom_commands(chat_id: int) -> list[CustomCommand]:

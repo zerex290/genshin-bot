@@ -8,7 +8,7 @@ from vkbottle_types.objects import MessagesMessageActionStatus
 
 from bot.utils import PostgresConnection
 from bot.utils.postgres import has_postgres_data
-from bot.src.constants import keyboard, COMMANDS
+from bot.constants import keyboard, COMMANDS
 
 
 __all__ = (

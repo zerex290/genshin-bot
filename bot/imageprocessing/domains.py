@@ -5,7 +5,7 @@ from PIL import Image, ImageFont, ImageDraw
 
 from bot.imageprocessing import FONT, get_scaled_size, get_centered_position, round_corners, cache_icon
 from bot.config.dependencies.paths import IMAGE_PROCESSING, FILECACHE
-from bot.src.models.honeyimpact.domains import Monster, Drop
+from bot.models.honeyimpact.domains import Monster, Drop
 
 
 def _process_icon(icon_path: str) -> Image.Image:

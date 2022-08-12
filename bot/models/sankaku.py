@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, Any
 from datetime import datetime
 
-from bot.src.types.sankaku import Rating, TagType, MediaType
+from bot.types.sankaku import Rating, TagType, MediaType
 
 
 @dataclass()

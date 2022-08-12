@@ -13,7 +13,7 @@ from bot.utils import PostgresConnection, json
 from bot.errors import IncompatibleOptions
 from bot.utils.files import upload
 from bot.validators.genshindb import GenshinDBValidator
-from bot.src.manuals import genshindb as man
+from bot.manuals import genshindb as man
 from bot.imageprocessing.domains import get_domain_image
 from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION
 

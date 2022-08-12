@@ -1,4 +1,4 @@
-from bot.src.manuals import BaseManual
+from bot.manuals import BaseManual
 
 
 class AccountLink(BaseManual):
@@ -60,7 +60,7 @@ class Rewards(BaseManual):
     '''
 
 
-class RedeemCode(BaseManual):
+class Codes(BaseManual):
     HELP = '''
     \r\nСсылка на команду в статье: hhttps://vk.com/@bot_genshin-commands?anchor=prom
     \r\nОписание: При использовании данной команды бот активирует на вашем игровом аккаунте указанные в сообщении \
