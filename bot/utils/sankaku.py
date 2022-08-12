@@ -1,4 +1,4 @@
-from bot.models.sankaku import Post
+from ..models.sankaku import Post
 
 
 def find_restricted_tags(post: Post, restricted_tags: tuple[str, ...]) -> bool:

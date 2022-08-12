@@ -1,4 +1,4 @@
-from bot.models.honeyimpact import enemies
+from ...models.honeyimpact import enemies
 
 
 def format_information(enemy: enemies.Information) -> str:

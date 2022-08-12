@@ -5,9 +5,9 @@ from typing import Sequence
 from genshin.models import Notes, Exploration, ClaimedDailyReward, PartialGenshinUserStats, Diary
 from genshin.models.genshin.chronicle.abyss import SpiralAbyss, AbyssRankCharacter
 
-from bot.utils import get_current_timestamp
-from bot.types.genshin import Characters, ElementSymbols, Regions, Rewards, DiaryCategories
-from bot.types.uncategorized import MonthIntegers, Months
+from ..utils import get_current_timestamp
+from ..types.genshin import Characters, ElementSymbols, Regions, Rewards, DiaryCategories
+from ..types.uncategorized import MonthIntegers, Months
 
 
 def _format_recovery_time(object_recovery_time: datetime.datetime) -> str:

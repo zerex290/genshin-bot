@@ -2,10 +2,10 @@ import asyncio
 
 from vkbottle import load_blueprints_from_package
 
-from bot.config import Bot
-from bot.middlewares import *
-from bot.src.extra import *
-from bot.utils.files import write_logs
+from ..config import Bot
+from ..middlewares import *
+from ..src.extra import *
+from ..utils.files import write_logs
 
 bot = Bot()
 post_uploader = PostUploader()

@@ -3,10 +3,10 @@ from typing import Optional, Literal, TypeAlias
 from vkbottle.bot import Message
 from vkbottle_types.objects import MessagesForeignMessage
 
-from bot.validators import BaseValidator, ChatValidator
-from bot.errors.hoyolab import *
-from bot.utils.postgres import has_postgres_data
-from bot.utils.genshin import is_genshin_account
+from . import BaseValidator, ChatValidator
+from ..errors.hoyolab import *
+from ..utils.postgres import has_postgres_data
+from ..utils.genshin import is_genshin_account
 
 
 __all__ = (

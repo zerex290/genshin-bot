@@ -4,7 +4,7 @@ from collections.abc import Callable, Awaitable
 import genshin
 from genshin.errors import InvalidCookies, GenshinException
 
-from bot.utils.postgres import PostgresConnection
+from ..utils.postgres import PostgresConnection
 
 
 _T = TypeVar('_T')

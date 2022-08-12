@@ -1,7 +1,7 @@
 import json
 from os import sep
 
-from bot.config.dependencies.paths import FILECACHE
+from ..config.dependencies.paths import FILECACHE
 
 
 def dump(obj: dict, filetype: str) -> None:

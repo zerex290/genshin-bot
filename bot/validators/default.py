@@ -4,10 +4,10 @@ from re import Match
 from vkbottle import API
 from vkbottle_types.objects import MessagesForeignMessage, MessagesMessageAttachment
 
-from bot.validators import BaseValidator
-from bot.errors.default import *
-from bot.utils.postgres import has_postgres_data
-from bot.config.dependencies import group
+from . import BaseValidator
+from ..errors.default import *
+from ..utils.postgres import has_postgres_data
+from ..config.dependencies import group
 
 
 __all__ = (

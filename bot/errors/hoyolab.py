@@ -1,6 +1,6 @@
 from typing import Literal, TypeAlias
 
-from bot.errors import GenshinBotException
+from . import GenshinBotException
 
 
 __all__ = (

@@ -1,7 +1,7 @@
 from vkbottle import API, Bot, User
 
-from bot.config.dependencies import user
-from bot.config.dependencies import group
+from .dependencies import user
+from .dependencies import group
 
 
 class Vk:

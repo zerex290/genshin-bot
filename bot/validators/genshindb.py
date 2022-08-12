@@ -2,9 +2,9 @@ from typing import Optional
 
 from vkbottle_types.objects import MessagesForeignMessage, MessagesKeyboard
 
-from bot.validators import BaseValidator
-from bot.errors.genshindb import *
-from bot.utils.postgres import has_postgres_data
+from . import BaseValidator
+from ..errors.genshindb import *
+from ..utils.postgres import has_postgres_data
 
 
 __all__ = ('GenshinDBValidator',)

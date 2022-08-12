@@ -11,14 +11,14 @@ from vkbottle import API
 from lxml import html
 from lxml.html import HtmlElement
 
-from bot.utils import json, catch_aiohttp_errors
-from bot.config import honeyimpact
-from bot.utils.files import download, upload
-from bot.templates import honeyimpact as tpl
-from bot.models import honeyimpact as mdl
-from bot.config.dependencies.paths import FILECACHE
-from bot.types.uncategorized import Months
-from bot.types.genshin import Characters, Elements, ElementSymbols, Weapons, Artifacts, Enemies, Domains
+from ..utils import json, catch_aiohttp_errors
+from ..config import honeyimpact
+from ..utils.files import download, upload
+from ..templates import honeyimpact as tpl
+from ..models import honeyimpact as mdl
+from ..config.dependencies.paths import FILECACHE
+from ..types.uncategorized import Months
+from ..types.genshin import Characters, Elements, ElementSymbols, Weapons, Artifacts, Enemies, Domains
 
 
 __all__ = (

@@ -1,13 +1,3 @@
-__all__ = (
-    'GENSHIN_IMPACT',
-    'ART_STYLE',
-    'CLOTHING',
-    'JEWELRY',
-    'EMOTIONS',
-    'BODY'
-)
-
-
 GENSHIN_IMPACT = {
     'геншин': 'genshin_impact',
     'розария': 'rosaria_(genshin_impact)',

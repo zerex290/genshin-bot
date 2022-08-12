@@ -1,7 +1,7 @@
 import re
 
-from bot.models.sankaku import TagType, Tag
-from bot.config.dependencies.group import SHORTNAME
+from ..models.sankaku import TagType, Tag
+from ..config.dependencies.group import SHORTNAME
 
 
 def _prettify_tag(tag: str) -> str:

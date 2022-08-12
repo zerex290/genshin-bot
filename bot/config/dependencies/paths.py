@@ -1,7 +1,7 @@
 import os
 
 
-cwd: str = os.getcwd()  #: get current working directory
+cwd: str = os.getcwd()
 
 ASCENSION: str = os.path.join(cwd, 'ascension')
 BOOKS: str = os.path.join(cwd, 'books', 'books.png')

@@ -1,7 +1,3 @@
-"""
-DATABASE_ADDRESS: postgres://user:password@host:port/database?option=value
-"""
-
 import os
 
 

@@ -1,4 +1,4 @@
-from bot.models.honeyimpact import books
+from ...models.honeyimpact import books
 
 
 def format_information(book: books.Information) -> str:

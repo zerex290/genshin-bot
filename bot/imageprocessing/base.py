@@ -3,8 +3,8 @@ from typing import Literal
 
 from PIL import Image, ImageDraw
 
-from bot.utils.files import download
-from bot.config.dependencies.paths import FILECACHE
+from ..utils.files import download
+from ..config.dependencies.paths import FILECACHE
 
 
 FONT = 'Montserrat-ExtraBold.ttf'  #: Default font for texts

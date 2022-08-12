@@ -1,6 +1,6 @@
 import asyncpg
 
-from bot.config.dependencies.postgres import DATABASE_ADDRESS
+from ..config.dependencies.postgres import DATABASE_ADDRESS
 
 
 class PostgresConnection:

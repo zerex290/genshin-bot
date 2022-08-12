@@ -10,8 +10,8 @@ import aiofiles
 from vkbottle import API, VKAPIError
 from vkbottle import PhotoMessageUploader, DocMessagesUploader, PhotoWallUploader, DocWallUploader, VideoUploader
 
-from bot.utils import catch_aiohttp_errors
-from bot.config.dependencies.paths import LOGS
+from ..utils import catch_aiohttp_errors
+from ..config.dependencies.paths import LOGS
 
 
 UploaderType: TypeAlias = Literal['photo_messages', 'document_messages', 'photo_wall', 'document_wall', 'video']

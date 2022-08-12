@@ -1,4 +1,4 @@
-from bot.config.vk import Vk
+from .vk import Vk
 
 
 class Bot(Vk):

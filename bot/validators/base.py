@@ -1,6 +1,6 @@
 from vkbottle.bot import Message
 
-from bot.errors import GenshinBotException, WrongChatError
+from ..errors import GenshinBotException, WrongChatError
 
 
 __all__ = (

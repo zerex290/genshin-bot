@@ -7,8 +7,8 @@ from typing import Sequence
 from PIL import Image, ImageFont, ImageDraw
 from genshin.models import SpiralAbyss, Floor, Chamber, Battle, AbyssCharacter
 
-from bot.imageprocessing import FONT, cache_icon
-from bot.config.dependencies.paths import IMAGE_PROCESSING, FILECACHE
+from . import FONT, cache_icon
+from ..config.dependencies.paths import IMAGE_PROCESSING, FILECACHE
 
 
 def _draw_floor_text(draw: ImageDraw.ImageDraw, floor_number: int, floor: Floor, chamber_number: int) -> None:

@@ -3,10 +3,10 @@ from typing import Optional, AsyncIterator
 
 import aiohttp
 
-from bot.config import sankaku
-from bot.utils import get_tz, catch_aiohttp_errors
-from bot.types.sankaku import Rating, Order, TagType
-from bot.models.sankaku import Post, Author, Tag
+from ..config import sankaku
+from ..utils import get_tz, catch_aiohttp_errors
+from ..types.sankaku import Rating, Order, TagType
+from ..models.sankaku import Post, Author, Tag
 
 
 __all__ = ('SankakuParser',)

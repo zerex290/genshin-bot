@@ -1,4 +1,4 @@
-from bot.src.main import main
+from .src.main import main
 
 
 __all__ = ('main',)

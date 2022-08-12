@@ -2,10 +2,10 @@ from typing import Optional
 
 from vkbottle import API, VKAPIError
 
-from bot.validators import BaseValidator, ChatValidator
-from bot.constants import COMMANDS
-from bot.utils.postgres import has_postgres_data
-from bot.errors.customcommands import *
+from . import BaseValidator, ChatValidator
+from ..constants import COMMANDS
+from ..utils.postgres import has_postgres_data
+from ..errors.customcommands import *
 
 
 __all__ = (

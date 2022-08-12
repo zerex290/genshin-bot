@@ -7,15 +7,15 @@ from vkbottle import API, Bot, VKAPIError
 
 from genshin.types import Game
 
-from bot.parsers import *
-from bot.utils import PostgresConnection, GenshinClient, json, get_current_timestamp, find_restricted_tags
-from bot.utils.files import download, upload
-from bot.utils.genshin import get_genshin_account_by_id
-from bot.utils.postgres import has_postgres_data
-from bot.types.sankaku import MediaType, Rating, TagType
-from bot.templates.artposting import format_post_message, format_post_source
-from bot.config.dependencies.paths import FILECACHE
-from bot.config.dependencies.group import ID
+from ..parsers import *
+from ..utils import PostgresConnection, GenshinClient, json, get_current_timestamp, find_restricted_tags
+from ..utils.files import download, upload
+from ..utils.genshin import get_genshin_account_by_id
+from ..utils.postgres import has_postgres_data
+from ..types.sankaku import MediaType, Rating, TagType
+from ..templates.artposting import format_post_message, format_post_source
+from ..config.dependencies.paths import FILECACHE
+from ..config.dependencies.group import ID
 
 
 __all__ = (
