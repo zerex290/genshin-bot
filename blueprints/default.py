@@ -212,14 +212,17 @@ class RandomPicture:
 
     @staticmethod
     async def get_attachments(tags: tuple[str, ...], nsfw: bool, search_limit: int, fav_count: int) -> str:
-        attachments: list[str] = []
+        attachments = []
+        downloaded = []
         rating = Rating.E if nsfw else Rating.S
         async for post in SankakuParser(tags=tags, rating=rating).iter_posts(fav_count):
             if len(attachments) >= search_limit:
                 break
-            if nsfw and find_restricted_tags(post, ('loli', 'shota')):
+            if post.id in downloaded:
                 continue
             if post.file_mediatype != MediaType.IMAGE:
+                continue
+            if nsfw and find_restricted_tags(post, ('loli', 'shota')):
                 continue
             picture = await download(post.sample_url, FILECACHE, str(post.id), post.file_suffix)
             if not picture:
@@ -227,6 +230,7 @@ class RandomPicture:
             attachment = await upload(bp.api, 'photo_messages', picture)
             if attachment is not None:
                 attachments.append(attachment)
+                downloaded.append(post.id)
             os.remove(picture)
         return ','.join(attachments)
 
