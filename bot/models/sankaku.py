@@ -89,7 +89,7 @@ class Post:
     @property
     def file_mediatype(self) -> MediaType:
         match self.file_suffix:
-            case 'png' | 'jpeg':
+            case 'png' | 'jpeg' | 'webp':
                 return MediaType.IMAGE
             case 'webm' | 'mp4':
                 return MediaType.VIDEO
