@@ -96,10 +96,10 @@ class CommandCreation:
         async with PostgresConnection() as connection:
             await connection.execute(f"""
                 INSERT INTO custom_commands VALUES (
-                    '{cmd_name}', {self.message.peer_id}, {self.message.from_id}, '{date_added}', 
-                    0, '{msg}', '{doc_id}', '{audio_id}', '{photo_id}'
+                    $1, {self.message.peer_id}, {self.message.from_id}, '{date_added}', 
+                    0, $2, '{doc_id}', '{audio_id}', '{photo_id}'
                 );
-            """)
+            """, cmd_name, msg)
 
     async def create(self) -> str:
         self.validator.check_chat_allowed(self.message.peer_id)
@@ -155,9 +155,9 @@ async def get_custom_command(message: Message, command: CustomCommand) -> None:
     await message.answer(command.message, ','.join(attachments))
     async with PostgresConnection() as connection:
         await connection.execute(f"""
-        UPDATE custom_commands SET times_used = times_used + 1 
-        WHERE chat_id = {message.peer_id} AND name = '{command.name}';
-        """)
+            UPDATE custom_commands SET times_used = times_used + 1 
+            WHERE chat_id = {message.peer_id} AND name = $1;
+        """, command.name)
 
 
 @bp.on.message(CommandRule(['делком'], ['~~п'], man.CommandDeletion))
@@ -170,7 +170,8 @@ async def delete_custom_command(message: Message) -> None:
         await validator.check_command_exist(name, message.peer_id)
         async with PostgresConnection() as connection:
             await connection.execute(
-                f"DELETE FROM custom_commands WHERE name = '{name}' AND chat_id = {message.peer_id};"
+                f"DELETE FROM custom_commands WHERE name = $1 AND chat_id = {message.peer_id};",
+                name
             )
         await message.answer(f"Команда '{name}' была успешно удалена!")
 

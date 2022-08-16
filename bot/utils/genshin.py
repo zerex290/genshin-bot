@@ -30,13 +30,15 @@ class GenshinClient:
         return True
 
 
-async def is_genshin_account(uid: int, ltoken: str, ltuid: str, cookie_token: str) -> bool:
+async def is_genshin_account(uid: int, ltoken: str, ltuid: int, cookie_token: str) -> bool:
     async with GenshinClient(ltuid=ltuid, ltoken=ltoken, account_id=ltuid, cookie_token=cookie_token) as client:
         try:
             await client.get_genshin_notes(uid)
             await client.redeem_code('GENSHINGIFT', uid)
             return True
         except InvalidCookies:
+            return False
+        except ValueError:
             return False
         except GenshinException:
             return True

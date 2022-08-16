@@ -27,7 +27,7 @@ class CreationValidator(BaseValidator, ChatValidator):
 
     @staticmethod
     async def check_command_new(name: str, chat_id: int) -> None:
-        if await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = '{name}' AND chat_id = {chat_id};"):
+        if await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = $1 AND chat_id = {chat_id};", name):
             raise CommandAlreadyExist(name)
 
     @staticmethod
@@ -53,7 +53,7 @@ class DeletionValidator(BaseValidator, ChatValidator):
 
     @staticmethod
     async def check_command_exist(name: str, chat_id: int):
-        if not await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = '{name}' AND chat_id = {chat_id};"):
+        if not await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = $1 AND chat_id = {chat_id};", name):
             raise CommandNotExist
 
 

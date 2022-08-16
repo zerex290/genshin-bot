@@ -149,14 +149,14 @@ async def link_genshin_account(message: Message) -> None:
         validator.check_cookie_amount(cookies)
         validator.check_cookie_syntax(cookies)
         cookies = {c.lower().split('=')[0]: c.split('=')[1] for c in cookies}
+        cookies['uid'] = int(cookies['uid'])
+        cookies['ltuid'] = int(cookies['ltuid'])
         await validator.check_cookies_valid(cookies)
         async with PostgresConnection() as connection:
             await connection.execute(f"""
-                INSERT INTO genshin_accounts (user_id, uid, ltuid, ltoken, cookie_token) VALUES (
-                    {message.from_id}, {cookies['uid']}, {cookies['ltuid']}, 
-                    '{cookies['ltoken']}', '{cookies['cookie_token']}'
-                ); 
-            """)
+                INSERT INTO genshin_accounts (user_id, uid, ltuid, ltoken, cookie_token) 
+                VALUES ({message.from_id}, $1, $2, $3, $4);
+            """, cookies['uid'], cookies['ltuid'], cookies['ltoken'], cookies['cookie_token'])
         await message.answer('Привязка вашего аккаунта прошла успешно!')
 
 

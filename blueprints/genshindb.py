@@ -59,9 +59,9 @@ class GenshinDatabase:
         async with PostgresConnection() as connection:
             await connection.execute(f"""
                 INSERT INTO genshin_db_shortcuts VALUES (
-                    {self.message.from_id}, '{shortcut}', '{msg}', '{photo_id}', '{keyboard.json()}'
+                    {self.message.from_id}, $1, $2, '{photo_id}', '{keyboard.json()}'
                 );
-            """)
+            """, shortcut, msg)
 
     async def add_shortcut(self) -> str:
         shortcut = self.message.text[self.message.text.find('~~аш') + 4:].strip()
@@ -80,8 +80,8 @@ class GenshinDatabase:
         await self.validator.check_shortcut_exist(shortcut, self.message.from_id)
         async with PostgresConnection() as connection:
             await connection.execute(f"""
-                DELETE FROM genshin_db_shortcuts WHERE shortcut = '{shortcut}' AND user_id = {self.message.from_id};
-            """)
+                DELETE FROM genshin_db_shortcuts WHERE shortcut = $1 AND user_id = {self.message.from_id};
+            """, shortcut)
         return shortcut
 
     async def get_user_shortcuts(self) -> str:
@@ -116,8 +116,8 @@ class GenshinDatabase:
         async with PostgresConnection() as connection:
             shortcut = await connection.fetchrow(f"""
                 SELECT message, photo_id, keyboard FROM genshin_db_shortcuts 
-                WHERE user_id = {self.message.from_id} AND shortcut = '{shortcut}';
-            """)
+                WHERE user_id = {self.message.from_id} AND shortcut = $1;
+            """, shortcut)
             return dict(shortcut)
 
     async def get(self) -> None:
