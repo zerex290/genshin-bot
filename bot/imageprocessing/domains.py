@@ -5,7 +5,6 @@ from PIL import Image, ImageFont, ImageDraw
 
 from . import FONT, get_scaled_size, get_centered_position, round_corners, cache_icon
 from ..config.dependencies.paths import IMAGE_PROCESSING, FILECACHE
-from ..models.honeyimpact.domains import Monster, Drop
 
 
 def _process_icon(icon_path: str) -> Image.Image:
@@ -111,18 +110,18 @@ def _calc_crop_box(
     return w0, h0, w1, h1
 
 
-async def get_domain_image(cover_url: str, monsters: list[Monster], drop: list[Drop]) -> str:
+async def get_domain_image(cover_url: str, monsters: list[str], rewards: list[str]) -> str:
     """Process domain image template, save it and return its path
 
     :param cover_url: Link to image of domain cover
-    :param monsters: List with deserialized monster objects
-    :param drop: List with deserialized drop objects
+    :param monsters: List of urls of each monster
+    :param rewards: List of urls of each reward
     :return: Path to saved image
     """
     cover = _process_cover(await cache_icon(cover_url))
     texts = [_process_text(t) for t in ('Дроп', 'Противники')]
-    monsters = [_process_icon(await cache_icon(m.url)) for m in monsters]
-    drop = [_process_icon(await cache_icon(d.url)) for d in drop]
+    monsters = [_process_icon(await cache_icon(m)) for m in monsters]
+    rewards = [_process_icon(await cache_icon(r)) for r in rewards]
 
     path = os.path.join(FILECACHE, f"domain_{randint(0, 10000)}.png")
     with Image.open(os.path.join(IMAGE_PROCESSING, 'templates', 'domains', 'domains.png')) as template:
@@ -132,10 +131,10 @@ async def get_domain_image(cover_url: str, monsters: list[Monster], drop: list[D
         template.paste(cover, (idt + (cpx_w+idt//2) - cover.width//2, idt), mask=cover)
         for i, t in enumerate(texts):
             template.paste(t, (idt + (t.width+idt)*i, cover.height + idt*2), mask=t)
-        for i, d in enumerate(drop):
+        for i, d in enumerate(rewards):
             template.paste(d, _calc_icon_pos(i, idt, d.size, cpx_w, cpx_h), mask=d)
         for i, m in enumerate(monsters):
             template.paste(m, _calc_icon_pos(i, cpx_w + idt*2, m.size, cpx_w, cpx_h), mask=m)
-        template = template.crop(_calc_crop_box(idt, cpx_w, cpx_h, drop[0].size, max(len(drop), len(monsters))))
+        template = template.crop(_calc_crop_box(idt, cpx_w, cpx_h, rewards[0].size, max(len(rewards), len(monsters))))
         template.save(path)
     return path

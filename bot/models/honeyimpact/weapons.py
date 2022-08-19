@@ -1,35 +1,34 @@
 from dataclasses import dataclass
-from typing import Any
 
 
 @dataclass(frozen=True)
 class Information:
-    name: str | Any
-    weapon_type: str | Any
-    rarity: int | Any
-    primary_stat_title: str | Any
-    primary_stat_value: int | Any
-    secondary_stat_title: str | Any
-    secondary_stat_value: float | Any
-    description: str | Any
+    name: str
+    weapon_type: str
+    rarity: int
+    primary_stat_title: str
+    primary_stat_value: float
+    secondary_stat_title: str
+    secondary_stat_value: int | float | str
+    description: str
 
 
 @dataclass(frozen=True)
 class Ability:
-    title: str | Any
-    description: str | Any
+    title: str
+    description: str
 
 
 @dataclass(frozen=True)
 class Progression:
-    level: str | Any
-    primary_stat_title: str | Any
-    primary_stat_value: int | Any
-    secondary_stat_title: str | Any
-    secondary_stat_value: float | Any
+    level: int | str
+    primary_stat_title: str
+    primary_stat_value: int | float | str
+    secondary_stat_title: str
+    secondary_stat_value: int | float | str
 
 
 @dataclass(frozen=True)
 class Refinement:
-    level: str | Any
-    description: str | Any
+    level: str
+    description: str

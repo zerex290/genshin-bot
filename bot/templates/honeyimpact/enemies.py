@@ -6,6 +6,7 @@ def format_information(enemy: enemies.Information) -> str:
         f"🖼Основная информация:\n"
         f"👾Противник: {enemy.name}\n"
         f"🎭Тип: {enemy.enemy_type}\n"
+        f"❇Класс: {enemy.grade}\n"
         f"🧳Дроп: {enemy.drop}\n"
         f"📖Описание: {enemy.description}"
     )

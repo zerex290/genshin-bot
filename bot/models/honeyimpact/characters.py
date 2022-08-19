@@ -5,13 +5,14 @@ from dataclasses import dataclass
 class Information:
     name: str
     title: str
-    allegiance: str
+    occupation: str
+    association: str
     rarity: int
     weapon: str
     element: str
     ascension_stat: str
-    birthday: str
-    astrolabe_name: str
+    birthdate: str
+    constellation: str
     description: str
 
 

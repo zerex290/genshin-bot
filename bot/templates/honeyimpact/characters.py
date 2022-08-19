@@ -6,13 +6,14 @@ def format_information(character: characters.Information) -> str:
         f"🖼Основная информация:\n"
         f"👤Персонаж: {character.name}\n"
         f"👑Титул: {character.title}\n"
-        f"🧰Группа: {character.allegiance}\n"
+        f"🧰Группа: {character.occupation}\n"
+        f"🌎Регион: {character.association}\n"
         f"💫Редкость: {character.rarity}⭐\n"
         f"⚔Оружие: {character.weapon}\n"
         f"⚱Глаз Бога: {character.element}\n"
         f"📈Стат возвышения: {character.ascension_stat}\n"
-        f"🎉День рождения: {character.birthday}\n"
-        f"🔮Созвездие: {character.astrolabe_name}\n"
+        f"🎉Дата рождения: {character.birthdate}\n"
+        f"🔮Созвездие: {character.constellation}\n"
         f"📖Описание: {character.description}"
     )
     return formatted_information
@@ -25,7 +26,7 @@ def format_active_skills(
         elemental_burst: characters.Skill
 ) -> str:
     formatted_active_skills = (
-        f"♟Навыки:\n"
+        f"♟Активные Навыки:\n"
         f"• Авто-атака: {auto_attack.title} -- {auto_attack.description}\n"
         f"• Элем. навык: {elemental_skill.title} -- {elemental_skill.description}\n"
         f"• Доп. навык: {alternative_sprint.title} -- {alternative_sprint.description}\n"
@@ -58,11 +59,11 @@ def format_constellations(
 ) -> str:
     formatted_constellations = (
         f"🎆Описание созвездий:\n"
-        f"• {first_constellation.title}: {first_constellation.description}\n"
-        f"• {second_constellation.title}: {second_constellation.description}\n"
-        f"• {third_constellation.title}: {third_constellation.description}\n"
-        f"• {fourth_constellation.title}: {fourth_constellation.description}\n"
-        f"• {fifth_constellation.title}: {fifth_constellation.description}\n"
-        f"• {sixth_constellation.title}: {sixth_constellation.description}"
+        f"❶ {first_constellation.title}: {first_constellation.description}\n"
+        f"❷ {second_constellation.title}: {second_constellation.description}\n"
+        f"❸ {third_constellation.title}: {third_constellation.description}\n"
+        f"❹ {fourth_constellation.title}: {fourth_constellation.description}\n"
+        f"❺ {fifth_constellation.title}: {fifth_constellation.description}\n"
+        f"❻ {sixth_constellation.title}: {sixth_constellation.description}"
     )
     return formatted_constellations

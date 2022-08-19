@@ -4,7 +4,6 @@ from enum import Enum
 class Characters(Enum):
     VENTI = 'Венти'
     ROSARIA = 'Розария'
-
     XIAO = 'Сяо'
     GANYU = 'Гань Юй'
     ALBEDO = 'Альбедо'
@@ -43,8 +42,8 @@ class Characters(Enum):
     HEIZO = 'Хэйдзо'
     SHIKANOIN_HEIZOU = 'Хэйдзо'
 
-    SHINOBU = 'Куки Синобу'
-    KUKI_SHINOBU = 'Куки Синобу'
+    SHINOBU = 'Синобу'
+    KUKI_SHINOBU = 'Синобу'
 
     ITTO = 'Итто'
     ARATAKI_ITTO = 'Итто'
@@ -81,21 +80,11 @@ class Characters(Enum):
     KUJOU_SARA = 'Сара'
 
     SHOUGUN = 'Райден'
-    SHOUGUN_RAIDEN = 'Райден'
-    RAIDEN_SHOUGUN = 'Райден'
-    SHOGUN = 'Райден'
-    SHOGUN_RAIDEN = 'Райден'
     RAIDEN_SHOGUN = 'Райден'
 
     TRAVELER = 'Путешественник'
-    TRAVELER_BOY_ANEMO = 'Итер'
-    TRAVELER_BOY_GEO = 'Итер'
-    TRAVELER_BOY_ELECTRO = 'Итер'
-    TRAVELER_BOY_DENDRO = 'Итер'
-    TRAVELER_GIRL_ANEMO = 'Люмин'
-    TRAVELER_GIRL_GEO = 'Люмин'
-    TRAVELER_GIRL_ELECTRO = 'Люмин'
-    TRAVELER_GIRL_DENDRO = 'Люмин'
+    PLAYERBOY = 'Итер'
+    PLAYERGIRL = 'Люмин'
 
     THOMA = 'Тома'
     TOHMA = 'Тома'
@@ -115,15 +104,38 @@ class Weapons(Enum):
     CLAYMORE = 'Двуручное'
 
 
-class Artifacts(Enum):
-    QUALITY_OF_LIFE_SETS = 'Здоровье'
-    ATTACK_SETS = 'Урон'
-    ELEMENTAL_ATTACK_SETS = 'Элем. Урон'
-    DEFENSE_SETS = 'Защита'
-    ELEMENTAL_RESISTANCE_SETS = 'Элем. Защита'
-    SUPPORT_SETS = 'Поддержка'
-    ONE_PIECE_TIARA_SETS = 'Тиары'
-    UNCATEGORIZED = 'Вне категории'
+class Stats(Enum):
+    ATK = 'Сила атаки'
+    BONUS_ATK = 'Бонус силы атаки'
+
+    HP = 'Макс. здоровье'
+    BONUS_HP = 'Бонус макс. здоровья'
+    BONUS_HEAL = 'Бонус лечения'
+
+    DEF = 'Защита'
+    BONUS_DEF = 'Бонус защиты'
+
+    CRR = 'Крит. шанс'
+    BONUS_CRITRATE = 'Бонус крит. шанса'
+
+    CRD = 'Крит. урон'
+    BONUS_CRITDMG = 'Бонус крит. урона'
+
+    EM = 'Мастерство стихий'
+    BONUS_EM = 'Бонус мастерства стихий'
+
+    ER = 'Восст. энергии'
+    BONUS_ER = 'Бонус восст. энергии'
+
+    PHYS = 'Физ. урон'
+    BONUS_PHYS = 'Бонус физ. урона'
+    BONUS_PYRO = 'Бонус пиро урона'
+    BONUS_ANEMO = 'Бонус анемо урона'
+    BONUS_ELEC = 'Бонус электро урона'
+    BONUS_HYDRO = 'Бонус гидро урона'
+    BONUS_CRYO = 'Бонус крио урона'
+    BONUS_GEO = 'Бонус гео урона'
+    BONUS_DENDRO = 'Бонус дендро урона'
 
 
 class Enemies(Enum):
@@ -138,11 +150,17 @@ class Enemies(Enum):
     UNCATEGORIZED = 'Вне категории'
 
 
+class Grades(Enum):
+    REGULAR = 'Обычный'
+    BOSS = 'Босс'
+    ELITE = 'Элитный'
+
+
 class Domains(Enum):
-    ARTIFACTS = 'Артефакты'
-    WEAPON_ASCENSION_MATERIALS = 'Возвышение оружия'
-    TALENT_LEVEL_UP_MATERIAL = 'Возвышение навыков'
-    TROUNCE_DOMAINS = 'Подземелья наказания'
+    ARTIFACT = 'Артефакты'
+    TALENT_MATERIAL = 'Возвышение талантов'
+    WEAPON_MATERIAL = 'Возвышение оружия'
+    BOSS = 'Подземелья наказания'
 
 
 class Elements(Enum):
@@ -153,6 +171,7 @@ class Elements(Enum):
     CRYO = 'Крио'
     GEO = 'Гео'
     DENDRO = 'Дендро'
+    NONE = 'Мульти'
 
 
 class ElementSymbols(Enum):
@@ -166,6 +185,7 @@ class ElementSymbols(Enum):
 
 
 class Regions(Enum):
+    SUMERU = 'Сумеру'
     ENKANOMIYA = 'Энканомия'
     INAZUMA = 'Инадзума'
     DRAGONSPINE = 'Драконий Хребет'

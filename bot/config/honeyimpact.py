@@ -10,5 +10,5 @@ HEADERS: dict = {
 }
 
 ATTRIBUTES: dict = {
-    'lang': ''
+    'lang': 'RU'
 }

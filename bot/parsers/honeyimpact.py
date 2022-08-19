@@ -1,24 +1,23 @@
+from __future__ import annotations
 import asyncio
 import re
 import os
-import random
 from typing import Optional
 
 import aiohttp
 import aiofiles
-from vkbottle import API
 
 from lxml import html
 from lxml.html import HtmlElement
+from lxml.etree import ParserError
 
 from ..utils import json, catch_aiohttp_errors
 from ..config import honeyimpact
-from ..utils.files import download, upload
 from ..templates import honeyimpact as tpl
 from ..models import honeyimpact as mdl
 from ..config.dependencies.paths import FILECACHE
-from ..types.uncategorized import Months
-from ..types.genshin import Characters, Elements, ElementSymbols, Weapons, Artifacts, Enemies, Domains
+from ..types.uncategorized import Months, MonthIntegers
+from ..types.genshin import Characters, Elements, Regions, Weapons, Stats, Enemies, Grades, Domains
 
 
 __all__ = (
@@ -31,95 +30,131 @@ __all__ = (
 )
 
 
-class HoneyImpactParser:
-    def __init__(self, lang: str = 'RU') -> None:
-        self.base_url = honeyimpact.URL
-        self.lang = lang
+_ENDPOINTS = {
+        'CharacterParser': ['fam_chars/'],
+        'WeaponParser': [
+            'fam_sword/',
+            'fam_claymore/',
+            'fam_polearm/',
+            'fam_bow/',
+            'fam_catalyst/'
+        ],
+        'ArtifactParser': ['fam_art_set/'],
+        'EnemyParser': [
+            'mcat_20011201/',  #: Elemental Lifeforms
+            'mcat_21010101/',  #: Hilichurls
+            'mcat_22010101/',  #: The Abyss Order
+            'mcat_23010601/',  #: Fatui
+            'mcat_24010101/',  #: Automaton
+            'mcat_25010101/',  #: Other Human Factions
+            'mcat_26010201/',  #: Magical Beasts
+            'mcat_29010101/'  #: Bosses
+        ],
+        'BookParser': [''],
+        'DomainParser': [
+            'dcat_1/',  #: Artifact
+            'dcat_10/',  #: Character Material
+            'dcat_2/',  #: Weapon Material
+            'dcat_1006/'  #: Boss
+        ],
+    }
 
-        self._headers = honeyimpact.HEADERS
-        self._attributes = honeyimpact.ATTRIBUTES
 
-    @property
-    def headers(self) -> dict[str, str]:
-        headers = self._headers.copy()
-        return headers
+class _AsyncHtmlElement(HtmlElement):
+    def __init__(self, _element: HtmlElement) -> None:
+        super().__init__()
+        self._element = _element
 
-    @property
-    def attributes(self) -> dict[str, str]:
-        attributes = self._attributes.copy()
-        attributes['lang'] = self.lang
-        return attributes
+    def __str__(self) -> str:
+        return str(self._element)
 
-    @catch_aiohttp_errors
-    async def _compile_html(self, page_url: str) -> Optional[HtmlElement]:
+    def __repr__(self) -> str:
+        return repr(self._element)
+
+    async def xpath(self, expr: str, *args) -> list[_AsyncHtmlElement | str | float | int]:
         loop = asyncio.get_running_loop()
-        async with aiohttp.ClientSession() as session:
-            async with session.get(page_url, headers=self.headers, params=self.attributes) as response:
-                if response.ok:
-                    html_element = await response.text()
-                    return await loop.run_in_executor(None, html.document_fromstring, html_element)
+        if self._element is not None:
+            return [
+                _AsyncHtmlElement(e) if isinstance(e, HtmlElement) else e
+                for e in await loop.run_in_executor(None, self._element.xpath, expr, *args)
+            ]
+        else:
+            return []
 
-    @staticmethod
-    async def _xpath(html_element: Optional[HtmlElement], query: str) -> list[HtmlElement | str | int]:
+    async def text(self, sep: str = '') -> str:
+        """Returns text inside the current element.
+
+        :param sep: custom separator between text parts
+        :return: Str representation of text
+        """
+        return sep.join(await self.xpath('.//text()'))
+
+    async def position(self) -> Optional[int]:
+        """Returns current element position within the parent.
+        Element indexing starts with 1 according to html document structure.
+
+        :return: Int with element position
+        """
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, html_element.xpath, query) if html_element is not None else []
-
-    @staticmethod
-    async def get_icon_attachment(api: API, url: str) -> Optional[str]:
-        file = await download(url, FILECACHE, f"icon_{random.randint(0, 10000)}", 'png')
-        if file:
-            attachment = await upload(api, 'photo_messages', file)
-            os.remove(file)
-            return attachment
-        return None
+        try:
+            parent = await loop.run_in_executor(None, self._element.getparent)
+            return (await loop.run_in_executor(None, parent.index, self._element)) + 1
+        except ValueError:
+            return None
 
 
-class CharacterParser(HoneyImpactParser):
-    RELEASED = 'db/char/characters/'
-    BETA = 'db/char/unreleased-and-upcoming-characters/'
+class CharacterParser:
+    def __init__(self, element: str, name: str) -> None:
+        self._data = json.load('characters')[element][name]
+        self.element = element
+        self.name = name
+        self.href: str = self._data[0]
+        self.icon: str = self._data[1]
+        self.rarity: int = self._data[2]
+        self.weapon: str = self._data[3]
+        del self._data
 
-    def __init__(self, lang: str = 'RU') -> None:
-        super().__init__(lang)
-
-    async def get_characters(self) -> Optional[dict[str, dict]]:
+    @classmethod
+    async def get_characters(cls) -> Optional[dict[str, dict]]:
         characters = {e.value: {} for e in Elements}
-        urls = (self.base_url + self.RELEASED, self.base_url + self.BETA)
 
-        for url in urls:
-            tree = await self._compile_html(url)
+        for endpoint in _ENDPOINTS[cls.__name__]:
+            tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
             if tree is None:
                 return None
-            table = await self._xpath(tree, '//div[@class="char_sea_cont"]//span[@class="sea_charname"]')
+            table = await _deserialize(
+                (await tree.xpath('//section[@id="characters"]//script/text()'))[0],
+                'sortable_data'
+            )
             for character in table:
-                path = (await self._xpath(character, './..'))[0].items()[0][-1].rstrip(f"?lang={self.lang}")[1:]
-                name = Characters[path.split('/')[-2].upper()].value
-                element = await self._xpath(character, './../..//img[contains(@class, "element")]')
-                element = element[0].items()[-1][-1].split('/')[-1].rstrip('_35.png').upper()
-                characters[Elements[element].value][name] = path
+                _, name, rarity, weapon, element, _ = character
+                href = re.search(r'\w+', (await name.xpath('//@href'))[0])[0]
+                icon = f"{honeyimpact.URL}img/{href}.webp"
+                name = Characters[href.split('_')[0].upper()].value
+                rarity = int(re.search(r'\d', await rarity.text())[0])
+                weapon = Weapons[re.search(r'\w+', await weapon.text())[0].upper()].value
+                element = Elements[re.search(r'\w+', await element.text())[0].upper()].value
+                characters[element][name] = [href, icon, rarity, weapon]
         return characters
 
-    async def get_information(self, name: str, element: str) -> str:
-        tree = await self._compile_html(self.base_url + json.load('characters')[element][name])
-        table = (await self._xpath(tree, '//div[@class="wrappercont"]//table[@class="item_main_table"][1]'))[0]
+    async def get_information(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = (await tree.xpath('//table[@class="genshin_table main_table"]'))[0]
 
-        ascension_stat = (await self._xpath(tree, '//div[@class="skilldmgwrapper"][preceding-sibling::span][1]'))[0]
-        ascension_stat = (await self._xpath((await self._xpath(ascension_stat, './/tr'))[0], './td/text()'))[4]
-        title = ''.join(await self._xpath(table, './/td[contains(text(), "Title")]/following-sibling::td/text()'))
-        allegiance = await self._xpath(table, './/td[contains(text(), "Allegiance")]/following-sibling::td/text()')
-        allegiance = ''.join(allegiance)
-        rarity = len(await self._xpath(table, './/td[contains(text(), "Rarity")]/following-sibling::td/div'))
-        weapon = (await self._xpath(table, './/td[contains(text(), "Weapon")]/following-sibling::td/a/text()'))[0]
-        weapon = Weapons[weapon.upper()].value
-        birthday = ''.join(await self._xpath(table, './/td[contains(text(), "Birthday")]/following-sibling::td/text()'))
-        if len(birthday.split()) > 1:
-            day, month = birthday.split()
-            birthday = f"{Months[month.upper()].value} {day}"
+        title = ''.join(await table.xpath('.//td[contains(text(), "Title")]/following-sibling::td/text()'))
+        occ = ''.join(await table.xpath('.//td[contains(text(), "Occupation")]/following-sibling::td/text()'))
+        association = Regions[
+            ''.join(await table.xpath('.//td[contains(text(), "Association")]/following-sibling::td/text()'))
+            .upper()
+        ].value
+        birthdate = (await table.xpath('.//td[contains(text(), "of Birth")]/following-sibling::td/text()'))
+        if len(birthdate) == 2:
+            birthdate = f"{Months[MonthIntegers(int(birthdate[1])).name].value} {birthdate[0]}"
         else:
-            birthday = Months[birthday.upper().strip()].value
-        a_name = ''.join(await self._xpath(table, './/td[contains(text(), "Astrolabe")]/following-sibling::td/text()'))
-
-        desc = ''.join(await self._xpath(table, './/td[contains(text(), "Description")]/following-sibling::td/text()'))
-        match name:
+            birthdate = '--'
+        con = ''.join(await table.xpath('.//td[contains(text(), "Constellation")]/following-sibling::td/text()'))
+        desc = ''.join(await table.xpath('.//td[contains(text(), "Description")]/following-sibling::td/text()'))
+        match self.name:
             case 'Итер':
                 desc = re.sub(r'\{F#[а-яА-ЯёЁ\s]+}', '', desc)
                 desc = re.sub(r'[{M#}]', '', desc)
@@ -128,452 +163,470 @@ class CharacterParser(HoneyImpactParser):
                 desc = re.sub(r'[{F#}]', '', desc)
             case _:
                 pass
+        asc_stat = _format_stat(
+            ''.join(
+                await (await tree.xpath('//table[@class="genshin_table stat_table"]/thead'))[0]
+                .xpath('.//td[last()-2]/text()')
+            )
+        )
 
         character = mdl.characters.Information(
-            name, title, allegiance, rarity, weapon, element, ascension_stat, birthday, a_name, desc
+            self.name, title, occ, association,
+            self.rarity, self.weapon, self.element,
+            asc_stat, birthdate, con, desc
         )
         return tpl.characters.format_information(character)
 
-    async def get_active_skills(self, name: str, element: str) -> str:
-        tree = await self._compile_html(self.base_url + json.load('characters')[element][name])
-        table = (
-            await self._xpath(
-                tree,
-                '//table[preceding-sibling::span[text()="Attack Talents"]]'
-                '[following-sibling::span[contains(text(), "Talent Ascension Materials")]]'
-            )
-        )
-        auto_attack = table[-4] if (len(table) % 4 == 0) else table[-3] if table else ''
-        elemental_skill = table[-3] if (len(table) % 4 == 0) else table[-2] if table else ''
-        alternative_sprint = table[-2] if (len(table) % 4 == 0 and table) else ''
-        elemental_burst = table[-1] if table else ''
-        if not isinstance(auto_attack, str):
-            auto_attack_title = ''.join(await self._xpath(auto_attack, './/tr[1]/td[2]/a/text()'))
-            auto_attack_desc = ''.join(await self._xpath(auto_attack, './/tr[2]//div//text()')).replace('•', '')
+    async def get_active_skills(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = await tree.xpath('//section[@id="char_skills"]/*')
+        if not table:
+            a_atk, e_skill, a_sprint, e_burst = (mdl.characters.Skill('', '') for _ in range(4))
+            return tpl.characters.format_active_skills(a_atk, e_skill, a_sprint, e_burst)
+        table = table[2:-11]
+
+        a_atk = table[0]
+        e_skill = table[1]
+        a_sprint = table[-2] if (len(table) % 4 == 0) else ''
+        e_burst = table[-1]
+
+        a_atk_title = ''.join(await a_atk.xpath('.//tr[1]/td[2]/a/text()'))
+        a_atk_desc = await (await a_atk.xpath('.//tr[2]/td[1]'))[0].text(' ')
+        e_skill_title = ''.join(await e_skill.xpath('.//tr[1]/td[2]/a/text()'))
+        e_skill_desc = await (await e_skill.xpath('.//tr[2]/td[1]'))[0].text(' ')
+        if not isinstance(a_sprint, str):
+            a_sprint_title = ''.join(await a_sprint.xpath('.//tr[1]/td[2]/a/text()'))
+            a_sprint_desc = await (await a_sprint.xpath('.//tr[2]/td[1]'))[0].text(' ')
         else:
-            auto_attack_title, auto_attack_desc = '', ''
-        if not isinstance(elemental_skill, str):
-            elemental_skill_title = ''.join(await self._xpath(elemental_skill, './/tr[1]/td[2]/a/text()'))
-            elemental_skill_desc = ''.join(await self._xpath(elemental_skill, './/tr[2]//div//text()')).replace('•', '')
-        else:
-            elemental_skill_title, elemental_skill_desc = '', ''
-        if not isinstance(alternative_sprint, str):
-            alternative_sprint_title = ''.join(await self._xpath(alternative_sprint, './/tr[1]/td[2]/a/text()'))
-            alternative_sprint_desc = ''.join(await self._xpath(alternative_sprint, './/tr[2]//div//text()'))
-            alternative_sprint_desc = alternative_sprint_desc.replace('•', '')
-        else:
-            alternative_sprint_title, alternative_sprint_desc = '', ''
-        if not isinstance(elemental_burst, str):
-            elemental_burst_title = ''.join(await self._xpath(elemental_burst, './/tr[1]/td[2]/a/text()'))
-            elemental_burst_desc = ''.join(await self._xpath(elemental_burst, './/tr[2]//div//text()')).replace('•', '')
-        else:
-            elemental_burst_title, elemental_burst_desc = '', ''
+            a_sprint_title, a_sprint_desc = '', ''
+        e_burst_title = ''.join(await e_burst.xpath('.//tr[1]/td[2]/a/text()'))
+        e_burst_desc = await (await e_burst.xpath('.//tr[2]/td[1]'))[0].text(' ')
 
-        auto_attack = mdl.characters.Skill(auto_attack_title, auto_attack_desc)
-        elemental_skill = mdl.characters.Skill(elemental_skill_title, elemental_skill_desc)
-        alternative_sprint = mdl.characters.Skill(alternative_sprint_title, alternative_sprint_desc)
-        elemental_burst = mdl.characters.Skill(elemental_burst_title, elemental_burst_desc)
+        a_atk = mdl.characters.Skill(a_atk_title, a_atk_desc)
+        e_skill = mdl.characters.Skill(e_skill_title, e_skill_desc)
+        a_sprint = mdl.characters.Skill(a_sprint_title, a_sprint_desc)
+        e_burst = mdl.characters.Skill(e_burst_title, e_burst_desc)
+        return tpl.characters.format_active_skills(a_atk, e_skill, a_sprint, e_burst)
 
-        response = tpl.characters.format_active_skills(
-            auto_attack, elemental_skill, alternative_sprint, elemental_burst
+    async def get_passive_skills(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = await tree.xpath('//section[@id="char_skills"]/*')
+        if not table:
+            f_passive, s_passive, t_passive = (mdl.characters.Skill('', '') for _ in range(3))
+            return tpl.characters.format_passive_skills(f_passive, s_passive, t_passive)
+        table = table[-10:-7]
+
+        f_passive = table[0]
+        s_passive = table[1]
+        t_passive = table[2]
+
+        f_passive_title = ''.join(await f_passive.xpath('.//tr[1]/td[2]/a/text()'))
+        f_passive_desc = await (await f_passive.xpath('.//tr[2]/td[1]'))[0].text(' ')
+        s_passive_title = ''.join(await s_passive.xpath('.//tr[1]/td[2]/a/text()'))
+        s_passive_desc = await (await s_passive.xpath('.//tr[2]/td[1]'))[0].text(' ')
+        t_passive_title = ''.join(await t_passive.xpath('.//tr[1]/td[2]/a/text()'))
+        t_passive_desc = await (await t_passive.xpath('.//tr[2]/td[1]'))[0].text(' ')
+
+        f_passive = mdl.characters.Skill(f_passive_title, f_passive_desc)
+        s_passive = mdl.characters.Skill(s_passive_title, s_passive_desc)
+        t_passive = mdl.characters.Skill(t_passive_title, t_passive_desc)
+        return tpl.characters.format_passive_skills(f_passive, s_passive, t_passive)
+
+    async def get_constellations(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = await tree.xpath('//section[@id="char_skills"]/*')
+        if not table:
+            f_passive, s_passive, t_passive = (mdl.characters.Skill('', '') for _ in range(3))
+            return tpl.characters.format_passive_skills(f_passive, s_passive, t_passive)
+        table = table[-6:]
+
+        first_con = table[0]
+        second_con = table[1]
+        third_con = table[2]
+        fourth_con = table[3]
+        fifth_con = table[4]
+        sixth_con = table[5]
+
+        first_con_title = ''.join(await first_con.xpath('.//tr[1]/td[2]/a/text()'))
+        first_con_desc = await (await first_con.xpath('.//tr[2]/td[1]'))[0].text(' ')
+        second_con_title = ''.join(await second_con.xpath('.//tr[1]/td[2]/a/text()'))
+        second_con_desc = await (await second_con.xpath('.//tr[2]/td[1]'))[0].text(' ')
+        third_con_title = ''.join(await third_con.xpath('.//tr[1]/td[2]/a/text()'))
+        third_con_desc = await (await third_con.xpath('.//tr[2]/td[1]'))[0].text(' ')
+        fourth_con_title = ''.join(await fourth_con.xpath('.//tr[1]/td[2]/a/text()'))
+        fourth_con_desc = await (await fourth_con.xpath('.//tr[2]/td[1]'))[0].text(' ')
+        fifth_con_title = ''.join(await fifth_con.xpath('.//tr[1]/td[2]/a/text()'))
+        fifth_con_desc = await (await fifth_con.xpath('.//tr[2]/td[1]'))[0].text(' ')
+        sixth_con_title = ''.join(await sixth_con.xpath('.//tr[1]/td[2]/a/text()'))
+        sixth_con_desc = await (await sixth_con.xpath('.//tr[2]/td[1]'))[0].text(' ')
+
+        first_con = mdl.characters.Skill(first_con_title, first_con_desc)
+        second_con = mdl.characters.Skill(second_con_title, second_con_desc)
+        third_con = mdl.characters.Skill(third_con_title, third_con_desc)
+        fourth_con = mdl.characters.Skill(fourth_con_title, fourth_con_desc)
+        fifth_con = mdl.characters.Skill(fifth_con_title, fifth_con_desc)
+        sixth_con = mdl.characters.Skill(sixth_con_title, sixth_con_desc)
+        return tpl.characters.format_constellations(
+            first_con, second_con, third_con, fourth_con, fifth_con, sixth_con
         )
-        return response
-
-    async def get_passive_skills(self, name: str, element: str) -> str:
-        tree = await self._compile_html(self.base_url + json.load('characters')[element][name])
-        table = (
-            await self._xpath(
-                tree,
-                '//div[@class="wrappercont"]//table[preceding-sibling::span[@id="beta_scroll_passive_talent"]]'
-                '[following-sibling::span[@id="beta_scroll_constellation"]]/tr'
-            )
-        )
-        first_passive_title = ''.join(await self._xpath(table[0], './/text()')) if table else ''
-        first_passive_desc = ''.join(await self._xpath(table[1], './/text()')).replace('•', '') if table else ''
-        second_passive_title = ''.join(await self._xpath(table[2], './/text()')) if table else ''
-        second_passive_desc = ''.join(await self._xpath(table[3], './/text()')).replace('•', '') if table else ''
-        third_passive_title = ''.join(await self._xpath(table[-2], './/text()')) if table else ''
-        third_passive_desc = ''.join(await self._xpath(table[-1], './/text()')).replace('•', '') if table else ''
-
-        first_passive = mdl.characters.Skill(first_passive_title, first_passive_desc)
-        second_passive = mdl.characters.Skill(second_passive_title, second_passive_desc)
-        third_passive = mdl.characters.Skill(third_passive_title, third_passive_desc)
-
-        response = tpl.characters.format_passive_skills(first_passive, second_passive, third_passive)
-        return response
-
-    async def get_constellations(self, name: str, element: str) -> str:
-        tree = await self._compile_html(self.base_url + json.load('characters')[element][name])
-        table = (
-            await self._xpath(
-                tree,
-                '//div[@class="wrappercont"]//table[preceding-sibling::span[@id="beta_scroll_constellation"]]/tr'
-            )
-        )
-        first_constellation_title = ''.join(await self._xpath(table[0], './/text()')) if table else ''
-        first_constellation_desc = ''.join(await self._xpath(table[1], './/text()')) if table else ''
-        second_constellation_title = ''.join(await self._xpath(table[2], './/text()')) if table else ''
-        second_constellation_desc = ''.join(await self._xpath(table[3], './/text()')) if table else ''
-        third_constellation_title = ''.join(await self._xpath(table[4], './/text()')) if table else ''
-        third_constellation_desc = ''.join(await self._xpath(table[5], './/text()')) if table else ''
-        fourth_constellation_title = ''.join(await self._xpath(table[6], './/text()')) if table else ''
-        fourth_constellation_desc = ''.join(await self._xpath(table[7], './/text()')) if table else ''
-        fifth_constellation_title = ''.join(await self._xpath(table[8], './/text()')) if table else ''
-        fifth_constellation_desc = ''.join(await self._xpath(table[9], './/text()')) if table else ''
-        sixth_constellation_title = ''.join(await self._xpath(table[10], './/text()')) if table else ''
-        sixth_constellation_desc = ''.join(await self._xpath(table[11], './/text()')) if table else ''
-
-        first_constellation = mdl.characters.Skill(first_constellation_title, first_constellation_desc)
-        second_constellation = mdl.characters.Skill(second_constellation_title, second_constellation_desc)
-        third_constellation = mdl.characters.Skill(third_constellation_title, third_constellation_desc)
-        fourth_constellation = mdl.characters.Skill(fourth_constellation_title, fourth_constellation_desc)
-        fifth_constellation = mdl.characters.Skill(fifth_constellation_title, fifth_constellation_desc)
-        sixth_constellation = mdl.characters.Skill(sixth_constellation_title, sixth_constellation_desc)
-
-        response = tpl.characters.format_constellations(
-            first_constellation, second_constellation, third_constellation,
-            fourth_constellation, fifth_constellation, sixth_constellation
-        )
-        return response
 
 
-class WeaponParser(HoneyImpactParser):
-    def __init__(self, lang: str = 'RU') -> None:
-        super().__init__(lang)
+class WeaponParser:
+    def __init__(self, w_type: str, name: str) -> None:
+        self._data = json.load('weapons')[w_type][name]
+        self.type = w_type
+        self.name = name
+        self.href: str = self._data[0]
+        self.icon: str = self._data[1]
+        self.rarity: int = self._data[2]
+        self.atk: float = self._data[3]
+        self.sub: str = self._data[4]
+        self.value: int | float | str = self._data[5]
+        self.affix: str = self._data[6]
+        del self._data
 
-    async def get_weapons(self) -> Optional[dict[str, dict]]:
+    @classmethod
+    async def get_weapons(cls) -> Optional[dict[str, dict]]:
         weapons = {w.value: {} for w in Weapons}
 
-        for weapon_type in weapons:
-            tree = await self._compile_html(self.base_url + 'db/weapon/' + Weapons(weapon_type).name.lower())
+        for endpoint in _ENDPOINTS[cls.__name__]:
+            tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
             if tree is None:
                 return None
-            table = await self._xpath(tree, '//div[@class="scrollwrapper"]/table[@class="art_stat_table"]/tr//a')
-            for element in table:
-                if await self._xpath(element, './text()'):
-                    name = ''.join(await self._xpath(element, './text()'))
-                    code = element.get('href').split('/')[3] if element.get('href').find('weapon') != -1 else ''
-                    rarity = len(await self._xpath(element, '../following-sibling::td/div[contains(@class, "stars")]'))
-                    weapons[weapon_type][name] = (code, rarity)
+            table = await _deserialize(
+                (await tree.xpath('//section[@id="weapons"]//script/text()'))[0],
+                'sortable_data'
+            )
+            for weapon in table:
+                _, name, rarity, atk, sub, value, affix, _ = weapon
+                href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
+                icon = f"{honeyimpact.URL}img/{href}.webp"
+                name = re.search(r'[\w\s:]+', await name.text())[0]
+                rarity = int(re.search(r'\d', await rarity.text())[0])
+                if isinstance(sub, _AsyncHtmlElement):
+                    sub = _format_stat(await sub.text())
+                if isinstance(value, _AsyncHtmlElement):
+                    value = await value.text()
+                if isinstance(affix, _AsyncHtmlElement):
+                    affix = re.sub(r'<[^>]+>', '', await affix.text())
+                weapons[Weapons[endpoint.split('_')[-1][:-1].upper()].value][name] = [
+                    href, icon, rarity, atk, sub, value, affix
+                ]
         return weapons
 
-    async def get_information(self, name: str, weapon_type: str) -> str:
-        code, rarity = json.load('weapons')[weapon_type][name]
-        tree = await self._compile_html(self.base_url + 'weapon/' + code)
-        table = (await self._xpath(tree, '//div[@class="wrappercont"]//table[@class="item_main_table"][1]'))[1]
+    async def get_information(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = (await tree.xpath('//table[@class="genshin_table main_table"]'))[0]
 
-        first_stat_title = 'Базовая атака'
-        first_stat = (await self._xpath(table, './/td[text()="Base Attack"]/following-sibling::td/text()'))[0]
-        second_stat_title = (await self._xpath(table, './/td[text()="Secondary Stat"]/following-sibling::td/text()'))[0]
-        second_stat = (await self._xpath(table, './/td[text()="Secondary Stat Value"]/following-sibling::td/text()'))[0]
-
-        desc = await self._xpath(
-            table, './/tr/td[contains(text(), "In-game Description")]/following-sibling::td/text()'
-        )
-        desc = ''.join(desc)
+        desc = ''.join(await table.xpath('.//td[text()="Description"]/following-sibling::td/text()'))
 
         weapon = mdl.weapons.Information(
-            name, weapon_type, rarity, first_stat_title, first_stat, second_stat_title, second_stat, desc
+            self.name, self.type, self.rarity, 'Базовая атака', self.atk, self.sub, self.value, desc
         )
         return tpl.weapons.format_information(weapon)
 
-    async def get_ability(self, name: str, weapon_type: str) -> str:
-        tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
-        table = (await self._xpath(tree, '//div[@class="wrappercont"]//table[@class="item_main_table"][1]'))[1]
+    async def get_ability(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = (await tree.xpath('//table[@class="genshin_table main_table"]'))[0]
 
-        title = ''.join(
-            await self._xpath(table, './/tr/td[text()="Special (passive) Ability"]/following-sibling::td/text()')
-        )
-        desc = ''.join(
-            await self._xpath(table, './/tr/td[contains(text(), "Ability Desc")]/following-sibling::td//text()')
-        )
+        title = ''.join(await table.xpath('//td[text()="Weapon Affix"]/following-sibling::td/text()'))
 
-        ability = mdl.weapons.Ability(title, desc)
+        ability = mdl.weapons.Ability(title, self.affix)
         return tpl.weapons.format_ability(ability)
 
-    async def get_progression(self, name: str, weapon_type: str) -> str:
-        tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
-        table = await self._xpath(
-            tree,
-            '//table[@class="add_stat_table"][preceding-sibling::span[contains(text(), "Stat Progress")]]'
-            '[following-sibling::span[contains(text(), "Refine")]]'
-        )
+    async def get_progression(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = (await tree.xpath('//table[@class="genshin_table stat_table"]/tr'))
 
-        progressions: list[mdl.weapons.Progression] = []
-        second_stat = await self._xpath(
-            tree,
-            '//div[@class="wrappercont"]//td[text()="Secondary Stat"]/following-sibling::td/text()'
-        )
-        for row in await self._xpath(table[1], './tr[position()>1]'):
+        progressions = []
+        for row in table:
             progressions.append(
                 mdl.weapons.Progression(
-                    (await self._xpath(row, './td[1]/text()'))[0],
+                    (await row.xpath('./td[1]/text()'))[0],
                     'Атака',
-                    (await self._xpath(row, './td[2]/text()'))[0],
-                    second_stat[-1],
-                    (await self._xpath(row, './td[3]/text()'))[0]
+                    (await row.xpath('./td[2]/text()'))[0],
+                    self.sub,
+                    (await row.xpath('./td[3]/text()'))[0]
                 )
             )
         return tpl.weapons.format_progression(progressions)
 
-    async def get_refinement(self, name: str, weapon_type: str) -> str:
-        tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
-        table = await self._xpath(
-            tree, '//div[@class="wrappercont"]//span[contains(text(), "(Refine)")]/following-sibling::table[1]'
-        )
-        refinements: list[mdl.weapons.Refinement] = []
-        for row in await self._xpath(table[-1], './tr[position()>1]'):
-            level, *description = (await self._xpath(row, './/text()'))
-            level = re.search(r'\d', level)[0]
-            description = ''.join(description)
-            refinements.append(mdl.weapons.Refinement(level, description))
+    async def get_refinement(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = (await tree.xpath('//table[@class="genshin_table affix_table"]/tr'))
+
+        refinements = []
+        for row in table:
+            refinements.append(
+                mdl.weapons.Refinement(
+                    (await row.xpath('./td[1]/text()'))[0],
+                    ''.join(await row.xpath('./td[2]//text()'))
+                )
+            )
         return tpl.weapons.format_refinement(refinements)
 
-    async def get_story(self, name: str, weapon_type: str) -> str:
-        tree = await self._compile_html(self.base_url + 'weapon/' + json.load('weapons')[weapon_type][name][0])
-        story = await self._xpath(
-            tree,
-            '//span[@class="item_secondary_title"][text()="Item Story"]/following-sibling::table//text()'
-        )
+    async def get_story(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        story = ''.join(await tree.xpath('//table[@class="genshin_table quotes_table"]/tr//text()')).strip()
         return tpl.weapons.format_story(''.join(story))
 
 
-class ArtifactParser(HoneyImpactParser):
-    def __init__(self, lang: str = 'RU') -> None:
-        super().__init__(lang)
+class ArtifactParser:
+    def __init__(self, a_type: str, name: str) -> None:
+        self._data = json.load('artifacts')[a_type][name]
+        self.type = a_type
+        self.name = name
+        self.href: str = self._data[0]
+        self.icon: str = self._data[1]
+        self.affix: list[str] = self._data[2]
+        self.variants: int = self._data[3]
+        del self._data
 
-    async def get_artifacts(self) -> Optional[dict[str, dict]]:
-        tree = await self._compile_html(self.base_url + 'db/artifact/')
-        if tree is None:
-            return None
-        tables = await self._xpath(tree, '//div[@class="wrappercont"]/table[contains(@class, "art_stat_table")]')
+    @classmethod
+    async def get_artifacts(cls) -> Optional[dict[str, dict]]:
+        a_type = 'Набор артефактов'
+        artifacts = {a_type: {}}
 
-        artifacts = {a.value: {} for a in Artifacts}
-        for i, table in enumerate(tables):
-            for row in await self._xpath(table, './tr[position()>1]'):
-                if await self._xpath(row, './/a/text()'):
-                    name = ''.join(await self._xpath(row, './/a//text()'))
-                    code = (await self._xpath(row, './/a'))[0].items()[0][-1].split('/')[-2]
-                    rarity = '-'.join(
-                        [str(len(div)) for div in await self._xpath(row, './/div[@class="star_art_wrap_cont"]')]
-                    )
-                    icon = f"{self.base_url}{(await self._xpath(row, './/a//img'))[0].items()[-1][-1][1:-7]}.png"
-                    artifacts[list(Artifacts)[i].value][name] = (code, rarity.strip(), icon)
+        for endpoint in _ENDPOINTS[cls.__name__]:
+            tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
+            if tree is None:
+                return None
+            table = await _deserialize(
+                (await tree.xpath('//table[@class="genshin_table sortable "]//script/text()'))[0],
+                'sortable_data'
+            )
+            for artifact in table:
+                icons, name, affix = artifact
+                href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
+                icon = f"{honeyimpact.URL}img/{href}.webp"
+                name = re.search(r'[\w\s:]+', await name.text())[0]
+                affix = [
+                    re.sub(r'<[^>]+>|[124]-Piece:\s?', '', (await span.xpath('./text()'))[0])
+                    for span in await affix.xpath('//span')
+                ]
+                variants = len(await icons.xpath('//@href')) - 1
+                artifacts[a_type][name] = [href, icon, affix, variants]
         return artifacts
 
-    async def get_information(self, name: str, artifact_type: str) -> str:
-        code, rarity, _ = json.load('artifacts')[artifact_type][name]
-        tree = await self._compile_html(self.base_url + 'db/art/family/' + code)
-        table = (await self._xpath(tree, '//table[@class="item_main_table"]'))[0]
+    async def get_information(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = (await tree.xpath('//table[@class="genshin_table main_table"]'))[0]
 
-        piece2 = ''.join(await self._xpath(table, './tr/td[contains(text(), "2 Piece")]/following-sibling::td/text()'))
-        piece4 = ''.join(await self._xpath(table, './tr/td[contains(text(), "4 Piece")]/following-sibling::td/text()'))
+        rarity = (await table.xpath('//td[text()="Rarity"]/following-sibling::td/img'))
+        rarity = f"{len(rarity)}-{len(rarity) + self.variants}"
 
-        artifact = mdl.artifacts.Information(name, artifact_type, rarity, piece2, piece4)
+        artifact = mdl.artifacts.Information(self.name, self.type, rarity, self.affix)
         return tpl.artifacts.format_information(artifact)
 
 
-class EnemyParser(HoneyImpactParser):
-    def __init__(self, lang: str = 'RU') -> None:
-        super().__init__(lang)
+class EnemyParser:
+    def __init__(self, e_type: str, name: str) -> None:
+        self._data = json.load('enemies')[e_type][name]
+        self.type = e_type
+        self.name = name
+        self.href: str = self._data[0]
+        self.icon: str = self._data[1]
+        self.grade: str = self._data[2]
+        self.drop: str = self._data[3]
+        del self._data
 
-    async def get_enemies(self) -> Optional[dict[str, dict]]:
-        tree = await self._compile_html(self.base_url + 'db/enemy/')
-        if tree is None:
-            return None
-        tables = await self._xpath(tree, '//div[contains(@class, "wrappercont_char")]/*')
-
+    @classmethod
+    async def get_enemies(cls) -> Optional[dict[str, dict]]:
+        e_types = list(Enemies)
         enemies = {e.value: {} for e in Enemies}
-        enemy_type = ''
-        for item in tables[2:]:  #: First two items aren't necessary
-            if item.get('class') == 'enemy_type':
-                enemy_type = (''.join(await self._xpath(item, './text()'))).upper().replace(' ', '_')
-            else:
-                name = ''.join(await self._xpath(item, './a//text()'))
-                code = (await self._xpath(item, './a'))[0].items()[0][-1].split('/')[-2]
-                enemies[Enemies[enemy_type].value][name] = code
+
+        for i, endpoint in enumerate(_ENDPOINTS[cls.__name__]):
+            tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
+            if tree is None:
+                return None
+            table = await _deserialize(
+                (await tree.xpath('//table[@class="genshin_table sortable "]//script/text()'))[0],
+                'sortable_data'
+            )
+            for enemy in table:
+                _, name, grade, drop = enemy
+                href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
+                icon = f"{honeyimpact.URL}img/{href}.webp"
+                name = re.search(r'[\w\s:]+', await name.text())[0]
+                grade = Grades[(await grade.text()).upper()].value
+                if isinstance(drop, _AsyncHtmlElement):
+                    drop = ', '.join(await drop.xpath('//img/@alt'))
+                enemies[e_types[i].value][name] = [href, icon, grade, drop]
         return enemies
 
-    async def get_information(self, name: str, enemy_type: str) -> str:
-        tree = await self._compile_html(self.base_url + 'db/monster/' + json.load('enemies')[enemy_type][name])
+    async def get_information(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = (await tree.xpath('//table[@class="genshin_table main_table"]'))[0]
 
-        drop = await self._xpath(
-            tree,
-            '//table[@class="add_stat_table"][preceding-sibling::span[@class="item_secondary_title"]]'
-        )
-        drop = ', '.join(
-            [''.join(await self._xpath(i, './/a//text()')) for i in await self._xpath(drop[0], './tr[position()>1]')]
-        )
-        desc = ''.join(await self._xpath(tree, '//table[@class="item_main_table"]/tr[last()]/td[last()]//text()'))
+        desc = ''.join(await table.xpath('.//td[text()="Description"]/following-sibling::td/text()'))
 
-        enemy = mdl.enemies.Information(name, enemy_type, drop, desc)
+        enemy = mdl.enemies.Information(self.name, self.type, self.grade, self.drop, desc)
         return tpl.enemies.format_information(enemy)
 
-    async def get_progression(self, name: str, enemy_type: str) -> str:
-        tree = await self._compile_html(self.base_url + 'db/monster/' + json.load('enemies')[enemy_type][name])
-        table = await self._xpath(tree, '//div[@class="scrollwrapper"]/table')
-        stats = await self._xpath(table[0], './tr[position()>1]') if table else []
+    async def get_progression(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = (await tree.xpath('//section[@id="Variant #1"]//table[@class="genshin_table stat_table"]/tr'))
 
-        progressions: list[mdl.enemies.Progression] = []
-        for stat in stats:
+        progressions = []
+        for row in table:
             progressions.append(
                 mdl.enemies.Progression(
-                    (await self._xpath(stat, './td[1]/text()'))[0][2:],
-                    (await self._xpath(stat, './td[2]/text()'))[0],
-                    (await self._xpath(stat, './td[3]/text()'))[0],
-                    (await self._xpath(stat, './td[4]/text()'))[0],
-                    (await self._xpath(stat, './td[5]/text()'))[0],
-                    (await self._xpath(stat, './td[6]/text()'))[0],
-                    (await self._xpath(stat, './td[7]/text()'))[0],
-                    (await self._xpath(stat, './td[8]/text()'))[0],
-                    (await self._xpath(stat, './td[9]/text()'))[0],
-                    (await self._xpath(stat, './td[10]/text()'))[0],
-                    (await self._xpath(stat, './td[11]/text()'))[0],
-                    (await self._xpath(stat, './td[12]/text()'))[0],
-                    (await self._xpath(stat, './td[13]/text()'))[0]
+                    (await row.xpath('./td[1]/text()'))[0],
+                    (await row.xpath('./td[2]/text()'))[0],
+                    (await row.xpath('./td[3]/text()'))[0],
+                    (await row.xpath('./td[4]/text()'))[0],
+                    (await row.xpath('./td[5]/text()'))[0],
+                    (await row.xpath('./td[6]/text()'))[0],
+                    (await row.xpath('./td[7]/text()'))[0],
+                    (await row.xpath('./td[8]/text()'))[0],
+                    (await row.xpath('./td[9]/text()'))[0],
+                    (await row.xpath('./td[10]/text()'))[0],
+                    (await row.xpath('./td[11]/text()'))[0],
+                    (await row.xpath('./td[12]/text()'))[0],
+                    (await row.xpath('./td[13]/text()'))[0]
                 )
             )
         return tpl.enemies.format_progression(progressions)
 
 
-class BookParser(HoneyImpactParser):
-    def __init__(self, lang: str = 'RU') -> None:
-        super().__init__(lang)
+class BookParser:
+    def __init__(self, b_type: str, v_name: str) -> None:
+        self._data = json.load('books')[b_type][v_name]
+        self.type = b_type
+        self.href: str = self._data[0]
+        self.icon: str = self._data[1]
+        self.rarity: int = self._data[2]
+        self.v_num: int = self._data[3]
+        self.story: Optional[str] = None
+        del self._data
 
-    async def get_books(self) -> Optional[dict[str, dict]]:
-        tree = await self._compile_html(self.base_url)
-        if tree is None:
-            return None
-        table = await self._xpath(tree, '//div/span[text() = "Книги"]/../following-sibling::div[1]/a')
+    @classmethod
+    async def get_books(cls) -> Optional[dict[str, dict]]:
+        books = {}
 
-        books: dict[str, dict] = {}
-        for book in table:
-            name = ''.join(await self._xpath(book, './/text()'))
-            link = f"{self.base_url}{book.get('href').rstrip(f'?lang={self.lang}')[1:]}"
-            books[name] = {}
-            for i, volume in enumerate(
-                    await self._xpath(await self._compile_html(link), '//div[@class="items_wrap"]//span/..')
-            ):
-                volume_link = f"{self.base_url}{volume.get('href').rstrip(f'?lang={self.lang}')[1:]}"
-                volume_icon = f"{volume_link.replace('db/item', 'img/book').rstrip('/')}.png"
-                books[name][f"Том {i + 1}"] = (volume_link, volume_icon)
+        for endpoint in _ENDPOINTS[cls.__name__]:
+            tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
+            if tree is None:
+                return None
+            b_table = await tree.xpath(
+                '//label[@class="menu_item_text" and text()="Книги"]/following-sibling::div[1]//a'
+            )
+            for book in b_table:
+                href = re.search(r'\w+\d+', (await book.xpath('./@href'))[0])[0]
+                b_type = await book.text()
+                tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + href)
+                if tree is None:
+                    return None
+                v_table = await _deserialize(
+                    (await tree.xpath('//table[@class="genshin_table sortable "]//script/text()'))[0],
+                    'sortable_data'
+                )
+                books[b_type] = {}
+                for i, volume in enumerate(v_table):
+                    _, name, rarity, _ = volume
+                    href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
+                    icon = f"{honeyimpact.URL}img/{href}.webp"
+                    rarity = len(await rarity.xpath('//div/img'))
+                    v_num = i + 1
+                    books[b_type][f"Часть {v_num}"] = [href, icon, rarity, v_num]
         return books
 
-    @staticmethod
-    async def _get_book_txt(peer_id: int, api: API, text: str, name: str, volume: str) -> str:
-        async with aiofiles.open(f"{FILECACHE}{os.sep}{name}-{volume}.txt", 'w') as book:
-            await book.write(text)
-        attachment = await upload(
-            api,
-            'document_messages',
-            f"{name}: Том {volume}.txt", f"{FILECACHE}{os.sep}{name}-{volume}.txt",
-            peer_id=peer_id
-        )
-        os.remove(f"{FILECACHE}{os.sep}{name}-{volume}.txt")
-        return attachment
+    async def save_book(self) -> str:
+        save_path = os.path.join(FILECACHE, f"{self.type} [{self.v_num}].txt")
+        async with aiofiles.open(save_path, 'w') as book:
+            await book.write(self.story)
+        return save_path
 
-    async def get_information(self, peer_id: int, api: API, name: str, volume: str) -> tuple[str, str]:
-        tree = await self._compile_html(json.load('books')[name][f"{volume}"][0])
+    async def get_information(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
 
-        story = await self._xpath(tree, '//span[text() = "Item Story"]/following-sibling::table//text()')
-        if not story:
-            story = await self._xpath(
-                tree,
-                '//div[@class="wrappercont"]//td[text() = "In-game Description"]/following-sibling::td//text()'
-            )
-        story = '\n'.join(story)
-        volume = volume.split()[-1]
-        doc = await self._get_book_txt(peer_id, api, story, name, volume)
-        if (len(name) + len(volume) + len(story) + 63) >= 4096:  #: Vk message max len constraint
-            story = 'Недоступно из-за превышения максимальной длины сообщения Вконтакте...'
+        self.story = ''.join(await tree.xpath('//table[@class="genshin_table quotes_table"]/tr//text()')).strip()
 
-        book = mdl.books.Information(name, volume, story)
-        return tpl.books.format_information(book), doc
+        book = mdl.books.Information(self.type, self.v_num, self.story)
+        information = tpl.books.format_information(book)
+        if len(information) > 4096:
+            story = 'Недоступно из-за ограничения Вконтакте на максимальную длину сообщения...'
+            book = mdl.books.Information(self.type, self.v_num, story)
+            information = tpl.books.format_information(book)
+        return information
 
 
-class DomainParser(HoneyImpactParser):
-    def __init__(self, lang: str = 'RU') -> None:
-        super().__init__(lang)
+class DomainParser:
+    def __init__(self, d_type: str, name: str) -> None:
+        self._data = json.load('domains')[d_type][name]
+        self.type = d_type
+        self.name = name
+        self.href: str = self._data[0]
+        self.icon: str = self._data[1]
+        self.monsters: list[str] = self._data[2]
+        self.rewards: list[str] = self._data[3]
+        del self._data
 
-    async def get_domains(self) -> Optional[dict[str, dict]]:
-        tree = await self._compile_html(self.base_url + 'db/domains/')
-        if tree is None:
-            return None
-        table = (await self._xpath(tree, '//div[@class="entry-content clearfix"]/*'))[0]
+    @classmethod
+    async def get_domains(cls) -> Optional[dict[str, dict]]:
+        d_types = list(Domains)
+        domains = {d.value: {} for d in Domains}
 
-        domains: dict[str, dict] = {d.value: {} for d in Domains}
-        domain_type = ''
-        for item in table.iter('div', 'span'):
-            if item.get('class') == 'enemy_type':
-                domain_type = (re.sub(r'[- ]', '_', ''.join((await self._xpath(item, './text()'))).upper()))
-            elif item.get('class') == 'char_sea_cont enemy_sea_cont':
-                name = ''.join(await self._xpath(item, './/span[@class="sea_charname"]/text()'))
-                code = re.sub(
-                    r'(\w+\d+)_135.png',
-                    r'/db/dom/\1/',
-                    (await self._xpath(item, './/div[@class="enemy_avatar_cont"]/img/@data-src'))[0].split('/')[-1]
+        for i, endpoint in enumerate(_ENDPOINTS[cls.__name__]):
+            tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
+            if tree is None:
+                return None
+            table = await _deserialize(
+                    (await tree.xpath('//table[@class="genshin_table sortable "]//script/text()'))[0],
+                    'sortable_data'
                 )
-                icon_xpath = './/div[@class="enemy_avatar_cont"]//@data-src'
-                icon = f"{self.base_url}{(await self._xpath(item, icon_xpath))[0][1:]}"
-                try:
-                    domains[Domains[domain_type].value][name] = (code, icon)
-                except KeyError:
-                    break
+            for domain in table:
+                _, name, monsters, rewards = domain
+                href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
+                icon = f"{honeyimpact.URL}img/{href}.webp"
+                name = re.search(r'[\w\s:]+', await name.text())[0]
+                monsters = [honeyimpact.URL + m.replace('\\', '')[1:] for m in await monsters.xpath('//img/@src')]
+                rewards = [honeyimpact.URL + r.replace('\\', '')[1:] for r in await rewards.xpath('//img/@src')]
+                domains[d_types[i].value][name] = [href, icon, monsters, rewards]
         return domains
 
-    async def get_information(self, name: str, domain_type: str) -> str:
-        tree = await self._compile_html(self.base_url + json.load('domains')[domain_type][name][0])
-        table = (await self._xpath(tree, '//table[@class="add_stat_table"][2]'))[0]
+    async def get_information(self) -> str:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+        table = (await tree.xpath('//table[@class="genshin_table main_table"]'))[0]
 
-        disorders = dict(
-            zip(
-                await self._xpath(table, './/td[contains(text(), "Disorder")]/text()'),
-                await self._xpath(table, './/td[contains(text(), "Disorder")]/following-sibling::td[1]/text()')
-            )
-        )
-        disorders = tuple(disorders.values()) if disorders else None
-        elements = set(
-            await self._xpath(table, './/td[contains(text(), "Elements")]/following-sibling::td[1]/img/@data-src')
-        )
-        elements = tuple(
-            ElementSymbols[re.sub(r'(\w+)_35.png', r'\1', element.split('/')[-1]).upper()].value
-            for element in elements
-        )
-        desc = ''.join(
-            await self._xpath(
-                tree,
-                '//table[@class="item_main_table"]//td[contains(text(), "In-game")]/following-sibling::td/text()'
-            )
-        )
+        desc = ''.join(await table.xpath('.//td[text()="Description"]/following-sibling::td/text()'))
 
-        domain = mdl.domains.Information(name, domain_type, elements, disorders, desc)
+        domain = mdl.domains.Information(self.name, self.type, desc)
         return tpl.domains.format_information(domain)
 
-    async def get_monsters(self, name: str, domain_type: str) -> list[mdl.domains.Monster]:
-        tree = await self._compile_html(self.base_url + json.load('domains')[domain_type][name][0])
-        table = (await self._xpath(tree, '//table[@class="add_stat_table"][2]'))[0]
 
-        monsters = dict(
-            zip(
-                await self._xpath(table, './/td[contains(text(), "Monsters")]/text()'),
-                await self._xpath(table, './/td[contains(text(), "Monsters")]/following-sibling::td[1]')
-            )
-        )
-        monsters = [
-            mdl.domains.Monster(self.base_url, src)
-            for src in await self._xpath(monsters['Monsters'], './/@data-src')
-        ]
-        return monsters
+@catch_aiohttp_errors
+async def _get_tree(url: str) -> Optional[_AsyncHtmlElement]:
+    loop = asyncio.get_running_loop()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=honeyimpact.HEADERS, params=honeyimpact.ATTRIBUTES) as response:
+            if response.ok:
+                text = await response.text()
+                return _AsyncHtmlElement(await loop.run_in_executor(None, html.document_fromstring, text))
 
-    async def get_drop(self, name: str, domain_type: str) -> list[mdl.domains.Drop]:
-        tree = await self._compile_html(self.base_url + json.load('domains')[domain_type][name][0])
-        table = [
-            td
-            for i, td in enumerate((await self._xpath(tree, '//table[@class="add_stat_table"][1]//td'))[2:])
-            if i % 2 == 0
-        ]
-        drop = [
-            mdl.domains.Drop(self.base_url, (await self._xpath(d, './/@data-src'))[0])
-            for d in table
-        ]
-        return drop
+
+async def _deserialize(text: str, anchor: str) -> list[list[_AsyncHtmlElement | str | float | int]]:
+    """Function fetching and deserializing plain text array data
+        from html <script>.
+
+        :param text: plain text containing array data
+        :param anchor: name of array
+        :return: deserialized data fetched from plain text
+        """
+    loop = asyncio.get_running_loop()
+    data = re.findall(fr"({anchor}.push)(\()(\[.+])(\);)", text.strip())
+    data = eval(data[0][2])
+    for row in data:
+        for i, elem in enumerate(row):
+            try:
+                elem = _AsyncHtmlElement(await loop.run_in_executor(None, html.fromstring, elem))
+            except (TypeError, ParserError):
+                pass
+            row[i] = elem
+    return data
+
+
+def _format_stat(stat: str) -> str:
+    stat = stat.replace(' ', '_').upper()
+    stat_enum = Stats[stat.replace('%', '')]
+    return stat.replace(stat_enum.name, f"{stat_enum.value} ")
