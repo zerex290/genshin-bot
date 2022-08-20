@@ -2,20 +2,20 @@ import os
 import re
 from typing import Optional
 
-from vkbottle import Keyboard, KeyboardButtonColor, Callback, GroupEventType
+from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import Blueprint, Message, MessageEvent
 from vkbottle_types.objects import MessagesKeyboard
 
 from . import Options, Payload
-from bot.parsers import CharacterParser, WeaponParser, ArtifactParser, EnemyParser, BookParser, DomainParser
+from bot.parsers.honeyimpact import *
 from bot.rules import CommandRule, EventRule
 from bot.utils import PostgresConnection, json
 from bot.errors import IncompatibleOptions
-from bot.utils.files import upload
+from bot.utils.files import download, upload
 from bot.validators.genshindb import GenshinDBValidator
 from bot.manuals import genshindb as man
 from bot.imageprocessing.domains import get_domain_image
-from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION
+from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION, FILECACHE
 
 
 bp = Blueprint('GenshinDatabase')
@@ -98,7 +98,7 @@ class GenshinDatabase:
         for i, values in enumerate(GenshinDatabase.SECTIONS.items()):
             button_type, label = values
             kb.add(
-                Callback(label, {'user_id': user_id, 'type': button_type, 'page': 0}),  #: remove page later
+                Callback(label, {'user_id': user_id, 'type': button_type}),
                 KeyboardButtonColor.PRIMARY
             )
             if i + 1 != len(GenshinDatabase.SECTIONS):
@@ -144,6 +144,18 @@ async def get_attachment_icon(icon_path: str) -> Optional[str]:
     return await upload(bp.api, 'photo_messages', icon_path)
 
 
+async def cache_icon(url: str) -> str:
+    """Download image from specified url and preserve it in cache files.
+
+    :param url: Link to image
+    :return: Path to cached image
+    """
+    name, suffix = url.rsplit('/', maxsplit=1)[1].split('.')
+    if not os.path.exists(os.path.join(FILECACHE, f"{name}.{suffix}")):
+        await download(url, FILECACHE, name, suffix)
+    return os.path.join(FILECACHE, f"{name}.{suffix}")
+
+
 @bp.on.message(CommandRule(['гдб'], ['~~п', '~~аш', '~~дш', '~~ш'], man.GenshinDatabase))
 async def get_genshin_database(message: Message, options: Options) -> None:
     async with GenshinDBValidator(message) as validator:
@@ -163,343 +175,259 @@ async def get_genshin_database(message: Message, options: Options) -> None:
                 raise IncompatibleOptions(options)
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['menu']))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(['menu']))
 async def return_to_menu(event: MessageEvent, payload: Payload) -> None:
     await event.edit_message(**(await GenshinDatabase.get_main_menu(payload['user_id'])))
 
 
-@bp.on.raw_event(
-    GroupEventType.MESSAGE_EVENT,
-    MessageEvent,
-    EventRule(['characters_type', 'weapons_type', 'artifacts_type', 'enemies_type', 'books_type', 'domains_type'])
-)
-async def get_type_filters(event: MessageEvent, payload: Payload) -> None:
-    payload_type = payload['type'].split('_')[0]
-    page = 0
+@bp.on.raw_event('message_event', MessageEvent, EventRule(list(GenshinDatabase.SECTIONS)))
+async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
+    keyboards = []
+    kb = Keyboard(inline=True)
+    pl_type = payload['type'].split('_')[0]
+    sections = json.load(pl_type)
+    apl = payload.copy()  #: additional payload
+    apl['type'] = pl_type
+
     buttons = 0
-    filters = json.load(payload_type)
-
-    keyboards: list[str] = []
-    keyboard = Keyboard(one_time=False, inline=True)
-
-    for i, f in enumerate(filters):
-        if buttons < 6 and f != list(filters)[-1]:
-            if buttons % 2 == 0 and buttons > 0:
-                keyboard.row()
-            keyboard.add(
-                Callback(f, {'user_id': event.user_id, 'type': payload_type, 'filter': f, 'page': 0}),
-                KeyboardButtonColor.SECONDARY
-            )
-            buttons += 1
-        else:
-            keyboard.row()
-            keyboard.add(
-                Callback(f, {'user_id': event.user_id, 'type': payload_type, 'filter': f, 'page': 0}),
-                KeyboardButtonColor.SECONDARY
-            )
-            keyboard.row()
+    last = list(sections)[-1]
+    for section in sections:
+        apl['section'] = section
+        apl['s_page'] = len(keyboards)
+        kb.add(Callback(section, apl.copy()))
+        buttons += 1
+        if buttons % 2 == 0 and section != last:
+            kb.row()
+        elif buttons % 7 == 0 or section == last:
+            page = len(keyboards)
+            epl = payload.copy()  #: extra payload for page control buttons
+            kb.row()
             if page != 0:
-                keyboard.add(
-                    Callback('Назад', {'user_id': event.user_id, 'type': payload['type'], 'page': page - 1}),
-                    KeyboardButtonColor.PRIMARY
-                )
-            keyboard.add(Callback('Меню', {'user_id': event.user_id, 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
-            if len(filters)-(i + 1) > 0:
-                keyboard.add(Callback('Далее', {'user_id': event.user_id, 'type': payload['type'], 'page': page + 1}))
-                page += 1
+                epl['s_page'] = page - 1
+                kb.add(Callback('Назад', epl.copy()), KeyboardButtonColor.PRIMARY)
+            kb.add(
+                Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}),
+                KeyboardButtonColor.POSITIVE
+            )
+            if section != last:
+                epl['s_page'] = page + 1
+                kb.add(Callback('Далее', epl.copy()), KeyboardButtonColor.PRIMARY)
+            keyboards.append(kb.get_json())
+            kb = Keyboard(inline=True)
             buttons = 0
-            keyboards.append(keyboard.get_json())
-            keyboard = Keyboard(one_time=False, inline=True)
 
     await event.edit_message(
         'Пожалуйста, выберите интересующий вас раздел!',
-        keyboard=keyboards[payload['page']],
-        attachment=await get_attachment_icon(f"{DATABASE_APPEARANCE}{os.sep}{payload_type}.png")
+        keyboard=keyboards[payload.get('s_page', 0)],
+        attachment=await get_attachment_icon(f"{DATABASE_APPEARANCE}{os.sep}{pl_type}.png")
     )
 
 
-@bp.on.raw_event(
-    GroupEventType.MESSAGE_EVENT,
-    MessageEvent,
-    EventRule(['characters', 'weapons', 'artifacts', 'enemies', 'books', 'domains'])
-)
-async def get_filtered_objects(event: MessageEvent, payload: Payload) -> None:
-    page = 0
+@bp.on.raw_event('message_event', MessageEvent, EventRule([s.split('_')[0] for s in GenshinDatabase.SECTIONS]))
+async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
+    keyboards = []
+    kb = Keyboard(inline=True)
+    sections = json.load(payload['type'])[payload['section']]
+    apl = payload.copy()  #: additional payload
+    apl['type'] = payload['type'][:-1]
+
     buttons = 0
-    objects = json.load(payload['type'])[payload['filter']]
-
-    keyboards: list[str] = []
-    keyboard = Keyboard(one_time=False, inline=True)
-
-    for i, obj in enumerate(objects):
-        if buttons < 5 and obj != list(objects)[-1]:
-            if buttons % 2 == 0 and buttons > 0:
-                keyboard.row()
-            keyboard.add(
-                Callback(
-                    obj,
-                    {
-                        'user_id': event.user_id, 'type': payload['type'][:-1],
-                        'filter': payload['filter'], 'page': page, 'obj': obj, 'obj_data': 'information'
-                    }
-                ),
-                KeyboardButtonColor.SECONDARY
-            )
-            buttons += 1
-        else:
-            keyboard.add(
-                Callback(
-                    obj,
-                    {
-                        'user_id': event.user_id, 'type': payload['type'][:-1],
-                        'filter': payload['filter'], 'page': page, 'obj': obj, 'obj_data': 'information'
-                    }
-                ),
-                KeyboardButtonColor.SECONDARY
-            )
-            keyboard.row()
-            keyboard.add(
-                Callback('К выбору раздела', {'user_id': event.user_id, 'type': f"{payload['type']}_type", 'page': 0}),
+    last = list(sections)[-1]
+    for obj in sections:
+        apl['object'] = obj
+        apl['o_page'] = len(keyboards)
+        kb.add(Callback(obj, apl.copy()))
+        buttons += 1
+        if buttons % 2 == 0 and buttons % 6 != 0 and obj != last:
+            kb.row()
+        elif buttons % 6 == 0 or obj == last:
+            page = len(keyboards)
+            epl = payload.copy()  #: extra payload for page control buttons
+            epl['type'] = f"{payload['type']}_type"
+            del epl['section']
+            if epl.get('o_page') is not None:
+                del epl['o_page']
+            kb.row()
+            kb.add(Callback('К выбору раздела', epl.copy()), KeyboardButtonColor.POSITIVE)
+            epl = payload.copy()
+            kb.row()
+            if page != 0:
+                epl['o_page'] = page - 1
+                kb.add(Callback('Назад', epl.copy()), KeyboardButtonColor.PRIMARY)
+            kb.add(
+                Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}),
                 KeyboardButtonColor.POSITIVE
             )
-            keyboard.row()
-            if page != 0:
-                keyboard.add(
-                    Callback(
-                        'Назад',
-                        {
-                            'user_id': event.user_id, 'type': payload['type'],
-                            'filter': payload['filter'], 'page': page - 1
-                        }
-                    ),
-                    KeyboardButtonColor.PRIMARY
-                )
-            keyboard.add(Callback('Меню', {'user_id': event.user_id, 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
-            if len(objects)-(i + 1) > 0:
-                keyboard.add(
-                    Callback(
-                        'Далее',
-                        {
-                            'user_id': event.user_id, 'type': payload['type'],
-                            'filter': payload['filter'], 'page': page + 1
-                        }
-                    )
-                )
-                page += 1
+            if obj != last:
+                epl['o_page'] = page + 1
+                kb.add(Callback('Далее', epl.copy()), KeyboardButtonColor.PRIMARY)
+            keyboards.append(kb.get_json())
+            kb = Keyboard(inline=True)
             buttons = 0
-            keyboards.append(keyboard.get_json())
-            keyboard = Keyboard(one_time=False, inline=True)
 
-    if not keyboards:
-        keyboard.add(
-            Callback('К выбору раздела', {'user_id': event.user_id, 'type': f"{payload['type']}_type", 'page': 0}),
-            KeyboardButtonColor.POSITIVE
-        )
-        keyboard.row()
-        keyboard.add(Callback('Меню', {'user_id': event.user_id, 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
-        keyboards.append(keyboard.get_json())
-
-    await event.edit_message(f"Поиск по разделу '{payload['filter']}'!", keyboard=keyboards[payload['page']])
+    await event.edit_message(f"Поиск по разделу '{payload['section']}'!", keyboard=keyboards[payload.get('o_page', 0)])
 
 
-def _get_object_payload(user_id: int, payload, obj_data: str) -> dict[str, str | int]:
-    payload = {
-        'user_id': user_id,
-        'type': payload['type'],
-        'filter': payload['filter'],
-        'page': payload['page'],
-        'obj': payload['obj'],
-        'obj_data': obj_data
-    }
-    return payload
-
-
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['character']))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(['character']))
 async def get_character(event: MessageEvent, payload: Payload) -> None:
-    character = CharacterParser()
-    data_types = {
+    character = CharacterParser(payload['section'], payload['object'])
+    buttons = {
         'information': ('Основная информация', character.get_information),
         'active_skills': ('Активные навыки', character.get_active_skills),
         'passive_skills': ('Пассивные навыки', character.get_passive_skills),
         'constellations': ('Созвездия', character.get_constellations),
         'ascension': ('Возвышение', upload)
     }
-    keyboard = Keyboard(one_time=False, inline=True)
+    kb = Keyboard(inline=True)
+    apl = payload.copy()
 
-    for data in data_types:
-        if data != payload['obj_data']:
-            keyboard.add(
-                Callback(data_types[data][0], _get_object_payload(event.user_id, payload, data)),
-                KeyboardButtonColor.SECONDARY
-            )
-            keyboard.row()
+    default = list(buttons)[0]
+    for data in buttons:
+        if data != payload.get('data', default):
+            apl['data'] = data
+            kb.add(Callback(buttons[data][0], apl.copy()))
+            kb.row()
+    apl['type'] = f"{payload['type']}s"
+    del apl['object']
+    del apl['data']
+    kb.add(Callback('К списку персонажей', apl.copy()), KeyboardButtonColor.POSITIVE)
+    kb.row()
+    kb.add(Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
 
-    keyboard.add(
-        Callback(
-            'К списку персонажей',
-            {'user_id': event.user_id, 'type': 'characters', 'filter': payload['filter'], 'page': payload['page']}
-        ),
-        KeyboardButtonColor.POSITIVE
-    )
-    keyboard.row()
-    keyboard.add(Callback('Меню', {'user_id': event.user_id, 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
-
-    name_en = json.load('characters')[payload['filter']][payload['obj']].split('/')[-2]
-    if payload['obj_data'] != 'ascension':
-        url = f"{character.base_url}img/char/{name_en}.png"
-        attachment = await character.get_icon_attachment(bp.api, url)
-        message = await data_types[payload['obj_data']][1](payload['obj'], payload['filter'])
+    if payload.get('data', default) != 'ascension':
+        attachment = await upload(bp.api, 'photo_messages', await cache_icon(character.icon))
+        message = await buttons[payload.get('data', default)][1]()
     else:
-        attachment = await get_attachment_icon(f"{ASCENSION}{os.sep}{name_en}.png")
-        message = f"🖼Материалы возвышения персонажа '{payload['obj']}':"
+        attachment = await get_attachment_icon(f"{ASCENSION}{os.sep}{character.href.split('_')[0]}.png")
+        message = f"🖼Материалы возвышения персонажа '{payload['object']}':"
 
-    await event.edit_message(message, attachment=attachment, keyboard=keyboard.get_json())
+    await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['weapon']))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(['weapon']))
 async def get_weapon(event: MessageEvent, payload: Payload) -> None:
-    weapon = WeaponParser()
-    data_types = {
+    weapon = WeaponParser(payload['section'], payload['object'])
+    buttons = {
         'information': ('Основная информация', weapon.get_information),
         'ability': ('Способность оружия', weapon.get_ability),
         'progression': ('Прогрессия', weapon.get_progression),
         'refinement': ('Пробуждение', weapon.get_refinement),
         'story': ('История', weapon.get_story)
     }
-    keyboard = Keyboard(one_time=False, inline=True)
+    kb = Keyboard(inline=True)
+    apl = payload.copy()
 
-    for data in data_types:
-        if data != payload['obj_data']:
-            keyboard.add(
-                Callback(data_types[data][0], _get_object_payload(event.user_id, payload, data)),
-                KeyboardButtonColor.SECONDARY
-            )
-            keyboard.row()
+    default = list(buttons)[0]
+    for data in buttons:
+        if data != payload.get('data', default):
+            apl['data'] = data
+            kb.add(Callback(buttons[data][0], apl.copy()))
+            kb.row()
+    apl['type'] = f"{payload['type']}s"
+    del apl['object']
+    del apl['data']
+    kb.add(Callback('К списку оружия', apl.copy()), KeyboardButtonColor.POSITIVE)
+    kb.row()
+    kb.add(Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
 
-    keyboard.add(
-        Callback(
-            'К списку оружия',
-            {'user_id': event.user_id, 'type': 'weapons', 'filter': payload['filter'], 'page': payload['page']}
-        ),
-        KeyboardButtonColor.POSITIVE
-    )
-    keyboard.row()
-    keyboard.add(Callback('Меню', {'user_id': event.user_id, 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
-
-    code = json.load('weapons')[payload['filter']][payload['obj']][0]
     await event.edit_message(
-        await data_types[payload['obj_data']][1](payload['obj'], payload['filter']),
-        attachment=await weapon.get_icon_attachment(bp.api, f"{weapon.base_url}img/weapon/{code}.png"),
-        keyboard=keyboard.get_json()
+        await buttons[payload.get('data', default)][1](),
+        attachment=await upload(bp.api, 'photo_messages', await cache_icon(weapon.icon)),
+        keyboard=kb.get_json()
     )
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['artifact']))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(['artifact']))
 async def get_artifact(event: MessageEvent, payload: Payload) -> None:
-    artifact = ArtifactParser()
-    keyboard = (
-        Keyboard(one_time=False, inline=True)
-        .add(
-            Callback(
-                'К списку артефактов',
-                {'user_id': event.user_id, 'type': 'artifacts', 'filter': payload['filter'], 'page': payload['page']}
-            ),
-            KeyboardButtonColor.POSITIVE
-        )
+    artifact = ArtifactParser(payload['section'], payload['object'])
+    apl = payload.copy()
+    apl['type'] = f"{payload['type']}s"
+    del apl['object']
+    kb = (
+        Keyboard(inline=True)
+        .add(Callback('К списку артефактов', apl.copy()), KeyboardButtonColor.POSITIVE)
         .row()
-        .add(Callback('Меню', {'user_id': event.user_id, 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
+        .add(Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
     )
 
-    icon = json.load('artifacts')[payload['filter']][payload['obj']][-1]
     await event.edit_message(
-        await artifact.get_information(payload['obj'], payload['filter']),
-        attachment=await artifact.get_icon_attachment(bp.api, icon),
-        keyboard=keyboard.get_json()
+        await artifact.get_information(),
+        attachment=await upload(bp.api, 'photo_messages', await cache_icon(artifact.icon)),
+        keyboard=kb.get_json()
     )
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['enemie']))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(['enemie']))
 async def get_enemy(event: MessageEvent, payload: Payload) -> None:
-    enemy = EnemyParser()
-    data_types = {
+    enemy = EnemyParser(payload['section'], payload['object'])
+    buttons = {
         'information': ('Основная информация', enemy.get_information),
         'progression': ('Прогрессия', enemy.get_progression)
     }
-    keyboard = Keyboard(one_time=False, inline=True)
+    kb = Keyboard(inline=True)
+    apl = payload.copy()
 
-    for data in data_types:
-        if data != payload['obj_data']:
-            keyboard.add(
-                Callback(data_types[data][0], _get_object_payload(event.user_id, payload, data)),
-                KeyboardButtonColor.SECONDARY
-            )
-            keyboard.row()
+    default = list(buttons)[0]
+    for data in buttons:
+        if data != payload.get('data', default):
+            apl['data'] = data
+            kb.add(Callback(buttons[data][0], apl.copy()))
+            kb.row()
+    apl['type'] = f"{payload['type']}s"
+    del apl['object']
+    del apl['data']
+    kb.add(Callback('К списку противников', apl.copy()), KeyboardButtonColor.POSITIVE)
+    kb.row()
+    kb.add(Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
 
-    keyboard.add(
-        Callback(
-            'К списку противников',
-            {'user_id': event.user_id, 'type': 'enemies', 'filter': payload['filter'], 'page': payload['page']}
-        ),
-        KeyboardButtonColor.POSITIVE
-    )
-    keyboard.row()
-    keyboard.add(Callback('Меню', {'user_id': event.user_id, 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
-
-    code = json.load('enemies')[payload['filter']][payload['obj']]
     await event.edit_message(
-        await data_types[payload['obj_data']][1](payload['obj'], payload['filter']),
-        attachment=await enemy.get_icon_attachment(bp.api, f"{enemy.base_url}img/enemy/{code}.png"),
-        keyboard=keyboard.get_json()
+        await buttons[payload.get('data', default)][1](),
+        attachment=await upload(bp.api, 'photo_messages', await cache_icon(enemy.icon)),
+        keyboard=kb.get_json()
     )
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['book']))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(['book']))
 async def get_book(event: MessageEvent, payload: Payload) -> None:
-    book = BookParser()
-    keyboard = (
-        Keyboard(one_time=False, inline=True)
-        .add(
-            Callback(
-                'К томам книги',
-                {'user_id': event.user_id, 'type': 'books', 'filter': payload['filter'], 'page': payload['page']}
-            ),
-            KeyboardButtonColor.POSITIVE
-        )
+    book = BookParser(payload['section'], payload['object'])
+    apl = payload.copy()
+    apl['type'] = f"{payload['type']}s"
+    del apl['object']
+    kb = (
+        Keyboard(inline=True)
+        .add(Callback('К оглавлению', apl.copy()), KeyboardButtonColor.POSITIVE)
         .row()
-        .add(Callback('Меню', {'user_id': event.user_id, 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
+        .add(Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
     )
 
-    icon = await book.get_icon_attachment(bp.api, json.load('books')[payload['filter']][payload['obj']][-1])
-    message, doc = await book.get_information(event.peer_id, bp.api, payload['filter'], payload['obj'])
+    icon = await upload(bp.api, 'photo_messages', await cache_icon(book.icon))
+    message = await book.get_information()
+    book = await book.save_book()
+    book_path, book_name = book, book.rsplit(os.sep, maxsplit=1)[1]
+    doc = await upload(bp.api, 'document_messages', book_name, book_path, peer_id=event.peer_id)
+    os.remove(book_path)
     await event.edit_message(
         message,
         attachment=f"{icon},{doc}",
-        keyboard=keyboard.get_json()
+        keyboard=kb.get_json()
     )
 
 
-@bp.on.raw_event(GroupEventType.MESSAGE_EVENT, MessageEvent, EventRule(['domain']))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(['domain']))
 async def get_domain(event: MessageEvent, payload: Payload) -> None:
-    domain = DomainParser()
-    keyboard = (
-        Keyboard(one_time=False, inline=True)
-        .add(
-            Callback(
-                'К списку подземелий',
-                {'user_id': event.user_id, 'type': 'domains', 'filter': payload['filter'], 'page': payload['page']}
-            ),
-            KeyboardButtonColor.POSITIVE
-        )
+    domain = DomainParser(payload['section'], payload['object'])
+    apl = payload.copy()
+    apl['type'] = f"{payload['type']}s"
+    del apl['object']
+    kb = (
+        Keyboard(inline=True)
+        .add(Callback('К списку подземелий', apl.copy()), KeyboardButtonColor.POSITIVE)
         .row()
-        .add(Callback('Меню', {'user_id': event.user_id, 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
+        .add(Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
     )
 
-    message = await domain.get_information(payload['obj'], payload['filter'])
-    attachment = await get_attachment_icon(
-        await get_domain_image(
-            json.load('domains')[payload['filter']][payload['obj']][-1],
-            await domain.get_monsters(payload['obj'], payload['filter']),
-            await domain.get_drop(payload['obj'], payload['filter'])
-        )
+    await event.edit_message(
+        await domain.get_information(),
+        attachment=await get_attachment_icon(await get_domain_image(domain.icon, domain.monsters, domain.rewards)),
+        keyboard=kb.get_json()
     )
-    await event.edit_message(message, attachment=attachment, keyboard=keyboard.get_json())
