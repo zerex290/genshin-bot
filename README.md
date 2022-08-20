@@ -28,6 +28,7 @@ can be downloaded from [YandexDisk](https://disk.yandex.ru/d/LPnj__Hr9pK8NA)
     * **USER_ID**: <code>int</code> - id of user on which standalone app was registered
     * **DATABASE_ADDRESS**: <code>str</code> - address of your database for asyncpg
 *(e.g. postgres://user:pass@host:port/database)*
- 3. Extract **Work Directory** into current folder: <code>tar -xf environment.zip </code>
- 4. Run secondary script which will create postgresql tables: <code> ./create_pg_tables.py </code>
- 5. Run main script: <code>python -m bot</code>
+ 3. Download **Work Directory**
+ 4. Extract **Work Directory** into current folder: <code>tar -xf environment.zip </code>
+ 5. Run secondary script which will create postgresql tables: <code> python create_pg_tables.py </code>
+ 6. Run main script: <code>python -m bot</code>
