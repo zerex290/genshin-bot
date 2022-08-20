@@ -531,7 +531,7 @@ class BookParser:
                     books[b_type][f"Часть {v_num}"] = [href, icon, rarity, v_num]
         return books
 
-    async def save_book(self) -> str:
+    async def save(self) -> str:
         save_path = os.path.join(FILECACHE, f"{self.type} [{self.v_num}].txt")
         async with aiofiles.open(save_path, 'w') as book:
             await book.write(self.story)

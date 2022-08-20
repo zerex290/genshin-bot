@@ -402,7 +402,7 @@ async def get_book(event: MessageEvent, payload: Payload) -> None:
 
     icon = await upload(bp.api, 'photo_messages', await cache_icon(book.icon))
     message = await book.get_information()
-    book = await book.save_book()
+    book = await book.save()
     book_path, book_name = book, book.rsplit(os.sep, maxsplit=1)[1]
     doc = await upload(bp.api, 'document_messages', book_name, book_path, peer_id=event.peer_id)
     os.remove(book_path)
