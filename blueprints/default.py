@@ -11,7 +11,7 @@ from vkbottle.bot import Blueprint, Message, MessageEvent
 from . import Options, Payload
 from bot.parsers import SankakuParser
 from bot.rules import CommandRule, EventRule
-from bot.utils import PostgresConnection, find_restricted_tags
+from bot.utils import PostgresConnection, find_forbidden_tags
 from bot.utils.postgres import has_postgres_data
 from bot.utils.files import download, upload
 from bot.constants import keyboard, tags as t
@@ -221,7 +221,7 @@ class RandomPicture:
                 continue
             if post.file_mediatype != MediaType.IMAGE:
                 continue
-            if nsfw and find_restricted_tags(post, ('loli', 'shota')):
+            if nsfw and find_forbidden_tags(post, ('loli', 'shota')):
                 continue
             picture = await download(post.sample_url, name=str(post.id), ext=post.file_suffix)
             if not picture:

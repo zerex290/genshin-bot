@@ -8,7 +8,7 @@ from vkbottle import Bot, VKAPIError, User
 from genshin.types import Game
 
 from ..parsers import *
-from ..utils import PostgresConnection, GenshinClient, json, get_current_timestamp, find_restricted_tags
+from ..utils import PostgresConnection, GenshinClient, json, get_current_timestamp, find_forbidden_tags
 from ..utils.files import download, upload
 from ..utils.genshin import get_genshin_account_by_id
 from ..utils.postgres import has_postgres_data
@@ -118,7 +118,7 @@ class PostUploader:
             async for post in parser.iter_posts(self.MINIMUM_DONUT_FAV_COUNT if donut else self.MINIMUM_FAV_COUNT):
                 if post.file_mediatype != MediaType.IMAGE:
                     continue
-                if donut and find_restricted_tags(post, ('loli', 'shota', 'penis')):
+                if donut and find_forbidden_tags(post, ('loli', 'shota', 'penis')):
                     continue
                 if len([tag for tag in post.tags if tag.type == TagType.CHARACTER]) > 2 and self.THEMATIC:
                     continue
