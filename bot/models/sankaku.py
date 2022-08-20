@@ -83,12 +83,12 @@ class Post:
     tags: list[Tag]
 
     @property
-    def file_suffix(self) -> str:
+    def ext(self) -> str:
         return self.file_type.split('/')[1]
 
     @property
-    def file_mediatype(self) -> MediaType:
-        match self.file_suffix:
+    def mediatype(self) -> MediaType:
+        match self.ext:
             case 'png' | 'jpeg' | 'webp':
                 return MediaType.IMAGE
             case 'webm' | 'mp4':
@@ -96,4 +96,4 @@ class Post:
             case 'gif':
                 return MediaType.ANIMATED_GIF
             case _:
-                raise ValueError(f"Can't find MediaType for file with suffix '{self.file_suffix}'")
+                raise ValueError(f"Can't find MediaType for file with ext '{self.ext}'!")

@@ -116,7 +116,7 @@ class PostUploader:
         while True:
             parser = SankakuParser(tags=self.tags, rating=Rating.E if donut else Rating.S)
             async for post in parser.iter_posts(self.MINIMUM_DONUT_FAV_COUNT if donut else self.MINIMUM_FAV_COUNT):
-                if post.file_mediatype != MediaType.IMAGE:
+                if post.mediatype != MediaType.IMAGE:
                     continue
                 if donut and find_forbidden_tags(post, ('loli', 'shota', 'penis')):
                     continue
@@ -124,7 +124,7 @@ class PostUploader:
                     continue
                 if await has_postgres_data(f"SELECT * FROM group_posts WHERE sankaku_post_id = {post.id};"):
                     continue
-                file = await download(post.file_url, name=str(post.id), ext=post.file_suffix)
+                file = await download(post.file_url, name=str(post.id), ext=post.ext)
                 if not file:
                     continue
                 attachment = await upload(self.user.api, 'photo_wall', file)

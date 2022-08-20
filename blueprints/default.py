@@ -219,11 +219,11 @@ class RandomPicture:
                 break
             if post.id in downloaded:
                 continue
-            if post.file_mediatype != MediaType.IMAGE:
+            if post.mediatype != MediaType.IMAGE:
                 continue
             if nsfw and find_forbidden_tags(post, ('loli', 'shota')):
                 continue
-            picture = await download(post.sample_url, name=str(post.id), ext=post.file_suffix)
+            picture = await download(post.sample_url, name=str(post.id), ext=post.ext)
             if not picture:
                 continue
             attachment = await upload(bp.api, 'photo_messages', picture)
