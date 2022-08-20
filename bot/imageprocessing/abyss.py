@@ -7,7 +7,8 @@ from typing import Sequence
 from PIL import Image, ImageFont, ImageDraw
 from genshin.models import SpiralAbyss, Floor, Chamber, Battle, AbyssCharacter
 
-from . import FONT, cache_icon
+from . import FONT
+from ..utils.files import download
 from ..config.dependencies.paths import IMAGE_PROCESSING, FILECACHE
 
 
@@ -234,7 +235,7 @@ async def _process_image_parts(template: Image.Image, floors: Sequence[Floor]) -
             for b_num, b in enumerate(c.battles):
                 _draw_half_text(draw, f_num, c_num, b_num, b)
                 for ch_num, ch in enumerate(b.characters):
-                    await cache_icon(ch.icon)
+                    await download(ch.icon, force=False)
                     _paste_character(template, f_num, c_num, b_num, ch_num, ch)
                     _draw_character_level(draw, f_num, c_num, b_num, ch_num, ch)
                     _paste_character_stars(template, f_num, c_num, b_num, ch_num, ch)

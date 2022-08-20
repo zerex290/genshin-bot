@@ -1,6 +1,5 @@
 import os
 import re
-from typing import Optional
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import Blueprint, Message, MessageEvent
@@ -15,7 +14,7 @@ from bot.utils.files import download, upload
 from bot.validators.genshindb import GenshinDBValidator
 from bot.manuals import genshindb as man
 from bot.imageprocessing.domains import get_domain_image
-from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION, FILECACHE
+from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION
 
 
 bp = Blueprint('GenshinDatabase')
@@ -134,28 +133,6 @@ class GenshinDatabase:
         )
 
 
-async def get_attachment_icon(icon_path: str) -> Optional[str]:
-    """
-    Check if icon exists.
-    If yes, then upload it to vk server and return formatted attachment string.
-    """
-    if not os.path.exists(icon_path):
-        return None
-    return await upload(bp.api, 'photo_messages', icon_path)
-
-
-async def cache_icon(url: str) -> str:
-    """Download image from specified url and preserve it in cache files.
-
-    :param url: Link to image
-    :return: Path to cached image
-    """
-    name, suffix = url.rsplit('/', maxsplit=1)[1].split('.')
-    if not os.path.exists(os.path.join(FILECACHE, f"{name}.{suffix}")):
-        await download(url, FILECACHE, name, suffix)
-    return os.path.join(FILECACHE, f"{name}.{suffix}")
-
-
 @bp.on.message(CommandRule(['гдб'], ['~~п', '~~аш', '~~дш', '~~ш'], man.GenshinDatabase))
 async def get_genshin_database(message: Message, options: Options) -> None:
     async with GenshinDBValidator(message) as validator:
@@ -216,10 +193,11 @@ async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
             kb = Keyboard(inline=True)
             buttons = 0
 
+    image_path = os.path.join(DATABASE_APPEARANCE, f"{pl_type}.png")
     await event.edit_message(
         'Пожалуйста, выберите интересующий вас раздел!',
         keyboard=keyboards[payload.get('s_page', 0)],
-        attachment=await get_attachment_icon(f"{DATABASE_APPEARANCE}{os.sep}{pl_type}.png")
+        attachment=await upload(bp.api, 'photo_messages', image_path) if os.path.exists(image_path) else None
     )
 
 
@@ -295,10 +273,11 @@ async def get_character(event: MessageEvent, payload: Payload) -> None:
     kb.add(Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
 
     if payload.get('data', default) != 'ascension':
-        attachment = await upload(bp.api, 'photo_messages', await cache_icon(character.icon))
+        attachment = await upload(bp.api, 'photo_messages', await download(character.icon, force=False))
         message = await buttons[payload.get('data', default)][1]()
     else:
-        attachment = await get_attachment_icon(f"{ASCENSION}{os.sep}{character.href.split('_')[0]}.png")
+        asc_path = os.path.join(ASCENSION, f"{character.href.split('_')[0]}.png")
+        attachment = await upload(bp.api, 'photo_messages', asc_path) if os.path.exists(asc_path) else None
         message = f"🖼Материалы возвышения персонажа '{payload['object']}':"
 
     await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
@@ -332,7 +311,7 @@ async def get_weapon(event: MessageEvent, payload: Payload) -> None:
 
     await event.edit_message(
         await buttons[payload.get('data', default)][1](),
-        attachment=await upload(bp.api, 'photo_messages', await cache_icon(weapon.icon)),
+        attachment=await upload(bp.api, 'photo_messages', await download(weapon.icon, force=False)),
         keyboard=kb.get_json()
     )
 
@@ -352,7 +331,7 @@ async def get_artifact(event: MessageEvent, payload: Payload) -> None:
 
     await event.edit_message(
         await artifact.get_information(),
-        attachment=await upload(bp.api, 'photo_messages', await cache_icon(artifact.icon)),
+        attachment=await upload(bp.api, 'photo_messages', await download(artifact.icon, force=False)),
         keyboard=kb.get_json()
     )
 
@@ -382,7 +361,7 @@ async def get_enemy(event: MessageEvent, payload: Payload) -> None:
 
     await event.edit_message(
         await buttons[payload.get('data', default)][1](),
-        attachment=await upload(bp.api, 'photo_messages', await cache_icon(enemy.icon)),
+        attachment=await upload(bp.api, 'photo_messages', await download(enemy.icon, force=False)),
         keyboard=kb.get_json()
     )
 
@@ -400,7 +379,7 @@ async def get_book(event: MessageEvent, payload: Payload) -> None:
         .add(Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
     )
 
-    icon = await upload(bp.api, 'photo_messages', await cache_icon(book.icon))
+    icon = await upload(bp.api, 'photo_messages', await download(book.icon, force=False))
     message = await book.get_information()
     book = await book.save()
     book_path, book_name = book, book.rsplit(os.sep, maxsplit=1)[1]
@@ -426,8 +405,11 @@ async def get_domain(event: MessageEvent, payload: Payload) -> None:
         .add(Callback('Меню', {'user_id': payload['user_id'], 'type': 'menu'}), KeyboardButtonColor.POSITIVE)
     )
 
+    image_path = await get_domain_image(domain.icon, domain.monsters, domain.rewards)
+    attachment = await upload(bp.api, 'photo_messages', image_path)
+    os.remove(image_path)
     await event.edit_message(
         await domain.get_information(),
-        attachment=await get_attachment_icon(await get_domain_image(domain.icon, domain.monsters, domain.rewards)),
+        attachment=attachment,
         keyboard=kb.get_json()
     )

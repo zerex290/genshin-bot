@@ -3,7 +3,8 @@ from random import randint
 
 from PIL import Image, ImageFont, ImageDraw
 
-from . import FONT, get_scaled_size, get_centered_position, round_corners, cache_icon
+from . import FONT, get_scaled_size, get_centered_position, round_corners
+from ..utils.files import download
 from ..config.dependencies.paths import IMAGE_PROCESSING, FILECACHE
 
 
@@ -118,10 +119,10 @@ async def get_domain_image(cover_url: str, monsters: list[str], rewards: list[st
     :param rewards: List of urls of each reward
     :return: Path to saved image
     """
-    cover = _process_cover(await cache_icon(cover_url))
+    cover = _process_cover(await download(cover_url, force=False))
     texts = [_process_text(t) for t in ('Дроп', 'Противники')]
-    monsters = [_process_icon(await cache_icon(m)) for m in monsters]
-    rewards = [_process_icon(await cache_icon(r)) for r in rewards]
+    monsters = [_process_icon(await download(m, force=False)) for m in monsters]
+    rewards = [_process_icon(await download(r, force=False)) for r in rewards]
 
     path = os.path.join(FILECACHE, f"domain_{randint(0, 10000)}.png")
     with Image.open(os.path.join(IMAGE_PROCESSING, 'templates', 'domains', 'domains.png')) as template:

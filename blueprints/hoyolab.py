@@ -1,6 +1,5 @@
 import asyncio
 import os
-from random import randint
 from typing import TypeAlias
 
 from vkbottle.bot import Blueprint, Message
@@ -18,7 +17,6 @@ from bot.utils.genshin import get_genshin_account_by_id, catch_hoyolab_errors
 from bot.imageprocessing.abyss import get_abyss_image
 from bot.manuals import hoyolab as man
 from bot.validators.hoyolab import *
-from bot.config.dependencies.paths import FILECACHE
 
 
 bp = Blueprint('HoYoLabCommands')
@@ -51,7 +49,7 @@ class Rewards(HoYoLAB):
     async def get(self) -> tuple[str, str]:
         async with GenshinClient(ltuid=self.account['ltuid'], ltoken=self.account['ltoken']) as client:
             rewards = await client.claimed_rewards(game=Game.GENSHIN.value)
-            icon = await download(rewards[0].icon, FILECACHE, f"reward_{randint(0, 10000)}", 'png')
+            icon = await download(rewards[0].icon)
             attachment = await upload(bp.api, 'photo_messages', icon)
             os.remove(icon)
             return tpl.hoyolab.format_daily_rewards(rewards), attachment

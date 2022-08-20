@@ -14,7 +14,6 @@ from ..utils.genshin import get_genshin_account_by_id
 from ..utils.postgres import has_postgres_data
 from ..types.sankaku import MediaType, Rating, TagType
 from ..templates.artposting import format_post_message, format_post_source
-from ..config.dependencies.paths import FILECACHE
 from ..config.dependencies.group import ID
 
 
@@ -125,7 +124,7 @@ class PostUploader:
                     continue
                 if await has_postgres_data(f"SELECT * FROM group_posts WHERE sankaku_post_id = {post.id};"):
                     continue
-                file = await download(post.file_url, FILECACHE, str(post.id), post.file_suffix)
+                file = await download(post.file_url, name=str(post.id), ext=post.file_suffix)
                 if not file:
                     continue
                 attachment = await upload(self.user.api, 'photo_wall', file)

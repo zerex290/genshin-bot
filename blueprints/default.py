@@ -20,7 +20,6 @@ from bot.validators import BaseValidator
 from bot.validators.default import *
 from bot.manuals import default as man
 from bot.types.sankaku import MediaType, Rating
-from bot.config.dependencies.paths import FILECACHE
 
 
 bp = Blueprint('DefaultCommands')
@@ -224,7 +223,7 @@ class RandomPicture:
                 continue
             if nsfw and find_restricted_tags(post, ('loli', 'shota')):
                 continue
-            picture = await download(post.sample_url, FILECACHE, str(post.id), post.file_suffix)
+            picture = await download(post.sample_url, name=str(post.id), ext=post.file_suffix)
             if not picture:
                 continue
             attachment = await upload(bp.api, 'photo_messages', picture)

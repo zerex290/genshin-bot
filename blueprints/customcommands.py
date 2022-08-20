@@ -12,7 +12,6 @@ from bot.errors import IncompatibleOptions
 from bot.utils.files import download, upload
 from bot.utils.postgres import has_postgres_data
 from bot.manuals import customcommands as man
-from bot.config.dependencies.paths import FILECACHE
 from bot.models.customcommands import CustomCommand
 from bot.validators.customcommands import *
 
@@ -61,7 +60,7 @@ class CommandCreation:
             if not document:
                 continue
             title = f"{cmd_name}.{document.ext}"
-            document = await download(document.url, FILECACHE, f"{cmd_name}{self.message.peer_id}", document.ext)
+            document = await download(document.url, name=document.title, ext=document.ext)
             document_id = await upload(bp.api, 'document_messages', title, document, peer_id=self.message.peer_id)
             os.remove(document)
             if document_id is not None:
@@ -82,7 +81,7 @@ class CommandCreation:
             if not attachment.photo:
                 continue
             urls = {size.height * size.width: size.url for size in attachment.photo.sizes}
-            photo = await download(urls[max(urls)], FILECACHE, f"{cmd_name}_{self.message.peer_id}", 'jpg')
+            photo = await download(urls[max(urls)], name=f"{cmd_name}_{self.message.peer_id}", ext='jpg')
             photo_id = await upload(bp.api, 'photo_messages', photo)
             os.remove(photo)
             if photo_id is not None:

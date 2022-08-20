@@ -1,10 +1,6 @@
-import os
 from typing import Literal
 
 from PIL import Image, ImageDraw
-
-from ..utils.files import download
-from ..config.dependencies.paths import FILECACHE
 
 
 FONT = 'Montserrat-ExtraBold.ttf'  #: Default font for texts
@@ -55,15 +51,3 @@ def round_corners(obj: Image.Image, rad: int) -> Image.Image:
     alpha.paste(ellipse.crop((rad, rad, rad * 2, rad * 2)), (width - rad, height - rad))  #: right-bottom corner
     obj.putalpha(alpha)
     return obj
-
-
-async def cache_icon(url: str) -> str:
-    """Download image from specified url and preserve it in cache files.
-
-    :param url: Link to image
-    :return: Path to cached image
-    """
-    name, suffix = url.rsplit('/', maxsplit=1)[1].split('.')
-    if not os.path.exists(os.path.join(FILECACHE, f"{name}.{suffix}")):
-        await download(url, FILECACHE, name, suffix)
-    return os.path.join(FILECACHE, f"{name}.{suffix}")
