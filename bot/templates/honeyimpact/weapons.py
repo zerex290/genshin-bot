@@ -5,7 +5,7 @@ def format_information(weapon: weapons.Information) -> str:
     formatted_information = (
         f"🖼Основная информация:\n"
         f"🔫Оружие: {weapon.name}\n"
-        f"⚔Тип: {weapon.weapon_type}\n"
+        f"⚔Тип: {weapon.type}\n"
         f"💫Редкость: {weapon.rarity}⭐\n"
         f"🔨{weapon.primary_stat_title}: {weapon.primary_stat_value}\n"
         f"🔨{weapon.secondary_stat_title}: {weapon.secondary_stat_value}\n"

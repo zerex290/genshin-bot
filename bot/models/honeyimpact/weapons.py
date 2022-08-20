@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Information:
     name: str
-    weapon_type: str
+    type: str
     rarity: int
     primary_stat_title: str
     primary_stat_value: float
