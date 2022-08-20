@@ -135,6 +135,7 @@ class CharacterParser:
                 weapon = Weapons[re.search(r'\w+', await weapon.text())[0].upper()].value
                 element = Elements[re.search(r'\w+', await element.text())[0].upper()].value
                 characters[element][name] = [href, icon, rarity, weapon]
+        del characters['Мульти']  #: Aether and Lumine has no future...
         return characters
 
     async def get_information(self) -> str:
@@ -154,15 +155,6 @@ class CharacterParser:
             birthdate = '--'
         con = ''.join(await table.xpath('.//td[contains(text(), "Constellation")]/following-sibling::td/text()'))
         desc = ''.join(await table.xpath('.//td[contains(text(), "Description")]/following-sibling::td/text()'))
-        match self.name:
-            case 'Итер':
-                desc = re.sub(r'\{F#[а-яА-ЯёЁ\s]+}', '', desc)
-                desc = re.sub(r'[{M#}]', '', desc)
-            case 'Люмин':
-                desc = re.sub(r'\{M#[а-яА-ЯёЁ\s]+}', '', desc)
-                desc = re.sub(r'[{F#}]', '', desc)
-            case _:
-                pass
         asc_stat = _format_stat(
             ''.join(
                 await (await tree.xpath('//table[@class="genshin_table stat_table"]/thead'))[0]
