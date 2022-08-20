@@ -408,7 +408,7 @@ async def return_to_menu(event: MessageEvent, payload: Payload) -> None:
 
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(['exit']))
-async def exit_from_tags_kb(event: MessageEvent, payload: Payload) -> None:
+async def exit_interactive_mode(event: MessageEvent, payload: Payload) -> None:
     await event.ctx_api.messages.edit(
         event.peer_id,
         'Произведен выход из интерактивного режима.',
@@ -417,12 +417,8 @@ async def exit_from_tags_kb(event: MessageEvent, payload: Payload) -> None:
     )
 
 
-@bp.on.raw_event(
-    'message_event',
-    MessageEvent,
-    EventRule(['art_style', 'genshin_impact', 'creatures', 'clothing', 'jewelry', 'emotions', 'body', 'search'])
-)
-async def get_tag_sections(event: MessageEvent, payload: Payload) -> None:
+@bp.on.raw_event('message_event', MessageEvent, EventRule([*list(RandomPicture.SECTIONS), 'search']))
+async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
     attachments = None
     if payload['type'] == 'search':
         payload['type'] = payload['prev']
