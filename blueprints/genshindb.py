@@ -41,7 +41,8 @@ class GenshinDatabase:
             )
         ).items[0]
         keyboard = reply_msg.keyboard
-        delattr(keyboard, 'author_id')
+        if keyboard is not None:
+            delattr(keyboard, 'author_id')
         msg = reply_msg.text.replace("'", '"')
         photo = reply_msg.attachments[0].photo if reply_msg.attachments else None
         photo_id = f"photo{photo.owner_id}_{photo.id}" if photo else ''
