@@ -147,7 +147,6 @@ class Enemies(Enum):
     OTHER_HUMAN_FACTIONS = 'Люди'
     MAGICAL_BEASTS = 'Магзвери'
     BOSSES = 'Боссы'
-    UNCATEGORIZED = 'Вне категории'
 
 
 class Grades(Enum):
@@ -193,6 +192,7 @@ class Regions(Enum):
     MONDSTADT = 'Мондштадт'
     THE_CHASM = 'Разлом'
     THE_CHASM_UNDERGROUND_MINES = 'Разлом: Подземные шахты'
+    MAINACTOR = ''  #: Not a real region; placed for association of main characters of the game
 
 
 class Rewards(Enum):
