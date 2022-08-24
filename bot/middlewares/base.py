@@ -114,7 +114,7 @@ class CommandGuesserMiddleware(BaseMiddleware[Message]):
         if self.event.text == text:
             return None
         if await has_postgres_data(f"SELECT * FROM users WHERE user_id = {self.event.from_id} AND autocorrect = false"):
-            await self.event.answer(f"~~Возможно, вы имели ввиду <<{text}>>?")
+            await self.event.answer(f"Возможно, вы имели ввиду <<{text}>>?")
             self.stop()
         else:
             self.event.text = text
