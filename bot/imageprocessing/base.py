@@ -1,6 +1,6 @@
 from typing import Literal
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageChops
 
 
 FONT = 'Montserrat-ExtraBold.ttf'  #: Default font for texts
@@ -35,19 +35,27 @@ def get_scaled_size(scale_by: Literal['w', 'h'], new_val: int, obj_width: int, o
 def round_corners(obj: Image.Image, rad: int) -> Image.Image:
     """Round image corners.
 
-    :param obj: image object which will be processed
-    :param rad: round radius in pixels
-    :return: image object with rounded corners
+    :param obj: Image object which will be processed
+    :param rad: Round radius in pixels
+    :return: Image object with rounded corners
     """
     width, height = obj.size
+    crop_paste_coordinates = [
+        [(0, 0, rad, rad), (0, 0)],  #: left-top corner
+        [(0, rad, rad, rad * 2), (0, height - rad)],  #: left-bottom corner
+        [(rad, 0, rad * 2, rad), (width - rad, 0)],  #: right-top corner
+        [(rad, rad, rad * 2, rad * 2), (width - rad, height - rad)]  #: right-bottom corner
+    ]
     alpha = Image.new('L', (width, height), 255)
     ellipse = Image.new('L', (rad * 2, rad * 2), 0)
     ImageDraw.Draw(ellipse).ellipse((0, 0, rad * 2, rad * 2), 255)
-    #: Ellipse crop request two points with coordinates x0, y0, x1, y1;
-    #: Scope of crop will be inside of rectangle with this coordinates
-    alpha.paste(ellipse.crop((0, 0, rad, rad)), (0, 0))  #: left-top corner
-    alpha.paste(ellipse.crop((0, rad, rad, rad * 2)), (0, height - rad))  #: left-bottom corner
-    alpha.paste(ellipse.crop((rad, 0, rad * 2, rad)), (width - rad, 0))  #: right-top corner
-    alpha.paste(ellipse.crop((rad, rad, rad * 2, rad * 2)), (width - rad, height - rad))  #: right-bottom corner
+    for crop_xy, paste_xy in crop_paste_coordinates:
+        alpha.paste(ellipse.crop(crop_xy), paste_xy)
+    obj_channels = obj.split()
+    if len(obj_channels) == 4:
+        alpha = ImageChops.darker(alpha, obj_channels[-1])
+    #: Scope inside ellipse filled with white color (255), outside - with black color (0);
+    #: Black color in alpha mode - invisible, white - opaque;
+    #: method darker() takes the min of the ellipse and original alpha channel (which can be anywhere between 0-255).
     obj.putalpha(alpha)
     return obj
