@@ -38,6 +38,9 @@ class Characters(Enum):
     DORI = 'Дори'
     COLLEI = 'Коллеи'
     TIGHNARI = 'Тигнари'
+    NILOU = 'Нилу'
+    CYNO = 'Сайно'
+    CANDACE = 'Кандакия'
 
     HEIZO = 'Хэйдзо'
     SHIKANOIN_HEIZOU = 'Хэйдзо'
