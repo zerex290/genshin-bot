@@ -11,6 +11,9 @@ __all__ = (
     'AccountUnlinked',
     'AccountNotExist',
     'ReplyMessageError',
+    'DisplayAlreadyLong',
+    'DisplayAlreadyShort',
+    'IncorrectDisplayType',
     'RedeemCodeNotSpecified',
     'CommandNotAllowed',
     'NotificationsAlreadyEnabled',
@@ -68,6 +71,19 @@ class ReplyMessageError(GenshinBotException):
             'SpiralAbyss': 'просмотра его прогресса витой бездны'
         }
         self.__class__._msg = f"Не прикреплено сообщение другого игрока для {datatypes[datatype]}!"
+
+
+class DisplayAlreadyLong(GenshinBotException):
+    _msg = 'Текстовое отображение для данной команды уже было включено!'
+
+
+class DisplayAlreadyShort(GenshinBotException):
+    _msg = 'Графическое отображение для данной команды уже было включено!'
+
+
+class IncorrectDisplayType(GenshinBotException):
+    def __init__(self, d_type: str) -> None:
+        self.__class__._msg = f"Параметр '{d_type}' не распознан! Доступные параметры: 'текст', 'пик'."
 
 
 class RedeemCodeNotSpecified(GenshinBotException):

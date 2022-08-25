@@ -14,6 +14,10 @@ async def create_pg_tables(connection):
         CREATE TABLE users (
             user_id int PRIMARY KEY,
             autocorrect boolean NOT NULL DEFAULT false,
+            notes varchar(5) NOT NULL DEFAULT 'short',
+            stats varchar(5) NOT NULL DEFAULT 'short',
+            rewards varchar(5) NOT NULL DEFAULT 'short',
+            diary varchar(5) NOT NULL DEFAULT 'short',
             CONSTRAINT is_user CHECK (user_id >= 0)
         );
     """)

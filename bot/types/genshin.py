@@ -198,23 +198,42 @@ class Regions(Enum):
     MAINACTOR = ''  #: Not a real region; placed for association of main characters of the game
 
 
-class Rewards(Enum):
-    PRIMOGEM = 'Камни Истока'
-    MORA = 'Мора'
-    FINE_ENHANCEMENT_ORE = 'Превосходная руда усиления'
-    ADVENTURER_EXPERIENCE = 'Опыт искателя приключений'
-    FRIED_RADISH_BALLS = 'Редисовые шарики'
-    SWEET_MADAME = 'Цыпленок в медовом соусе'
-    HERO_WIT = 'Опыт героя'
-    ALMOND_TOFU = 'Миндальный тофу'
-    FISHERMAN_TOAST = 'Рыбацкий бутерброд'
+class Offerings(Enum):
+    REPUTATION = 'Репутация'
+    FROSTBEARING_TREE = 'Древо вечной мерзлоты'
+    SACRED_SAKURA_FAVOR = 'Благосклонность сакуры'
+    LUMENSTONE_ADJUVANT = 'Адъювант'
+    TREE_OF_DREAMS = 'Древо снов'
 
 
 class DiaryCategories(Enum):
-    SPIRAL_ABYSS = '🌀Витая бездна'
-    DAILY_ACTIVITY = '🎁Ежедневная активность'
-    EVENTS = '♨События'
-    MAIL = '✉Почта'
-    ADVENTURE = '🚲Приключения'
-    QUESTS = '💡Задания'
-    OTHER = '✨Другое'
+    SPIRAL_ABYSS = 'Витая бездна'
+    DAILY_ACTIVITY = 'Ежедневная активность'
+    EVENTS = 'События'
+    MAIL = 'Почта'
+    ADVENTURE = 'Приключения'
+    QUESTS = 'Задания'
+    OTHER = 'Другое'
+
+
+class DiaryCategorySymbols(Enum):
+    SPIRAL_ABYSS = '🌀'
+    DAILY_ACTIVITY = '🎁'
+    EVENTS = '♨'
+    MAIL = '✉'
+    ADVENTURE = '🚲'
+    QUESTS = '💡'
+    OTHER = '✨'
+
+
+class TeapotComfortNames(Enum):
+    BARE_BONES = 'Пустовато'
+    HUMBLE_ABODE = 'Скромно'
+    COZY = 'Уютно'
+    QUEEN_SIZE = 'Просторно'
+    ELEGANT = 'Изыскано'
+    EXQUISITE = 'Прелестно'
+    EXTRAORDINARY = 'Необычно'
+    STATELY = 'Богато'
+    LUXURY = 'Шикарно'
+    FIT_FOR_A_KING = 'Роскошно'

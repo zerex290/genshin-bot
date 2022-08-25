@@ -72,8 +72,36 @@ class HoYoLABValidator(BaseValidator):
         if not account:
             raise AccountNotExist(for_other_user)
 
+    @staticmethod
+    async def check_display_short(cls_name: str, user_id: int) -> None:
+        if await has_postgres_data(f"SELECT * FROM users WHERE {cls_name} = 'long' AND user_id = {user_id};"):
+            raise DisplayAlreadyLong
+
+    @staticmethod
+    async def check_display_long(cls_name: str, user_id: int) -> None:
+        if await has_postgres_data(f"SELECT * FROM users WHERE {cls_name} = 'short' AND user_id = {user_id};"):
+            raise DisplayAlreadyShort
+
+    @staticmethod
+    def check_display_type_correct(d_type: str) -> None:
+        correct_types = ('short', 'long')
+        if d_type not in correct_types:
+            raise IncorrectDisplayType(d_type)
+
 
 class CodeValidator(HoYoLABValidator):
+    @staticmethod
+    def check_display_short(cls_name: str, user_id: int) -> None:
+        raise AttributeError('This method is unavailable!')
+
+    @staticmethod
+    def check_display_long(cls_name: str, user_id: int) -> None:
+        raise AttributeError('This method is unavailable!')
+
+    @staticmethod
+    def check_display_type_correct(d_type: str) -> None:
+        raise AttributeError('This method is unavailable!')
+
     @staticmethod
     def check_code_specified(codes: list[str]) -> None:
         if not codes:
@@ -116,6 +144,18 @@ class ResinNotifyValidator(BaseValidator, ChatValidator):
 
 
 class SpiralAbyssValidator(HoYoLABValidator):
+    @staticmethod
+    def check_display_short(cls_name: str, user_id: int) -> None:
+        raise AttributeError('This method is unavailable!')
+
+    @staticmethod
+    def check_display_long(cls_name: str, user_id: int) -> None:
+        raise AttributeError('This method is unavailable!')
+
+    @staticmethod
+    def check_display_type_correct(d_type: str) -> None:
+        raise AttributeError('This method is unavailable!')
+
     @staticmethod
     def check_abyss_unlocked(status: bool) -> None:
         if not status:

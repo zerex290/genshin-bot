@@ -53,7 +53,7 @@ async def get_genshin_account_by_id(user_id: int) -> Optional[dict[str, int | st
 
 
 def catch_hoyolab_errors(func: Callable[_P, Awaitable[_T]]) -> Callable[_P, Awaitable[_T]]:
-    async def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+    async def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T | str:
         try:
             return await func(*args, **kwargs)
         except InvalidCookies:
