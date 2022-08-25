@@ -509,10 +509,13 @@ class BookParser:
                 tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + href)
                 if tree is None:
                     return None
-                v_table = await _deserialize(
-                    (await tree.xpath('//table[@class="genshin_table sortable "]//script/text()'))[0],
-                    'sortable_data'
-                )
+                try:
+                    v_table = await _deserialize(
+                        (await tree.xpath('//table[@class="genshin_table sortable "]//script/text()'))[0],
+                        'sortable_data'
+                    )
+                except IndexError:
+                    continue
                 books[b_type] = {}
                 for i, volume in enumerate(v_table):
                     _, name, rarity, _ = volume
