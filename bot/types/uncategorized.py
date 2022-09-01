@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Months(Enum):
+class Month(Enum):
     JANUARY = 'Январь'
     FEBRUARY = 'Февраль'
     MARCH = 'Март'
@@ -16,7 +16,7 @@ class Months(Enum):
     DECEMBER = 'Декабрь'
 
 
-class MonthIntegers(Enum):
+class IntMonth(Enum):
     JANUARY = 1
     FEBRUARY = 2
     MARCH = 3

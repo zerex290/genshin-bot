@@ -9,7 +9,7 @@ from genshin.models import PartialGenshinUserStats, UserInfo, Stats, Teapot, Par
 from vkbottle_types.objects import UsersUserFull
 
 from . import FONT, round_corners
-from ..types.genshin import TeapotComfortNames, Characters, Regions, Offerings
+from ..types.genshin import TeapotComfortName, Character, Region, ExplorationOffering
 from ..utils.files import download
 from ..config.dependencies.paths import FILECACHE, IMAGE_PROCESSING
 
@@ -33,7 +33,7 @@ def _draw_teapot_text(draw: ImageDraw.ImageDraw, teapot: Optional[Teapot]) -> No
     if teapot is None:
         draw.text((471, 380), 'Не открыт', font=font, fill=(255, 255, 255), anchor='ma')
         return None
-    comfort_name = TeapotComfortNames[sub(r'[\s-]', '_', teapot.comfort_name).upper()].value
+    comfort_name = TeapotComfortName[sub(r'[\s-]', '_', teapot.comfort_name).upper()].value
     draw.text((89, 380), comfort_name, font=font, fill=(255, 255, 255))
     bottom_positions = [
         teapot.level, teapot.comfort, teapot.items, teapot.visitors
@@ -61,7 +61,7 @@ def _draw_character_text(draw: ImageDraw.ImageDraw, character: PartialCharacter)
     """Figma sizes + 2px to each width and height"""
     font = ImageFont.truetype(os.path.join(IMAGE_PROCESSING, 'fonts', FONT), 12)
     lvl = str(character.level)
-    name = Characters[character.name.replace(' ', '_').upper()].value
+    name = Character[character.name.replace(' ', '_').upper()].value
     friendship = str(character.friendship)
     constellation = str(character.constellation)
     draw.text((30, 21), lvl, font=font, fill=(255, 255, 255), anchor='ma')
@@ -103,7 +103,7 @@ async def _paste_characters(template: Image.Image, characters: Sequence[PartialC
 
 def _draw_exploration_text(draw: ImageDraw.ImageDraw, exploration: Exploration) -> None:
     font = ImageFont.truetype(os.path.join(IMAGE_PROCESSING, 'fonts', FONT), 12)
-    name = Regions[sub(r"'s|:|-", '', exploration.name).replace(' ', '_').upper()].value
+    name = Region[sub(r"'s|:|-", '', exploration.name).replace(' ', '_').upper()].value
     draw.text((50, 85), f"{exploration.explored}%", (255, 255, 255), font, 'ma')
     draw.text((192, 2), name, (255, 255, 255), font, 'ma')
 
@@ -112,7 +112,7 @@ def _draw_offerings_text(draw: ImageDraw.ImageDraw, offerings: Sequence[Offering
     font = ImageFont.truetype(os.path.join(IMAGE_PROCESSING, 'fonts', FONT), 10)
     for i, o in enumerate(offerings):
         indent_y = (20+4) * i
-        name = Offerings[sub(r"'s|:|-", '', o.name).replace(' ', '_').upper()].value
+        name = ExplorationOffering[sub(r"'s|:|-", '', o.name).replace(' ', '_').upper()].value
         draw.text((120, 42 + indent_y), name, (255, 255, 255), font)
         draw.text((270, 42 + indent_y), str(o.level), (255, 255, 255), font, 'ma')
 

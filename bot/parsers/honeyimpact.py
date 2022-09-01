@@ -16,8 +16,8 @@ from ..config import honeyimpact
 from ..templates import honeyimpact as tpl
 from ..models import honeyimpact as mdl
 from ..config.dependencies.paths import FILECACHE
-from ..types.uncategorized import Months, MonthIntegers
-from ..types.genshin import Characters, Elements, Regions, Weapons, Stats, Enemies, Grades, Domains
+from ..types.uncategorized import Month, IntMonth
+from ..types.genshin import Character, Element, Region, WeaponType, Stat, EnemyType, Grade, DomainType
 
 
 __all__ = (
@@ -116,7 +116,7 @@ class CharacterParser:
 
     @classmethod
     async def get_characters(cls) -> Optional[dict[str, dict]]:
-        characters = {e.value: {} for e in Elements}
+        characters = {e.value: {} for e in Element}
 
         for endpoint in _ENDPOINTS[cls.__name__]:
             tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
@@ -130,10 +130,10 @@ class CharacterParser:
                 _, name, rarity, weapon, element, _ = character
                 href = re.search(r'\w+', (await name.xpath('//@href'))[0])[0]
                 icon = f"{honeyimpact.URL}img/{href}.webp"
-                name = Characters[href.split('_')[0].upper()].value
+                name = Character[href.split('_')[0].upper()].value
                 rarity = int(re.search(r'\d', await rarity.text())[0])
-                weapon = Weapons[re.search(r'\w+', await weapon.text())[0].upper()].value
-                element = Elements[re.search(r'\w+', await element.text())[0].upper()].value
+                weapon = WeaponType[re.search(r'\w+', await weapon.text())[0].upper()].value
+                element = Element[re.search(r'\w+', await element.text())[0].upper()].value
                 characters[element][name] = [href, icon, rarity, weapon]
         del characters['Мульти']  #: Aether and Lumine has no future...
         return characters
@@ -144,13 +144,13 @@ class CharacterParser:
 
         title = ''.join(await table.xpath('.//td[contains(text(), "Title")]/following-sibling::td/text()'))
         occ = ''.join(await table.xpath('.//td[contains(text(), "Occupation")]/following-sibling::td/text()'))
-        association = Regions[
+        association = Region[
             ''.join(await table.xpath('.//td[contains(text(), "Association")]/following-sibling::td/text()'))
             .upper()
         ].value
         birthdate = (await table.xpath('.//td[contains(text(), "of Birth")]/following-sibling::td/text()'))
         if len(birthdate) == 2:
-            birthdate = f"{Months[MonthIntegers(int(birthdate[1])).name].value} {birthdate[0]}"
+            birthdate = f"{Month[IntMonth(int(birthdate[1])).name].value} {birthdate[0]}"
         else:
             birthdate = '--'
         con = ''.join(await table.xpath('.//td[contains(text(), "Constellation")]/following-sibling::td/text()'))
@@ -279,7 +279,7 @@ class WeaponParser:
 
     @classmethod
     async def get_weapons(cls) -> Optional[dict[str, dict]]:
-        weapons = {w.value: {} for w in Weapons}
+        weapons = {w.value: {} for w in WeaponType}
 
         for endpoint in _ENDPOINTS[cls.__name__]:
             tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
@@ -301,7 +301,7 @@ class WeaponParser:
                     value = await value.text()
                 if isinstance(affix, _AsyncHtmlElement):
                     affix = re.sub(r'<[^>]+>', '', await affix.text())
-                weapons[Weapons[endpoint.split('_')[-1][:-1].upper()].value][name] = [
+                weapons[WeaponType[endpoint.split('_')[-1][:-1].upper()].value][name] = [
                     href, icon, rarity, atk, sub, value, affix
                 ]
         return weapons
@@ -424,8 +424,8 @@ class EnemyParser:
 
     @classmethod
     async def get_enemies(cls) -> Optional[dict[str, dict]]:
-        e_types = list(Enemies)
-        enemies = {e.value: {} for e in Enemies}
+        e_types = list(EnemyType)
+        enemies = {e.value: {} for e in EnemyType}
 
         for i, endpoint in enumerate(_ENDPOINTS[cls.__name__]):
             tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
@@ -440,7 +440,7 @@ class EnemyParser:
                 href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
                 icon = f"{honeyimpact.URL}img/{href}.webp"
                 name = re.search(r'[\w\s:]+', await name.text())[0]
-                grade = Grades[(await grade.text()).upper()].value
+                grade = Grade[(await grade.text()).upper()].value
                 if isinstance(drop, _AsyncHtmlElement):
                     drop = ', '.join(await drop.xpath('//img/@alt'))
                 enemies[e_types[i].value][name] = [href, icon, grade, drop]
@@ -559,8 +559,8 @@ class DomainParser:
 
     @classmethod
     async def get_domains(cls) -> Optional[dict[str, dict]]:
-        d_types = list(Domains)
-        domains = {d.value: {} for d in Domains}
+        d_types = list(DomainType)
+        domains = {d.value: {} for d in DomainType}
 
         for i, endpoint in enumerate(_ENDPOINTS[cls.__name__]):
             tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
@@ -623,5 +623,5 @@ async def _deserialize(text: str, anchor: str) -> list[list[_AsyncHtmlElement | 
 
 def _format_stat(stat: str) -> str:
     stat = stat.replace(' ', '_').upper()
-    stat_enum = Stats[stat.replace('%', '')]
+    stat_enum = Stat[stat.replace('%', '')]
     return stat.replace(stat_enum.name, f"{stat_enum.value} ")

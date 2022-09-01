@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Characters(Enum):
+class Character(Enum):
     VENTI = 'Венти'
     ROSARIA = 'Розария'
     XIAO = 'Сяо'
@@ -99,7 +99,7 @@ class Characters(Enum):
     KAMISATO_AYATO = 'Аято'
 
 
-class Weapons(Enum):
+class WeaponType(Enum):
     CATALYST = 'Катализатор'
     POLEARM = 'Древковое'
     BOW = 'Лук'
@@ -107,7 +107,7 @@ class Weapons(Enum):
     CLAYMORE = 'Двуручное'
 
 
-class Stats(Enum):
+class Stat(Enum):
     ATK = 'Сила атаки'
     BONUS_ATK = 'Бонус силы атаки'
 
@@ -141,7 +141,7 @@ class Stats(Enum):
     BONUS_DENDRO = 'Бонус дендро урона'
 
 
-class Enemies(Enum):
+class EnemyType(Enum):
     ELEMENTAL_LIFEFORMS = 'Элементали'
     HILICHURLS = 'Хиличурлы'
     THE_ABYSS_ORDER = 'Бездна'
@@ -152,20 +152,20 @@ class Enemies(Enum):
     BOSSES = 'Боссы'
 
 
-class Grades(Enum):
+class Grade(Enum):
     REGULAR = 'Обычный'
     BOSS = 'Босс'
     ELITE = 'Элитный'
 
 
-class Domains(Enum):
+class DomainType(Enum):
     ARTIFACT = 'Артефакты'
     TALENT_MATERIAL = 'Возвышение талантов'
     WEAPON_MATERIAL = 'Возвышение оружия'
     BOSS = 'Подземелья наказания'
 
 
-class Elements(Enum):
+class Element(Enum):
     PYRO = 'Пиро'
     ANEMO = 'Анемо'
     ELECTRO = 'Электро'
@@ -176,7 +176,7 @@ class Elements(Enum):
     NONE = 'Мульти'
 
 
-class ElementSymbols(Enum):
+class ElementSymbol(Enum):
     PYRO = '🔥'
     ANEMO = '💨'
     ELECTRO = '⚡'
@@ -186,7 +186,7 @@ class ElementSymbols(Enum):
     DENDRO = '☘'
 
 
-class Regions(Enum):
+class Region(Enum):
     SUMERU = 'Сумеру'
     ENKANOMIYA = 'Энканомия'
     INAZUMA = 'Инадзума'
@@ -198,7 +198,7 @@ class Regions(Enum):
     MAINACTOR = ''  #: Not a real region; placed for association of main characters of the game
 
 
-class Offerings(Enum):
+class ExplorationOffering(Enum):
     REPUTATION = 'Репутация'
     FROSTBEARING_TREE = 'Древо вечной мерзлоты'
     SACRED_SAKURA_FAVOR = 'Благосклонность сакуры'
@@ -206,7 +206,7 @@ class Offerings(Enum):
     TREE_OF_DREAMS = 'Древо снов'
 
 
-class DiaryCategories(Enum):
+class DiaryCategory(Enum):
     SPIRAL_ABYSS = 'Витая бездна'
     DAILY_ACTIVITY = 'Ежедневная активность'
     EVENTS = 'События'
@@ -216,7 +216,7 @@ class DiaryCategories(Enum):
     OTHER = 'Другое'
 
 
-class DiaryCategorySymbols(Enum):
+class DiaryCategorySymbol(Enum):
     SPIRAL_ABYSS = '🌀'
     DAILY_ACTIVITY = '🎁'
     EVENTS = '♨'
@@ -226,7 +226,7 @@ class DiaryCategorySymbols(Enum):
     OTHER = '✨'
 
 
-class TeapotComfortNames(Enum):
+class TeapotComfortName(Enum):
     BARE_BONES = 'Пустовато'
     HUMBLE_ABODE = 'Скромно'
     COZY = 'Уютно'

@@ -6,7 +6,7 @@ from genshin.models import Notes, Expedition
 from vkbottle_types.objects import UsersUserFull
 
 from . import FONT, round_corners
-from ..types.genshin import Characters
+from ..types.genshin import Character
 from ..utils.files import download
 from ..config.dependencies.paths import IMAGE_PROCESSING, FILECACHE
 
@@ -159,7 +159,7 @@ def _draw_expedition_text(draw: ImageDraw.ImageDraw, expedition: Expedition) -> 
     :param expedition: One of the real time notes expeditions
     """
     font = ImageFont.truetype(os.path.join(IMAGE_PROCESSING, 'fonts', FONT), 18)
-    character = Characters[expedition.character.name.upper().replace(' ', '_')].value
+    character = Character[expedition.character.name.upper().replace(' ', '_')].value
     h, s = divmod(int(expedition.remaining_time.total_seconds()), 3600)
     m, _ = divmod(s, 60)
     rec_time = f"{h}ч {m}мин"

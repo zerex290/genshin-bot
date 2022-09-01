@@ -7,7 +7,7 @@ from genshin.models import Diary, DayDiaryData, MonthDiaryData, DiaryActionCateg
 from vkbottle_types.objects import UsersUserFull
 
 from . import round_corners, FONT
-from ..types.genshin import DiaryCategories
+from ..types.genshin import DiaryCategory
 from ..utils.files import download
 from ..config.dependencies.paths import FILECACHE, IMAGE_PROCESSING
 
@@ -34,10 +34,10 @@ def _draw_categories_text(draw: ImageDraw.ImageDraw, categories: Sequence[DiaryA
     percentage_font = ImageFont.truetype(os.path.join(IMAGE_PROCESSING, 'fonts', FONT), 12)
     positions = {
         c.value: ((34 + 48 + (96+5)*i, 378), (34 + 48 + (96+5)*i, 356))
-        for i, c in enumerate(DiaryCategories)
+        for i, c in enumerate(DiaryCategory)
     }
     for c in categories:
-        name = DiaryCategories[c.name.replace(' ', '_').upper()].value
+        name = DiaryCategory[c.name.replace(' ', '_').upper()].value
         print(positions[name])
         draw.text(positions[name][0], str(c.amount), (255, 255, 255), amount_font, 'ma')
         draw.text(positions[name][1], f"{c.percentage}%", (255, 255, 255), percentage_font, 'ma')

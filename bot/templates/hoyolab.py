@@ -8,8 +8,8 @@ from genshin.models import Notes, ClaimedDailyReward, PartialGenshinUserStats, D
 from genshin.models.genshin.chronicle.abyss import SpiralAbyss, AbyssRankCharacter
 
 from ..utils import get_current_timestamp
-from ..types.genshin import Characters, ElementSymbols, Regions, Offerings, DiaryCategories, DiaryCategorySymbols
-from ..types.uncategorized import MonthIntegers, Months
+from ..types.genshin import Character, ElementSymbol, Region, ExplorationOffering, DiaryCategory, DiaryCategorySymbol
+from ..types.uncategorized import IntMonth, Month
 
 
 _Display: TypeAlias = Literal['short', 'long']
@@ -46,7 +46,7 @@ def format_notes(notes: Notes, user: UsersUserFull, display: _Display) -> str:
         expedition_status = '♻' if e.status == 'Ongoing' else '✅'
         expeditions.append(
             f"{expedition_status}"
-            f"{Characters[e.character.name.upper().replace(' ', '_')].value}: "
+            f"{Character[e.character.name.upper().replace(' ', '_')].value}: "
             f"🕑Осталось: {_format_recovery_time(e.completion_time)}\n"
         )
 
@@ -77,8 +77,8 @@ def format_stats(stats: PartialGenshinUserStats, user: UsersUserFull, display: _
         five_star.append(c) if c.rarity == 5 else four_star.append(c)
         characters.append(
             f"{c.rarity}⭐ "
-            f"{ElementSymbols[c.element.upper()].value if c.element else '🌠'}"
-            f"{Characters[c.name.upper().replace(' ', '_')].value} "
+            f"{ElementSymbol[c.element.upper()].value if c.element else '🌠'}"
+            f"{Character[c.name.upper().replace(' ', '_')].value} "
             f"Ур. {c.level} "
             f"🎮Ур. дружбы: {c.friendship}\n"
         )
@@ -88,9 +88,9 @@ def format_stats(stats: PartialGenshinUserStats, user: UsersUserFull, display: _
         if e.name:
             offerings = []
             for o in e.offerings:
-                o_name = Offerings[re.sub(r"'s|:|-", '', o.name).replace(' ', '_').upper()].value
+                o_name = ExplorationOffering[re.sub(r"'s|:|-", '', o.name).replace(' ', '_').upper()].value
                 offerings.append(f"🍥{o_name}: {o.level}")
-            e_name = Regions[re.sub(r"'s|:|-", '', e.name).replace(' ', '_').upper()].value
+            e_name = Region[re.sub(r"'s|:|-", '', e.name).replace(' ', '_').upper()].value
             explorations.append(f"🌐{e.explored}% {e_name} {' '.join(offerings)}\n")
 
     if stats.teapot is None:
@@ -149,12 +149,12 @@ def format_traveler_diary(diary: Diary, user: UsersUserFull, display: _Display) 
 
     categories = []
     for c in diary.data.categories:
-        category = DiaryCategories[c.name.replace(' ', '_').upper()]
+        category = DiaryCategory[c.name.replace(' ', '_').upper()]
         categories.append(
-            f"{DiaryCategorySymbols[category.name].value}{category.value}: {c.amount} примогемов ({c.percentage}%)\n"
+            f"{DiaryCategorySymbol[category.name].value}{category.value}: {c.amount} примогемов ({c.percentage}%)\n"
         )
 
-    month = Months[MonthIntegers(diary.month).name].value
+    month = Month[IntMonth(diary.month).name].value
     formatted_traveler_diary = (
         f"{header}\n"
         f"💰Получено моры за день: {diary.day_data.current_mora}\n"
@@ -168,7 +168,7 @@ def format_traveler_diary(diary: Diary, user: UsersUserFull, display: _Display) 
 
 
 def _format_abyss_character(ch: AbyssRankCharacter) -> str:
-    return f"{ElementSymbols[ch.element.upper()].value}{Characters[ch.name.upper().replace(' ', '_')].value}"
+    return f"{ElementSymbol[ch.element.upper()].value}{Character[ch.name.upper().replace(' ', '_')].value}"
 
 
 def _format_abyss_ranks(characters: Sequence[AbyssRankCharacter]) -> str:
