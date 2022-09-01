@@ -292,7 +292,6 @@ async def get_commands_article(message: Message) -> None:
         '!фарм\n'
         '!таланты\n'
         '!книги\n'
-        '!данжи\n'
         '!гдб\n'
         '!заметки\n'
         '!резинноут\n'
