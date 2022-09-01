@@ -180,8 +180,8 @@ class RandomPicture:
     @staticmethod
     def _compile_message(attachment_string: str) -> str:
         cases = {1: 'е', 2: 'я', 3: 'я', 4: 'я'}
-        attachments = attachment_string.split(',')
-        return f"По вашему запросу найдено {len(attachments)} изображени{cases.get(len(attachments), 'й')}!"
+        pictures = len(attachment_string.split(',')) if attachment_string else 0
+        return f"По вашему запросу найдено {pictures} изображени{cases.get(pictures, 'й')}!"
 
     @staticmethod
     def get_interactive_keyboard(is_public: bool, user_id: int, state: str, msg_id: int) -> str:
