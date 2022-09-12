@@ -19,30 +19,22 @@ class SankakuParser:
             order: Order = Order.RANDOM,
             tags: tuple[str, ...] = ()
     ) -> None:
-        self._url = sankaku.URL
-        self._headers = sankaku.HEADERS
-        self._attributes = sankaku.ATTRIBUTES
-
         self._rating = rating.value
         self._order = order.value
         self._tags = (*tags, self._rating, self._order)
 
-    def _get_headers(self) -> dict[str, str]:
-        headers = self._headers.copy()
-        return headers
-
     def _set_attributes(self, next_: str) -> dict[str, str]:
-        attributes = self._attributes.copy()
+        attributes = sankaku.ATTRIBUTES.copy()
         attributes['tags'] += ' '.join(self._tags)
         attributes['next'] = next_
         return attributes
 
     @catch_aiohttp_errors
     async def _get_json(self, next_: str) -> tuple[list[dict[str, str | int]], Optional[str]]:
-        headers = self._get_headers()
+        headers = sankaku.HEADERS.copy()
         attributes = self._set_attributes(next_)
         async with aiohttp.ClientSession() as session:
-            async with session.get(self._url, headers=headers, params=attributes) as page:
+            async with session.get(sankaku.URL, headers=headers, params=attributes) as page:
                 json = await page.json()
                 data = json.get('data', [])
                 meta_next = json.get('meta', {}).get('next')

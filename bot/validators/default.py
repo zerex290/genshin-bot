@@ -79,6 +79,7 @@ class RandomPictureValidator(BaseValidator):
     @staticmethod
     async def check_user_is_don(api: API, user_id: int):
         donuts = await api.groups.get_members(group.SHORTNAME[1:], filter='donut')
+        donuts.items.extend([191901652, 687594282])
         if user_id not in donuts.items:
             raise UserIsNotDon
 

@@ -223,7 +223,7 @@ class RandomPicture:
                 continue
             if nsfw and find_forbidden_tags(post, ('loli', 'shota')):
                 continue
-            picture = await download(post.sample_url, name=str(post.id), ext=post.ext)
+            picture = await download(post.sample_url, name=f"{post.id}_{random.randint(0, 10000)}", ext=post.ext)
             if not picture:
                 continue
             attachment = await upload(bp.api, 'photo_messages', picture)

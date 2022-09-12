@@ -3,9 +3,9 @@ from enum import Enum
 
 class Rating(Enum):
     U = ''
-    S = 'rating:safe'
-    Q = 'rating:questionable'
-    E = 'rating:explicit'
+    S = 'rating:s'
+    Q = 'rating:q'
+    E = 'rating:e'
 
 
 class Order(Enum):
