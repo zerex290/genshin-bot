@@ -188,7 +188,7 @@ async def get_stats_image(stats: PartialGenshinUserStats, user: UsersUserFull) -
         _draw_teapot_text(draw, stats.teapot)
         _draw_characters_header_text(draw, stats.characters)
         await _paste_characters(template, stats.characters)
-        v_indent = 586 + (34+4)*(len(stats.characters)//4 + 1 if len(stats.characters) % 4 != 0 else 0) + 25
+        v_indent = 586 + (34+4)*(len(stats.characters)//4 + (1 if len(stats.characters) % 4 != 0 else 0)) + 25
         await _paste_explorations(template, stats.explorations, v_indent)
         v_indent += (100+4)*(len(stats.explorations)//3 + 1 if len(stats.explorations) % 3 != 0 else 0) + 34
         template = template.crop((0, 0, template.width, v_indent))
