@@ -62,9 +62,9 @@ class Timer:
             countdown = None
         return countdown
 
-    def _compile_message(self, note: str) -> str:
+    async def _compile_message(self, note: str) -> str:
         return (
-            f"@id{self.message.from_id} (), время прошло! "
+            f"@id{self.message.from_id} ({(await self.message.get_user()).first_name}), время прошло! "
             f"{'Пометка: ' + note if note else ''}"
         )
 
@@ -76,7 +76,7 @@ class Timer:
         self.validator.check_timer_syntax(countdown)
         await self.message.answer('Таймер установлен!')
         await sleep(countdown)
-        await self.message.answer(self._compile_message(note))
+        await self.message.answer(await self._compile_message(note))
 
 
 class RandomTag:
