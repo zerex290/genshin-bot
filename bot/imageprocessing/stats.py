@@ -18,7 +18,7 @@ def _draw_summary_text(draw: ImageDraw.ImageDraw, stats: Stats) -> None:
     font = ImageFont.truetype(os.path.join(IMAGE_PROCESSING, 'fonts', FONT), 28)
     positions = [
         stats.days_active, stats.achievements, stats.unlocked_waypoints, stats.unlocked_domains, stats.spiral_abyss,
-        stats.characters, stats.anemoculi, stats.geoculi, stats.electroculi, '',
+        stats.characters, stats.anemoculi, stats.geoculi, stats.electroculi, stats.dendroculi,
         stats.common_chests, stats.exquisite_chests, stats.precious_chests, stats.luxurious_chests, stats.remarkable_chests,
     ]
     for i, p in enumerate(positions):
