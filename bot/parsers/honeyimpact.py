@@ -153,7 +153,7 @@ class CharacterParser:
             birthdate = f"{Month[IntMonth(int(birthdate[1])).name].value} {birthdate[0]}"
         else:
             birthdate = '--'
-        con = ''.join(await table.xpath('.//td[contains(text(), "Constellation")]/following-sibling::td/text()'))
+        con = (await table.xpath('.//td[contains(text(), "Constellation")]/following-sibling::td/text()'))[-1]
         desc = ''.join(await table.xpath('.//td[contains(text(), "Description")]/following-sibling::td/text()'))
         asc_stat = _format_stat(
             ''.join(
@@ -176,6 +176,7 @@ class CharacterParser:
             a_atk, e_skill, a_sprint, e_burst = (mdl.characters.Skill('', '') for _ in range(4))
             return tpl.characters.format_active_skills(a_atk, e_skill, a_sprint, e_burst)
         table = table[2:-11]
+        table = table[:-1] if len(table) != 3 else table
 
         a_atk = table[0]
         e_skill = table[1]

@@ -135,6 +135,7 @@ class Stat(Enum):
     BONUS_PYRO = 'Бонус пиро урона'
     BONUS_ANEMO = 'Бонус анемо урона'
     BONUS_ELEC = 'Бонус электро урона'
+    BONUSE_ELEC = 'Бонуc электро урона'  #: Prevent parsing bugs
     BONUS_HYDRO = 'Бонус гидро урона'
     BONUS_CRYO = 'Бонус крио урона'
     BONUS_GEO = 'Бонус гео урона'
