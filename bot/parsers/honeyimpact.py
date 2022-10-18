@@ -576,8 +576,14 @@ class DomainParser:
                 href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
                 icon = f"{honeyimpact.URL}img/{href}.webp"
                 name = re.search(r'[\w\s:]+', await name.text())[0]
-                monsters = [honeyimpact.URL + m.replace('\\', '')[1:] for m in await monsters.xpath('//img/@src')]
-                rewards = [honeyimpact.URL + r.replace('\\', '')[1:] for r in await rewards.xpath('//img/@src')]
+                if isinstance(monsters, _AsyncHtmlElement):
+                    monsters = [honeyimpact.URL + m.replace('\\', '')[1:] for m in await monsters.xpath('//img/@src')]
+                else:
+                    monsters = []
+                if isinstance(rewards, _AsyncHtmlElement):
+                    rewards = [honeyimpact.URL + r.replace('\\', '')[1:] for r in await rewards.xpath('//img/@src')]
+                else:
+                    rewards = []
                 domains[d_types[i].value][name] = [href, icon, monsters, rewards]
         return domains
 

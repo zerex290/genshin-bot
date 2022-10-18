@@ -41,6 +41,8 @@ class Character(Enum):
     NILOU = 'Нилу'
     CYNO = 'Сайно'
     CANDACE = 'Кандакия'
+    NAHIDA = 'Нахида'
+    LAYLA = 'Лайла'
 
     HEIZO = 'Хэйдзо'
     SHIKANOIN_HEIZOU = 'Хэйдзо'
