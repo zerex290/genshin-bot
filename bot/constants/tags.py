@@ -60,7 +60,13 @@ GENSHIN_IMPACT = {
     'сайно': 'cyno_(genshin_impact)',
     'синьора': 'signora_(genshin_impact)',
     'дори': 'dori_(genshin_impact)',
-    'коллеи': 'collei_(genshin_impact)'
+    'коллеи': 'collei_(genshin_impact)',
+    'тигнари': 'tighnari_(genshin_impact)',
+    'нилу': 'nilou_(genshin_impact)',
+    'кандакия': 'candace_(genshin_impact)',
+    'нахида': 'nahida_(genshin_impact)',
+    'фарузан': 'faruzan_(genshin_impact)',
+    'лайла': 'layla_(genshin_impact)'
 }
 
 ART_STYLE = {

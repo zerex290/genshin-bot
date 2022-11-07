@@ -43,6 +43,8 @@ class Character(Enum):
     CANDACE = 'Кандакия'
     NAHIDA = 'Нахида'
     LAYLA = 'Лайла'
+    WANDERER = 'Странник'
+    FARUZAN = 'Фарузан'
 
     HEIZO = 'Хэйдзо'
     SHIKANOIN_HEIZOU = 'Хэйдзо'
