@@ -200,6 +200,7 @@ class Region(Enum):
     MONDSTADT = 'Мондштадт'
     THE_CHASM = 'Разлом'
     THE_CHASM_UNDERGROUND_MINES = 'Разлом: Подземные шахты'
+    FATUI = 'Фатуи'  #: Does it mean Snezhnaya?
     MAINACTOR = ''  #: Not a real region; placed for association of main characters of the game
 
 
