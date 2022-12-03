@@ -20,7 +20,7 @@ def _process_icon(icon_path: str) -> Image.Image:
         Image.open(os.path.join(IMAGE_PROCESSING, 'templates', 'domains', 'icon.png')) as template,
         Image.open(icon_path) as icon
     ):
-        icon = icon.resize(get_scaled_size('h', 35, icon.width, icon.height))
+        icon = icon.resize(get_scaled_size('h', 35, icon.size))
         template.paste(icon, get_centered_position(template.size, icon.size), mask=icon)
         return template
 
@@ -57,7 +57,7 @@ def _process_cover(cover_path: str) -> Image.Image:
         Image.open(os.path.join(IMAGE_PROCESSING, 'templates', 'domains', 'cover.png')) as template,
         Image.open(cover_path) as cover
     ):
-        cover = cover.resize(get_scaled_size('w', 139, cover.width, cover.height))
+        cover = cover.resize(get_scaled_size('w', 139, cover.size))
         cover = round_corners(cover, 8)
         template.paste(cover, (3, 2), mask=cover)
         return template

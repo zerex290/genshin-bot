@@ -6,30 +6,30 @@ from PIL import Image, ImageDraw, ImageChops
 FONT = 'Montserrat-ExtraBold.ttf'  #: Default font for texts
 
 
-def get_centered_position(bg_size: tuple[float, float], obj_size: tuple[float, float]) -> tuple[float, float]:
+def get_centered_position(bg_size: tuple[float, float], obj_size: tuple[float, float]) -> tuple[int, int]:
     """Return xy coordinates to center one image over another.
 
     :param bg_size: Tuple with xy coordinates of the background
     :param obj_size: Tuple with xy coordinates of the object
     :return: Tuple with xy coordinates of object which should be pasted into center of given background
     """
-    return (bg_size[0] - obj_size[0]) // 2, (bg_size[1] - obj_size[1]) // 2
+    return int((bg_size[0] - obj_size[0]) // 2), int((bg_size[1] - obj_size[1]) // 2)
 
 
-def get_scaled_size(scale_by: Literal['w', 'h'], new_val: int, obj_width: int, obj_height: int) -> tuple[int, int]:
+def get_scaled_size(scale_by: Literal['w', 'h'], new_val: int, obj_size: tuple[int, int]) -> tuple[int, int]:
     """Return resized image width and height with saved proportions.
 
     :param scale_by: Desired scaling; can be by width 'w' or by height 'h'
     :param new_val: Desired width or height of the resized image
-    :param obj_width: Actual width of the image
-    :param obj_height: Actual height of the image
+    :param obj_size: Actual size of the image
     :return: Tuple with resized width and height
     """
+    w, h = obj_size
     match scale_by:
         case 'w':
-            return new_val, int(new_val / (obj_width/obj_height))
+            return new_val, int(new_val / (w/h))
         case 'h':
-            return int(new_val / (obj_height/obj_width)), new_val
+            return int(new_val / (h/w)), new_val
 
 
 def round_corners(obj: Image.Image, rad: int) -> Image.Image:

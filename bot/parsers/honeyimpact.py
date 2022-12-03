@@ -26,7 +26,8 @@ __all__ = (
     'ArtifactParser',
     'EnemyParser',
     'BookParser',
-    'DomainParser'
+    'DomainParser',
+    'DailyFarmParser'
 )
 
 
@@ -50,7 +51,6 @@ _ENDPOINTS = {
             'mcat_26010201/',  #: Magical Beasts
             'mcat_29010101/'  #: Bosses
         ],
-        'BookParser': [''],
         'DomainParser': [
             'dcat_1/',  #: Artifact
             'dcat_10/',  #: Character Material
@@ -60,7 +60,7 @@ _ENDPOINTS = {
     }
 
 
-class _AsyncHtmlElement(HtmlElement):
+class _AsyncHtmlElement:
     def __init__(self, _element: HtmlElement) -> None:
         super().__init__()
         self._element = _element
@@ -70,6 +70,9 @@ class _AsyncHtmlElement(HtmlElement):
 
     def __repr__(self) -> str:
         return repr(self._element)
+
+    def __getattr__(self, attr):
+        return getattr(self._element, attr)
 
     async def xpath(self, expr: str, *args) -> list[_AsyncHtmlElement | str | float | int]:
         loop = asyncio.get_running_loop()
@@ -87,7 +90,7 @@ class _AsyncHtmlElement(HtmlElement):
         :param sep: custom separator between text parts
         :return: Str representation of text
         """
-        return sep.join(await self.xpath('.//text()'))
+        return sep.join(await self.xpath('.//text()')).strip()
 
     async def position(self) -> Optional[int]:
         """Returns current element position within the parent.
@@ -497,34 +500,33 @@ class BookParser:
     async def get_books(cls) -> Optional[dict[str, dict]]:
         books = {}
 
-        for endpoint in _ENDPOINTS[cls.__name__]:
-            tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + endpoint)
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL)
+        if tree is None:
+            return None
+        b_table = await tree.xpath(
+            '//label[@class="menu_item_text" and text()="Книги"]/following-sibling::div[1]//a'
+        )
+        for book in b_table:
+            href = re.search(r'\w+\d+', (await book.xpath('./@href'))[0])[0]
+            b_type = await book.text()
+            tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + href)
             if tree is None:
                 return None
-            b_table = await tree.xpath(
-                '//label[@class="menu_item_text" and text()="Книги"]/following-sibling::div[1]//a'
-            )
-            for book in b_table:
-                href = re.search(r'\w+\d+', (await book.xpath('./@href'))[0])[0]
-                b_type = await book.text()
-                tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + href)
-                if tree is None:
-                    return None
-                try:
-                    v_table = await _deserialize(
-                        (await tree.xpath('//table[@class="genshin_table sortable "]//script/text()'))[0],
-                        'sortable_data'
-                    )
-                except IndexError:
-                    continue
-                books[b_type] = {}
-                for i, volume in enumerate(v_table):
-                    _, name, rarity, _ = volume
-                    href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
-                    icon = f"{honeyimpact.URL}img/{href}.webp"
-                    rarity = len(await rarity.xpath('//div/img'))
-                    v_num = i + 1
-                    books[b_type][f"Часть {v_num}"] = [href, icon, rarity, v_num]
+            try:
+                v_table = await _deserialize(
+                    (await tree.xpath('//table[@class="genshin_table sortable "]//script/text()'))[0],
+                    'sortable_data'
+                )
+            except IndexError:
+                continue
+            books[b_type] = {}
+            for i, volume in enumerate(v_table):
+                _, name, rarity, _ = volume
+                href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
+                icon = f"{honeyimpact.URL}img/{href}.webp"
+                rarity = len(await rarity.xpath('//div/img'))
+                v_num = i + 1
+                books[b_type][f"Часть {v_num}"] = [href, icon, rarity, v_num]
         return books
 
     async def save(self) -> str:
@@ -595,6 +597,42 @@ class DomainParser:
 
         domain = mdl.domains.Information(self.name, self.type, desc)
         return tpl.domains.format_information(domain)
+
+
+class DailyFarmParser:
+    @staticmethod
+    async def _get_materials(elem: _AsyncHtmlElement) -> list[mdl.dailyfarm.Material]:
+        materials = []
+        for div in await elem.xpath('./div'):
+            weekday = int(div.get('data-days'))
+            for ep in await div.xpath('.//img/@src'):
+                icon = honeyimpact.URL + re.sub(r'_\d+.webp', '.webp', ep[1:])
+                materials.append(mdl.dailyfarm.Material(weekday, icon))
+        return materials
+
+    @staticmethod
+    async def _get_consumer(elem: _AsyncHtmlElement) -> mdl.dailyfarm.Consumer:
+        title = await elem.text()
+        weekdays = [int(wd) for wd in list(elem.get('data-days'))]
+        icon = honeyimpact.URL + re.sub(r'_\d+.webp', '.webp', (await elem.xpath('.//img/@src'))[0][1:])
+        rarity = int(elem.get('class').split()[-1].rsplit('_', maxsplit=1)[-1])
+        return mdl.dailyfarm.Consumer(title, weekdays, icon, rarity)
+
+    @classmethod
+    async def get_zones(cls) -> Optional[list[mdl.dailyfarm.Zone]]:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL)
+        if tree is None:
+            return None
+        table = await tree.xpath('//div[@class="homepage_index_cont calendar_day_wrap"]/*')
+        zones = []
+        for elem in table:
+            if elem.tag == 'span':
+                zones.append(
+                    {'title': await elem.text(), 'materials': await cls._get_materials(elem), 'consumers': []}
+                )
+            else:
+                zones[-1]['consumers'].append(await cls._get_consumer((await elem.xpath('./div'))[0]))
+        return [mdl.dailyfarm.Zone(**zone) for zone in zones]
 
 
 @catch_aiohttp_errors
