@@ -45,6 +45,8 @@ class Character(Enum):
     LAYLA = 'Лайла'
     WANDERER = 'Странник'
     FARUZAN = 'Фарузан'
+    ALHATHAM = 'Аль-Хайтам'
+    YAOYAO = 'Яо Яо'
 
     HEIZO = 'Хэйдзо'
     SHIKANOIN_HEIZOU = 'Хэйдзо'
