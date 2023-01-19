@@ -47,6 +47,8 @@ class Character(Enum):
     FARUZAN = 'Фарузан'
     ALHATHAM = 'Аль-Хайтам'
     YAOYAO = 'Яо Яо'
+    DEHYA = 'Дэхья'
+    MIKA = 'Мика'
 
     HEIZO = 'Хэйдзо'
     SHIKANOIN_HEIZOU = 'Хэйдзо'
