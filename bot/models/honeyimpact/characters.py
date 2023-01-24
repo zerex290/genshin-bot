@@ -20,3 +20,16 @@ class Information:
 class Skill:
     title: str
     description: str
+
+
+@dataclass(frozen=True)
+class AscensionMaterial:
+    icon: str
+    quantity: int
+
+
+@dataclass(frozen=True)
+class Ascension:
+    gacha_icon: str
+    lvl: list[AscensionMaterial]
+    talents: list[AscensionMaterial]

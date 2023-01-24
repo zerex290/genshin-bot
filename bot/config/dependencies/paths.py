@@ -3,7 +3,6 @@ import os
 
 cwd: str = os.getcwd()
 
-ASCENSION: str = os.path.join(cwd, 'ascension')
 BOOKS: str = os.path.join(cwd, 'books', 'books.png')
 BOSS_MATERIALS = os.path.join(cwd, 'boss_materials', 'materials.png')
 DATABASE_APPEARANCE: str = os.path.join(cwd, 'db_appearance')

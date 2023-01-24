@@ -13,8 +13,9 @@ from bot.errors import IncompatibleOptions
 from bot.utils.files import download, upload
 from bot.validators.genshindb import GenshinDBValidator
 from bot.manuals import genshindb as man
+from bot.imageprocessing.ascension import get_ascension_image
 from bot.imageprocessing.domains import get_domain_image
-from bot.config.dependencies.paths import DATABASE_APPEARANCE, ASCENSION
+from bot.config.dependencies.paths import DATABASE_APPEARANCE
 
 
 bp = Blueprint('GenshinDatabase')
@@ -277,9 +278,10 @@ async def get_character(event: MessageEvent, payload: Payload) -> None:
         attachment = await upload(bp.api, 'photo_messages', await download(character.icon, force=False))
         message = await buttons[payload.get('data', default)][1]()
     else:
-        asc_path = os.path.join(ASCENSION, f"{character.href.split('_')[0]}.png")
-        attachment = await upload(bp.api, 'photo_messages', asc_path) if os.path.exists(asc_path) else None
-        message = f"🖼Материалы возвышения персонажа '{payload['object']}':"
+        ascension_path = await get_ascension_image(character.name, await character.get_ascension())
+        attachment = await upload(bp.api, 'photo_messages', ascension_path)
+        os.remove(ascension_path)
+        message = f"🖼Материалы возвышения персонажа '{character.name}':"
 
     await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
 

@@ -266,6 +266,26 @@ class CharacterParser:
             first_con, second_con, third_con, fourth_con, fifth_con, sixth_con
         )
 
+    async def get_ascension(self) -> mdl.characters.Ascension:
+        tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
+
+        gacha_icon = self.icon.replace('.webp', '_gacha_card.webp')
+        lvl = []
+        for a in await (await tree.xpath('//table[@class="genshin_table stat_table"]'))[1].xpath('./tr[last()-2]/td[3]/a'):
+            href = re.search(r'\w+\d+', (await a.xpath('.//@href'))[0])[0]
+            icon = f"{honeyimpact.URL}img/{href}.webp"
+            quantity = await a.text()
+            quantity = int(quantity) if 'K' not in quantity else 2092000  #: Total Mora
+            lvl.append(mdl.characters.AscensionMaterial(icon, quantity))
+        lvl.append(mdl.characters.AscensionMaterial(f"{honeyimpact.URL}/img/i_13.webp", 432))  #: Hero's Wit
+        talents = []
+        for a in await (await tree.xpath('//table[@class="genshin_table asc_table"]'))[0].xpath('./tr[last()]/td[3]/a'):
+            href = re.search(r'\w+\d+', (await a.xpath('.//@href'))[0])[0]
+            icon = f"{honeyimpact.URL}img/{href}.webp"
+            quantity = int((await a.text()).replace('K', '000')) * 3
+            talents.append(mdl.characters.AscensionMaterial(icon, quantity))
+        return mdl.characters.Ascension(gacha_icon, lvl, talents)
+
 
 class WeaponParser:
     def __init__(self, w_type: str, name: str) -> None:
