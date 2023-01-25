@@ -4,6 +4,7 @@ from vkbottle.bot import Blueprint, Message
 
 from bot.utils import PostgresConnection
 from bot.rules import AdminRule
+from bot.config.dependencies import ADMINS
 
 
 bp = Blueprint('AdminCommands')
@@ -13,7 +14,7 @@ class UnregisteredException(Exception):
     pass
 
 
-@bp.on.message(AdminRule('exec', [191901652, 687594282]))
+@bp.on.message(AdminRule('exec', ADMINS))
 async def execute(message: Message) -> None:
     code: str = message.text.lstrip('!exec').lstrip()
     try:

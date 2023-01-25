@@ -22,6 +22,7 @@ can be downloaded from [YandexDisk](https://disk.yandex.ru/d/LPnj__Hr9pK8NA)
  1. Clone git repository to chosen directory:
 <code> git clone https://github.com/zerex290/genshin-bot </code>
  2. Set environmental variables necessary for work:
+    * **ADMINS**: <code>str</code> - admin ids separated by commas
     * **GROUP_TOKEN**: <code>str</code> - your group api access key
     * **GROUP_ID**: <code>int</code> - your group id *(e.g. -123456789)*
     * **SHORTNAME**: <code>str</code> - your group shortname *(e.g. @my_group)*
