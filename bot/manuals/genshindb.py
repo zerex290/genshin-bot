@@ -1,7 +1,7 @@
 from . import BaseManual
 
 
-class GenshinDatabase(BaseManual):
+class GenshinDB(BaseManual):
     HELP = '''
     \r\nСсылка на команду в статье: https://vk.com/@bot_genshin-commands?anchor=gdb
     \r\nОписание: При использовании данной команды бот отправляет в чат сообщение с интерактивной базой данных, \

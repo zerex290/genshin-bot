@@ -192,6 +192,7 @@ class RandomPicture:
                 Callback(
                     label,
                     {
+                        'handler': RandomPicture.__name__,
                         'user_id': user_id, 'msg_id': msg_id,
                         'type': button_type, 'state': state
                     }
@@ -203,7 +204,7 @@ class RandomPicture:
         kb.add(
             Callback(
                 'Выйти',
-                {'user_id': user_id, 'msg_id': msg_id, 'type': 'exit'}
+                {'handler': RandomPicture.__name__, 'user_id': user_id, 'msg_id': msg_id, 'type': 'exit'}
             ),
             KeyboardButtonColor.NEGATIVE
         )
@@ -390,7 +391,7 @@ async def get_random_picture(message: Message, options: Options) -> None:
             await picture.get()
 
 
-@bp.on.raw_event('message_event', MessageEvent, EventRule(['main_menu']))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(RandomPicture, ['menu']))
 async def return_to_menu(event: MessageEvent, payload: Payload) -> None:
     state = _RandomPictureState(*eval(payload['state']))
     await event.ctx_api.messages.edit(
@@ -406,7 +407,7 @@ async def return_to_menu(event: MessageEvent, payload: Payload) -> None:
     )
 
 
-@bp.on.raw_event('message_event', MessageEvent, EventRule(['exit']))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(RandomPicture, ['exit']))
 async def exit_interactive_mode(event: MessageEvent, payload: Payload) -> None:
     await event.ctx_api.messages.edit(
         event.peer_id,
@@ -416,7 +417,7 @@ async def exit_interactive_mode(event: MessageEvent, payload: Payload) -> None:
     )
 
 
-@bp.on.raw_event('message_event', MessageEvent, EventRule([*list(RandomPicture.SECTIONS), 'search']))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(RandomPicture, [*list(RandomPicture.SECTIONS), 'search']))
 async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
     attachments = None
     if payload['type'] == 'search':
@@ -453,9 +454,10 @@ async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
                 Callback(
                     'Меню',
                     {
+                        'handler': RandomPicture.__name__,
                         'user_id': payload['user_id'],
                         'msg_id': payload['msg_id'],
-                        'type': 'main_menu',
+                        'type': 'menu',
                         'state': payload['state']
                     }
                 ),
@@ -470,6 +472,7 @@ async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
                 Callback(
                     'Выйти',
                     {
+                        'handler': RandomPicture.__name__,
                         'user_id': payload['user_id'],
                         'msg_id': payload['msg_id'],
                         'type': 'exit',

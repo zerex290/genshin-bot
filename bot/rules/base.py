@@ -1,5 +1,4 @@
 import re
-from typing import Type
 
 from vkbottle.bot import Message, MessageEvent
 from vkbottle.dispatch.rules import ABCRule
@@ -23,7 +22,7 @@ class CommandRule(ABCRule[Message]):
             self,
             commands: list[str],
             options: Options,
-            manual: Type[BaseManual],
+            manual: type[BaseManual],
             prefix: str = '!'
     ) -> None:
         self.commands = commands
@@ -100,12 +99,16 @@ class CustomCommandRule(ABCRule[Message]):
 
 
 class EventRule(ABCRule[MessageEvent]):
-    def __init__(self, payload_type: list[str]) -> None:
-        self.payload_types = payload_type
+    def __init__(self, handler: type, payload_types: list[str], is_public: bool = False) -> None:
+        self.handler = handler.__name__
+        self.payload_types = payload_types
+        self.is_public = is_public
 
     async def check(self, event: MessageEvent) -> dict[str, Payload] | bool:
+        if event.payload['handler'] != self.handler:
+            return False
         if event.payload['type'] not in self.payload_types:
             return False
-        if not event.payload['user_id'] == event.user_id:
+        if not event.payload['user_id'] == event.user_id and not self.is_public:
             return False
         return {'payload': event.payload}
