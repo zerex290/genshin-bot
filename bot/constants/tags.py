@@ -50,11 +50,9 @@ GENSHIN_IMPACT = {
     'итто': 'arataki_itto',
     'аято': 'kamisato_ayato',
     'елань': 'yelan_(genshin_impact)',
-    'куки': 'kuki_shinobu',
     'синобу': 'kuki_shinobu',
-    'кукисинобу': 'kuki_shinobu',
     'байчжу': 'baizhu_(genshin_impact)',
-    'скарамучча': 'scaramouche_(genshin_impact)',
+    'странник': 'scaramouche_(genshin_impact)',
     'яояо': 'yaoyao_(genshin_impact)',
     'хэйдзо': 'shikanoin_heizou',
     'сайно': 'cyno_(genshin_impact)',
@@ -66,7 +64,10 @@ GENSHIN_IMPACT = {
     'кандакия': 'candace_(genshin_impact)',
     'нахида': 'nahida_(genshin_impact)',
     'фарузан': 'faruzan_(genshin_impact)',
-    'лайла': 'layla_(genshin_impact)'
+    'лайла': 'layla_(genshin_impact)',
+    'аль-хайтам': 'alhaitham_(genshin_impact)',
+    'дэхья': 'dehya_(genshin_impact)',
+    'мика': 'mika_(genshin_impact)'
 }
 
 ART_STYLE = {
@@ -135,7 +136,6 @@ EMOTIONS = {
 }
 
 BODY = {
-    'пальцы_ног': 'toes',
     'ноги': 'legs',
     'руки': 'hands',
     'стопы': 'feet',
