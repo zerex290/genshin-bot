@@ -107,7 +107,6 @@ class CommandCreation:
         cmd_name = text[0] if text else ''
         self.validator.check_command_specified(cmd_name)
         await self.validator.check_command_new(cmd_name, self.message.peer_id)
-        self.validator.check_command_not_reserved(cmd_name)
         date_added = get_current_timestamp(3)
         msg = text[1] if len(text) > 1 else ''
         doc_id = await self._get_document_id(cmd_name)

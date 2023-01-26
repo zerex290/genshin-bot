@@ -3,7 +3,6 @@ from typing import Optional
 from vkbottle import API, VKAPIError
 
 from . import BaseValidator, ChatValidator
-from ..constants import COMMANDS
 from ..utils.postgres import has_postgres_data
 from ..errors.customcommands import *
 
@@ -29,11 +28,6 @@ class CreationValidator(BaseValidator, ChatValidator):
     async def check_command_new(name: str, chat_id: int) -> None:
         if await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = $1 AND chat_id = {chat_id};", name):
             raise CommandAlreadyExist(name)
-
-    @staticmethod
-    def check_command_not_reserved(name: str) -> None:
-        if name in COMMANDS:
-            raise CommandReserved(name)
 
     @staticmethod
     def check_additions_specified(additions: list) -> None:

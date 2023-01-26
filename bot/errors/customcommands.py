@@ -10,7 +10,6 @@ __all__ = (
     'CommandNotSpecified',
     'CommandAlreadyExist',
     'CommandNotExist',
-    'CommandReserved',
     'AdditionsNotSpecified',
 )
 
@@ -46,11 +45,6 @@ class CommandAlreadyExist(GenshinBotException):
 
 class CommandNotExist(GenshinBotException):
     _msg = 'Невозможно удалить несуществующую команду!'
-
-
-class CommandReserved(GenshinBotException):
-    def __init__(self, name: str) -> None:
-        self.__class__._msg = f"Название '{name}' зарезервировано одной из стандартных команд бота!"
 
 
 class AdditionsNotSpecified(GenshinBotException):
