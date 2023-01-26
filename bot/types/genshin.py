@@ -110,9 +110,9 @@ class Character(Enum):
 
 
 class WeaponType(Enum):
-    CATALYST = 'Катализатор'
+    CATALYST = 'Катализаторы'
     POLEARM = 'Древковое'
-    BOW = 'Лук'
+    BOW = 'Стрелковое'
     SWORD = 'Одноручное'
     CLAYMORE = 'Двуручное'
 

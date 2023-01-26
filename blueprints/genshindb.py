@@ -3,7 +3,7 @@ import re
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import Blueprint, Message, MessageEvent
-from vkbottle_types.objects import MessagesKeyboard
+from vkbottle_types.objects import MessagesKeyboard, GroupsGroupFull
 
 from . import Options, Payload
 from bot.parsers.honeyimpact import *
@@ -13,16 +13,18 @@ from bot.errors import IncompatibleOptions
 from bot.utils.files import download, upload
 from bot.validators.genshindb import GenshinDBValidator
 from bot.manuals import genshindb as man
+from bot.imageprocessing.genshindb import *
 from bot.imageprocessing.ascension import get_ascension_image
 from bot.imageprocessing.domains import get_domain_image
-from bot.config.dependencies.paths import DATABASE_APPEARANCE
+from bot.config.dependencies.group import SHORTNAME
+from bot.config.dependencies.paths import IMAGE_PROCESSING
 
 
 bp = Blueprint('GenshinDatabase')
 
 
 class GenshinDB:
-    SECTIONS = {
+    CATEGORIES = {
         'characters_type': 'Персонажи',
         'weapons_type': 'Оружие',
         'artifacts_type': 'Артефакты',
@@ -96,10 +98,10 @@ class GenshinDB:
     @staticmethod
     def _get_interactive_keyboard(user_id: int) -> str:
         kb = Keyboard(inline=True)
-        for i, values in enumerate(GenshinDB.SECTIONS.items()):
+        for i, values in enumerate(GenshinDB.CATEGORIES.items()):
             button_type, label = values
             kb.add(
-                Callback(label, {'handler': GenshinDB.__name__, 'user_id': user_id, 'type': button_type}),
+                Callback(label, {'handler': GenshinDB.__name__, 'user_id': user_id, 'type': button_type, 'cat': label}),
                 KeyboardButtonColor.PRIMARY
             )
             if (i + 1) % 2 == 0:
@@ -111,9 +113,11 @@ class GenshinDB:
         return kb.get_json()
 
     @staticmethod
-    async def get_main_menu(user_id: int) -> dict[str, str, str]:
+    async def get_main_menu(user_id: int, group: GroupsGroupFull) -> dict[str, str, str]:
         message = f"Доброго времени суток, {(await bp.api.users.get([user_id]))[0].first_name}!"
-        attachment = await upload(bp.api, 'photo_messages', DATABASE_APPEARANCE + os.sep + 'menu.png')
+        menu_path = await get_menu_image(group, list(GenshinDB.CATEGORIES.values()))
+        attachment = await upload(bp.api, 'photo_messages', menu_path)
+        os.remove(menu_path)
         keyboard = GenshinDB._get_interactive_keyboard(user_id)
         return {'message': message, 'attachment': attachment, 'keyboard': keyboard}
 
@@ -128,7 +132,8 @@ class GenshinDB:
     async def get(self) -> None:
         shortcut = re.sub(r'^!гдб\s?', '', self.message.text)
         if not shortcut:
-            await self.message.answer(**(await self.get_main_menu(self.message.from_id)))
+            group = (await self.message.ctx_api.groups.get_by_id([SHORTNAME], fields=['photo_200']))[0]
+            await self.message.answer(**(await self.get_main_menu(self.message.from_id, group)))
             return None
         await self.validator.check_shortcut_exist(shortcut, self.message.from_id)
         shortcut = await self._fetch_shortcut_from_db(shortcut)
@@ -160,7 +165,8 @@ async def get_genshin_database(message: Message, options: Options) -> None:
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['menu']))
 async def return_to_menu(event: MessageEvent, payload: Payload) -> None:
-    await event.edit_message(**(await GenshinDB.get_main_menu(payload['user_id'])))
+    group = (await event.ctx_api.groups.get_by_id([SHORTNAME], fields=['photo_200']))[0]
+    await event.edit_message(**(await GenshinDB.get_main_menu(payload['user_id'], group)))
 
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['exit']))
@@ -168,7 +174,7 @@ async def exit_from_db(event: MessageEvent, **_) -> None:
     await event.edit_message('Произведен выход из интерактивной базы данных.', keyboard=Keyboard().get_json())
 
 
-@bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, list(GenshinDB.SECTIONS)))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, list(GenshinDB.CATEGORIES)))
 async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
     keyboards = []
     kb = Keyboard(inline=True)
@@ -177,17 +183,23 @@ async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
     apl = payload.copy()  #: additional payload
     apl['type'] = pl_type
 
+    section_paths = [[]]
     buttons = 0
     last = list(sections)[-1]
-    for section in sections:
-        apl['section'] = section
-        apl['s_page'] = len(keyboards)
+    for section, objects in sections.items():
+        page = len(keyboards)
+        if payload['cat'] == 'Персонажи':
+            path = os.path.join(IMAGE_PROCESSING, 'templates', 'genshindb', f"{section}.png")
+        else:
+            path = await download(objects[list(objects.keys())[-1]][1], force=False)  #: last object in section
+        section_paths[page].append(path)
+        apl['sect'] = section
+        apl['s_page'] = page
         kb.add(Callback(section, apl.copy()))
         buttons += 1
         if buttons % 2 == 0 and section != last:
             kb.row()
         elif buttons % 7 == 0 or section == last:
-            page = len(keyboards)
             epl = payload.copy()  #: extra payload for page control buttons
             kb.row()
             if page != 0:
@@ -200,40 +212,42 @@ async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
             if section != last:
                 epl['s_page'] = page + 1
                 kb.add(Callback('Далее', epl.copy()), KeyboardButtonColor.PRIMARY)
+                section_paths.append([])
             keyboards.append(kb.get_json())
             kb = Keyboard(inline=True)
             buttons = 0
 
-    image_path = os.path.join(DATABASE_APPEARANCE, f"{pl_type}.png")
-    await event.edit_message(
-        'Пожалуйста, выберите интересующий вас раздел!',
-        keyboard=keyboards[payload.get('s_page', 0)],
-        attachment=await upload(bp.api, 'photo_messages', image_path) if os.path.exists(image_path) else None
-    )
+    page = payload.get('s_page', 0)
+    section_path = get_section_image(section_paths[page], page + 1, payload['cat'])
+    attachment = await upload(bp.api, 'photo_messages', section_path)
+    os.remove(section_path)
+    await event.edit_message(f"Просмотр категории '{payload['cat']}'!", attachment=attachment, keyboard=keyboards[page])
 
 
-@bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, [s.split('_')[0] for s in GenshinDB.SECTIONS]))
+@bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, [c.split('_')[0] for c in GenshinDB.CATEGORIES]))
 async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
     keyboards = []
     kb = Keyboard(inline=True)
-    sections = json.load(payload['type'])[payload['section']]
+    objects = json.load(payload['type'])[payload['sect']]
     apl = payload.copy()  #: additional payload
     apl['type'] = payload['type'][:-1]
 
+    object_urls = [[]]
     buttons = 0
-    last = list(sections)[-1]
-    for obj in sections:
-        apl['object'] = obj
-        apl['o_page'] = len(keyboards)
+    last = list(objects)[-1]
+    for obj, data in objects.items():
+        page = len(keyboards)
+        object_urls[page].append(data[1])  #: object icon url
+        apl['obj'] = obj
+        apl['o_page'] = page
         kb.add(Callback(obj, apl.copy()))
         buttons += 1
         if buttons % 2 == 0 and buttons % 6 != 0 and obj != last:
             kb.row()
         elif buttons % 6 == 0 or obj == last:
-            page = len(keyboards)
             epl = payload.copy()  #: extra payload for page control buttons
             epl['type'] = f"{payload['type']}_type"
-            del epl['section']
+            del epl['sect']
             if epl.get('o_page') is not None:
                 del epl['o_page']
             kb.row()
@@ -250,16 +264,21 @@ async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
             if obj != last:
                 epl['o_page'] = page + 1
                 kb.add(Callback('Далее', epl.copy()), KeyboardButtonColor.PRIMARY)
+                object_urls.append([])
             keyboards.append(kb.get_json())
             kb = Keyboard(inline=True)
             buttons = 0
 
-    await event.edit_message(f"Поиск по разделу '{payload['section']}'!", keyboard=keyboards[payload.get('o_page', 0)])
+    page = payload.get('o_page', 0)
+    object_path = await get_object_image(object_urls[page], page + 1, payload['sect'])
+    attachment = await upload(bp.api, 'photo_messages', object_path)
+    os.remove(object_path)
+    await event.edit_message(f"Просмотр раздела '{payload['sect']}'!", attachment=attachment, keyboard=keyboards[page])
 
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['character']))
 async def get_character(event: MessageEvent, payload: Payload) -> None:
-    character = CharacterParser(payload['section'], payload['object'])
+    character = CharacterParser(payload['sect'], payload['obj'])
     buttons = {
         'information': ('Основная информация', character.get_information),
         'active_skills': ('Активные навыки', character.get_active_skills),
@@ -277,7 +296,7 @@ async def get_character(event: MessageEvent, payload: Payload) -> None:
             kb.add(Callback(buttons[data][0], apl.copy()))
             kb.row()
     apl['type'] = f"{payload['type']}s"
-    del apl['object']
+    del apl['obj']
     del apl['data']
     kb.add(Callback('К списку персонажей', apl.copy()), KeyboardButtonColor.POSITIVE)
     kb.row()
@@ -300,7 +319,7 @@ async def get_character(event: MessageEvent, payload: Payload) -> None:
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['weapon']))
 async def get_weapon(event: MessageEvent, payload: Payload) -> None:
-    weapon = WeaponParser(payload['section'], payload['object'])
+    weapon = WeaponParser(payload['sect'], payload['obj'])
     buttons = {
         'information': ('Основная информация', weapon.get_information),
         'ability': ('Способность оружия', weapon.get_ability),
@@ -318,7 +337,7 @@ async def get_weapon(event: MessageEvent, payload: Payload) -> None:
             kb.add(Callback(buttons[data][0], apl.copy()))
             kb.row()
     apl['type'] = f"{payload['type']}s"
-    del apl['object']
+    del apl['obj']
     del apl['data']
     kb.add(Callback('К списку оружия', apl.copy()), KeyboardButtonColor.POSITIVE)
     kb.row()
@@ -336,10 +355,10 @@ async def get_weapon(event: MessageEvent, payload: Payload) -> None:
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['artifact']))
 async def get_artifact(event: MessageEvent, payload: Payload) -> None:
-    artifact = ArtifactParser(payload['section'], payload['object'])
+    artifact = ArtifactParser(payload['sect'], payload['obj'])
     apl = payload.copy()
     apl['type'] = f"{payload['type']}s"
-    del apl['object']
+    del apl['obj']
     kb = (
         Keyboard(inline=True)
         .add(Callback('К списку артефактов', apl.copy()), KeyboardButtonColor.POSITIVE)
@@ -359,7 +378,7 @@ async def get_artifact(event: MessageEvent, payload: Payload) -> None:
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['enemie']))
 async def get_enemy(event: MessageEvent, payload: Payload) -> None:
-    enemy = EnemyParser(payload['section'], payload['object'])
+    enemy = EnemyParser(payload['sect'], payload['obj'])
     buttons = {
         'information': ('Основная информация', enemy.get_information),
         'progression': ('Прогрессия', enemy.get_progression)
@@ -374,7 +393,7 @@ async def get_enemy(event: MessageEvent, payload: Payload) -> None:
             kb.add(Callback(buttons[data][0], apl.copy()))
             kb.row()
     apl['type'] = f"{payload['type']}s"
-    del apl['object']
+    del apl['obj']
     del apl['data']
     kb.add(Callback('К списку противников', apl.copy()), KeyboardButtonColor.POSITIVE)
     kb.row()
@@ -392,10 +411,10 @@ async def get_enemy(event: MessageEvent, payload: Payload) -> None:
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['book']))
 async def get_book(event: MessageEvent, payload: Payload) -> None:
-    book = BookParser(payload['section'], payload['object'])
+    book = BookParser(payload['sect'], payload['obj'])
     apl = payload.copy()
     apl['type'] = f"{payload['type']}s"
-    del apl['object']
+    del apl['obj']
     kb = (
         Keyboard(inline=True)
         .add(Callback('К оглавлению', apl.copy()), KeyboardButtonColor.POSITIVE)
@@ -421,10 +440,10 @@ async def get_book(event: MessageEvent, payload: Payload) -> None:
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['domain']))
 async def get_domain(event: MessageEvent, payload: Payload) -> None:
-    domain = DomainParser(payload['section'], payload['object'])
+    domain = DomainParser(payload['sect'], payload['obj'])
     apl = payload.copy()
     apl['type'] = f"{payload['type']}s"
-    del apl['object']
+    del apl['obj']
     kb = (
         Keyboard(inline=True)
         .add(Callback('К списку подземелий', apl.copy()), KeyboardButtonColor.POSITIVE)
