@@ -102,8 +102,12 @@ class GenshinDB:
                 Callback(label, {'handler': GenshinDB.__name__, 'user_id': user_id, 'type': button_type}),
                 KeyboardButtonColor.PRIMARY
             )
-            if i + 1 != len(GenshinDB.SECTIONS):
+            if (i + 1) % 2 == 0:
                 kb.row()
+        kb.add(
+            Callback('Выйти', {'handler': GenshinDB.__name__, 'user_id': user_id, 'type': 'exit'}),
+            KeyboardButtonColor.NEGATIVE
+        )
         return kb.get_json()
 
     @staticmethod
@@ -157,6 +161,11 @@ async def get_genshin_database(message: Message, options: Options) -> None:
 @bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['menu']))
 async def return_to_menu(event: MessageEvent, payload: Payload) -> None:
     await event.edit_message(**(await GenshinDB.get_main_menu(payload['user_id'])))
+
+
+@bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['exit']))
+async def exit_from_db(event: MessageEvent, **_) -> None:
+    await event.edit_message('Произведен выход из интерактивной базы данных.', keyboard=Keyboard().get_json())
 
 
 @bp.on.raw_event('message_event', MessageEvent, EventRule(GenshinDB, list(GenshinDB.SECTIONS)))
