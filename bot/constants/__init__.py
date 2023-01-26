@@ -1,4 +1,7 @@
-from .commands import COMMANDS
+from .commands import *
 
 
 __all__ = ('COMMANDS',)
+
+
+COMMANDS = [*SERVICE, *MAIN, *GENSHIN, *CUSTOM]

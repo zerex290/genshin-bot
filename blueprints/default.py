@@ -14,7 +14,7 @@ from bot.rules import CommandRule, EventRule
 from bot.utils import PostgresConnection, find_forbidden_tags
 from bot.utils.postgres import has_postgres_data
 from bot.utils.files import download, upload
-from bot.constants import keyboard, tags as t
+from bot.constants import keyboard, commands, tags as t
 from bot.errors import IncompatibleOptions
 from bot.validators import BaseValidator
 from bot.validators.default import *
@@ -276,38 +276,13 @@ class RandomPicture:
 
 @bp.on.message(CommandRule(['команды'], ['~~п'], man.Guide))
 async def get_commands_article(message: Message) -> None:
-    commands = (
-        'Статья с подробным описанием всех команд: vk.com/@bot_genshin-commands\n\n'
-        'Основные команды:\n'
-        '!команды\n'
-        '!автокоррект\n'
-        '!перешли\n'
-        '!конверт\n'
-        '!таймер\n'
-        '!выбери\n'
-        '!пик\n'
-        '!рандомтег\n\n'
-        'Команды по Геншину:\n'
-        '!линк\n'
-        '!анлинк\n'
-        '!фарм\n'
-        '!таланты\n'
-        '!книги\n'
-        '!гдб\n'
-        '!заметки\n'
-        '!резинноут\n'
-        '!награды\n'
-        '!статы\n'
-        '!пром\n'
-        '!дневник\n'
-        '!бездна\n\n'
-        'Пользовательские команды:\n'
-        '!комы\n'
-        '!аддком\n'
-        '!делком\n'
-        '!!<<триггер>>'
-    )
-    await message.answer(commands)
+    msg = [
+        'Статья с подробным описанием всех команд: vk.com/@bot_genshin-commands',
+        '\nОсновные команды:', '\n'.join(f"!{c}" for c in commands.MAIN),
+        '\nКоманды по Геншину:', '\n'.join(f"!{c}" for c in commands.GENSHIN),
+        '\nПользовательские команды:', '\n'.join(f"!{c}" for c in commands.CUSTOM), '!!<<триггер>>'
+    ]
+    await message.answer('\n'.join(msg))
 
 
 @bp.on.message(CommandRule(['автокоррект'], ['~~п', '~~выкл', '~~вкл'], man.Autocorrection))
