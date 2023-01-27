@@ -66,8 +66,8 @@ async def create_pg_tables(connection):
             is_donut boolean NOT NULL
         );
     """)
-    genshin_db_shortcuts = (f"""
-        CREATE TABLE genshin_db_shortcuts (
+    genshindb_shortcuts = (f"""
+        CREATE TABLE genshindb_shortcuts (
             user_id int REFERENCES users(user_id),
             shortcut text,
             message text,
@@ -76,8 +76,18 @@ async def create_pg_tables(connection):
             PRIMARY KEY (user_id, shortcut)
         );
     """)
+    genshindb_pages = (f"""
+        CREATE TABLE genshindb_pages (
+            name text,
+            page int,
+            photo_id text NOT NULL,
+            token text NOT NULL,
+            PRIMARY KEY (name, page),
+            CONSTRAINT positive_page_value CHECK (page >= 0)
+        );
+    """)
 
-    for table in (chats, users, users_in_chats, genshin_accounts, custom_commands, group_posts, genshin_db_shortcuts):
+    for table in list(locals().copy().values())[1:]:  #: Skip connection and table locals
         await connection.execute(table)
 
 

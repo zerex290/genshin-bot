@@ -19,14 +19,14 @@ class GenshinDBValidator(BaseValidator):
     @staticmethod
     async def check_shortcut_new(name: str, user_id: int) -> None:
         if await has_postgres_data(
-                f"SELECT * FROM genshin_db_shortcuts WHERE user_id = {user_id} AND shortcut = '{name}';"
+                f"SELECT * FROM genshindb_shortcuts WHERE user_id = {user_id} AND shortcut = '{name}';"
         ):
             raise ShortcutAlreadyExist(name)
 
     @staticmethod
     async def check_shortcut_exist(name: str, user_id: int) -> None:
         if not await has_postgres_data(
-            f"SELECT * FROM genshin_db_shortcuts WHERE user_id = {user_id} AND shortcut = '{name}';"
+            f"SELECT * FROM genshindb_shortcuts WHERE user_id = {user_id} AND shortcut = '{name}';"
         ):
             raise ShortcutNotExist(name)
 
@@ -43,6 +43,6 @@ class GenshinDBValidator(BaseValidator):
     @staticmethod
     async def check_shortcuts_created(user_id: int) -> None:
         if not await has_postgres_data(
-            f"SELECT * FROM genshin_db_shortcuts WHERE user_id = {user_id};"
+            f"SELECT * FROM genshindb_shortcuts WHERE user_id = {user_id};"
         ):
             raise ShortcutsNotCreated

@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Optional
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import Blueprint, Message, MessageEvent
@@ -61,7 +62,7 @@ class GenshinDB:
     async def _add_shortcut_to_db(self, shortcut: str, msg: str, photo_id: str, keyboard: MessagesKeyboard) -> None:
         async with PostgresConnection() as connection:
             await connection.execute(f"""
-                INSERT INTO genshin_db_shortcuts VALUES (
+                INSERT INTO genshindb_shortcuts VALUES (
                     {self.message.from_id}, $1, $2, '{photo_id}', '{keyboard.json()}'
                 );
             """, shortcut, msg)
@@ -83,7 +84,7 @@ class GenshinDB:
         await self.validator.check_shortcut_exist(shortcut, self.message.from_id)
         async with PostgresConnection() as connection:
             await connection.execute(f"""
-                DELETE FROM genshin_db_shortcuts WHERE shortcut = $1 AND user_id = {self.message.from_id};
+                DELETE FROM genshindb_shortcuts WHERE shortcut = $1 AND user_id = {self.message.from_id};
             """, shortcut)
         return shortcut
 
@@ -91,7 +92,7 @@ class GenshinDB:
         await self.validator.check_shortcuts_created(self.message.from_id)
         async with PostgresConnection() as connection:
             shortcuts = await connection.fetch(
-                f"SELECT shortcut FROM genshin_db_shortcuts WHERE user_id = {self.message.from_id};"
+                f"SELECT shortcut FROM genshindb_shortcuts WHERE user_id = {self.message.from_id};"
             )
             return 'Список ваших шорткатов:\n' + '\n'.join(dict(s)['shortcut'] for s in shortcuts)
 
@@ -124,7 +125,7 @@ class GenshinDB:
     async def _fetch_shortcut_from_db(self, shortcut: str) -> dict[str, str | int]:
         async with PostgresConnection() as connection:
             shortcut = await connection.fetchrow(f"""
-                SELECT message, photo_id, keyboard FROM genshin_db_shortcuts 
+                SELECT message, photo_id, keyboard FROM genshindb_shortcuts 
                 WHERE user_id = {self.message.from_id} AND shortcut = $1;
             """, shortcut)
             return dict(shortcut)
@@ -142,6 +143,56 @@ class GenshinDB:
             attachment=shortcut['photo_id'] if shortcut['photo_id'] else None,
             keyboard=shortcut['keyboard']
         )
+
+    @staticmethod
+    async def _delete_page(name: str, page: int) -> None:
+        """Delete page with outdated token from genshindb_pages.
+
+        :param name: Category/section name
+        :param page: Page number
+        :return: None
+        """
+        async with PostgresConnection() as connection:
+            await connection.execute(f"DELETE FROM genshindb_pages WHERE name = '{name}' AND page = {page};")
+
+    @staticmethod
+    def _process_token(token: list[str] | str) -> str:
+        return '/'.join(token) if isinstance(token, list) else token
+
+    @staticmethod
+    async def fetch_page(name: str, page: int, token: list[str] | str) -> Optional[str]:
+        """Fetch page from genshindb_pages.
+
+        :param name: Category/section name
+        :param page: Page number
+        :param token: Special token
+        :return: Page attachment string or None
+        """
+        token = GenshinDB._process_token(token)
+        async with PostgresConnection() as connection:
+            attachment = await connection.fetchrow(
+                f"SELECT photo_id FROM genshindb_pages WHERE name = '{name}' AND page = {page} AND token = '{token}';"
+            )
+            if attachment is not None:
+                attachment = dict(attachment)['photo_id']
+            return attachment or await GenshinDB._delete_page(name, page)
+
+    @staticmethod
+    async def push_page(name: str, page: int, photo_id: str, token: list[str] | str) -> None:
+        """Push page to genshindb_pages.
+
+        :param name: Category/section name
+        :param page: Page number
+        :param photo_id: Page attachment string
+        :param token: Special token
+        :return: None
+        """
+        photo_id = photo_id.rsplit('_', maxsplit=1)[0]
+        token = GenshinDB._process_token(token)
+        async with PostgresConnection() as connection:
+            await connection.execute(f"""
+                INSERT INTO genshindb_pages VALUES ('{name}', {page}, '{photo_id}', '{token}');
+            """)
 
 
 @bp.on.message(CommandRule(['гдб'], ['~~п', '~~аш', '~~дш', '~~ш'], man.GenshinDB))
@@ -183,6 +234,7 @@ async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
     apl = payload.copy()  #: additional payload
     apl['type'] = pl_type
 
+    tokens = [[]]
     section_paths = [[]]
     buttons = 0
     last = list(sections)[-1]
@@ -192,6 +244,7 @@ async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
             path = os.path.join(IMAGE_PROCESSING, 'templates', 'genshindb', f"{section}.png")
         else:
             path = await download(objects[list(objects.keys())[-1]][1], force=False)  #: last object in section
+        tokens[page].append(section)
         section_paths[page].append(path)
         apl['sect'] = section
         apl['s_page'] = page
@@ -212,15 +265,21 @@ async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
             if section != last:
                 epl['s_page'] = page + 1
                 kb.add(Callback('Далее', epl.copy()), KeyboardButtonColor.PRIMARY)
+                tokens.append([])
                 section_paths.append([])
             keyboards.append(kb.get_json())
             kb = Keyboard(inline=True)
             buttons = 0
 
     page = payload.get('s_page', 0)
-    section_path = get_section_image(section_paths[page], page + 1, payload['cat'])
-    attachment = await upload(bp.api, 'photo_messages', section_path)
-    os.remove(section_path)
+    fetched_page = await GenshinDB.fetch_page(payload['cat'], page, tokens[page])
+    if fetched_page is not None:
+        attachment = fetched_page
+    else:
+        section_path = get_section_image(section_paths[page], page + 1, payload['cat'])
+        attachment = await upload(bp.api, 'photo_messages', section_path)
+        os.remove(section_path)
+        await GenshinDB.push_page(payload['cat'], page, attachment, tokens[page])
     await event.edit_message(f"Просмотр категории '{payload['cat']}'!", attachment=attachment, keyboard=keyboards[page])
 
 
@@ -232,11 +291,13 @@ async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
     apl = payload.copy()  #: additional payload
     apl['type'] = payload['type'][:-1]
 
+    tokens = [[]]
     object_urls = [[]]
     buttons = 0
     last = list(objects)[-1]
     for obj, data in objects.items():
         page = len(keyboards)
+        tokens[page].append(obj)
         object_urls[page].append(data[1])  #: object icon url
         apl['obj'] = obj
         apl['o_page'] = page
@@ -264,15 +325,21 @@ async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
             if obj != last:
                 epl['o_page'] = page + 1
                 kb.add(Callback('Далее', epl.copy()), KeyboardButtonColor.PRIMARY)
+                tokens.append([])
                 object_urls.append([])
             keyboards.append(kb.get_json())
             kb = Keyboard(inline=True)
             buttons = 0
 
     page = payload.get('o_page', 0)
-    object_path = await get_object_image(object_urls[page], page + 1, payload['sect'])
-    attachment = await upload(bp.api, 'photo_messages', object_path)
-    os.remove(object_path)
+    fetched_page = await GenshinDB.fetch_page(payload['sect'], page, tokens[page])
+    if fetched_page is not None:
+        attachment = fetched_page
+    else:
+        object_path = await get_object_image(object_urls[page], page + 1, payload['sect'])
+        attachment = await upload(bp.api, 'photo_messages', object_path)
+        os.remove(object_path)
+        await GenshinDB.push_page(payload['sect'], page, attachment, tokens[page])
     await event.edit_message(f"Просмотр раздела '{payload['sect']}'!", attachment=attachment, keyboard=keyboards[page])
 
 
