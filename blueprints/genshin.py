@@ -36,10 +36,10 @@ async def get_dailyfarm(message: Message, options: Options) -> None:
 
 
 @bp.on.message(CommandRule(['таланты'], ['~~п'], man.BossMaterials))
-async def get_boss_materials(message: Message) -> None:
+async def get_boss_materials(message: Message, **_) -> None:
     await message.answer(attachment=await upload(bp.api, 'photo_messages', BOSS_MATERIALS))
 
 
 @bp.on.message(CommandRule(['книги'], ['~~п'], man.Books))
-async def get_books(message: Message) -> None:
+async def get_books(message: Message, **_) -> None:
     await message.answer(attachment=await upload(bp.api, 'photo_messages', BOOKS))

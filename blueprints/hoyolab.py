@@ -225,7 +225,7 @@ class SpiralAbyss(HoYoLAB):
 
 
 @bp.on.message(CommandRule(['линк'], ['~~п'], man.AccountLink))
-async def link_genshin_account(message: Message) -> None:
+async def link_genshin_account(message: Message, **_) -> None:
     async with AccountLinkValidator(message) as validator:
         await validator.check_account_new(message.from_id)
         cookies = message.text.lstrip('!линк').strip().split()
@@ -244,7 +244,7 @@ async def link_genshin_account(message: Message) -> None:
 
 
 @bp.on.message(CommandRule(['анлинк'], ['~~п'], man.AccountUnlink))
-async def unlink_genshin_account(message: Message) -> None:
+async def unlink_genshin_account(message: Message, **_) -> None:
     async with AccountUnlinkValidator(message) as validator:
         await validator.check_account_linked(message.from_id)
         async with PostgresConnection() as connection:
@@ -363,7 +363,7 @@ async def get_rewards(message: Message, options: Options) -> None:
 
 
 @bp.on.message(CommandRule(['пром'], ['~~п'], man.Codes))
-async def redeem_code(message: Message) -> None:
+async def redeem_code(message: Message, **_) -> None:
     async with CodeValidator(message, 'Redeem') as validator:
         account = await get_genshin_account_by_id(message.from_id)
         validator.check_account_exist(account)

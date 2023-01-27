@@ -75,13 +75,15 @@ class ChatUserUpdateMiddleware(BaseMiddleware[Message]):
 
 
 class CommandGuesserMiddleware(BaseMiddleware[Message]):
-    def _format_text(self) -> str:
-        text = self.event.text
+    @staticmethod
+    def _convert_command(text: str) -> str:
         cmd = text.split(maxsplit=1)[0]
-        opt = re.findall(r'\s~~\S+', text)
-        text = text.replace(cmd, ''.join(keyboard.CYRILLIC.get(s, s) for s in cmd))
-        for o in opt:
-            text = text.replace(o, ''.join(keyboard.CYRILLIC.get(s, s) for s in o))
+        return text.replace(cmd, ''.join(keyboard.CYRILLIC.get(s, s) for s in cmd))
+
+    def _convert_options(self) -> str:
+        text = self.event.text
+        for opt in re.findall(r'\s~~\S+', text):
+            text = text.replace(opt, ''.join(keyboard.CYRILLIC.get(s, s) for s in opt))
         return text
 
     @lru_cache()
@@ -103,14 +105,18 @@ class CommandGuesserMiddleware(BaseMiddleware[Message]):
         return matches[min(matches)] if matches and min(matches) <= min_dist else None
 
     async def pre(self) -> None:
-        if not self.event.text.startswith('!') or self.event.text.startswith('!!'):
+        if not self.event.text.startswith('!!') and not self.event.text.startswith('!'):
             return None
-        text = self._format_text()
-        command = text.split(maxsplit=1)[0].lstrip('!')
-        match = self._get_match(command.lower(), 2)
-        if not match:
-            return None
-        text = text.replace(f"!{command}", f"!{match}")
+        custom_command = self.event.text.startswith('!!')
+        if custom_command:
+            text = self._convert_options()
+        else:
+            text = self._convert_command(self._convert_options())
+            command = text.split(maxsplit=1)[0].lstrip('!')
+            match = self._get_match(command.lower(), 2)
+            if not match:
+                return None
+            text = text.replace(f"!{command}", f"!{match}")
         if self.event.text == text:
             return None
         if await has_postgres_data(f"SELECT * FROM users WHERE user_id = {self.event.from_id} AND autocorrect = false"):

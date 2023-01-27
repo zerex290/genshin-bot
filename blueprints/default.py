@@ -275,7 +275,7 @@ class RandomPicture:
 
 
 @bp.on.message(CommandRule(['команды'], ['~~п'], man.Guide))
-async def get_commands_article(message: Message) -> None:
+async def get_commands_article(message: Message, **_) -> None:
     msg = [
         'Статья с подробным описанием всех команд: vk.com/@bot_genshin-commands',
         '\nОсновные команды:', '\n'.join(f"!{c}" for c in commands.MAIN),
@@ -305,7 +305,7 @@ async def manage_syntax_autocorrection(message: Message, options: Options) -> No
 
 
 @bp.on.message(CommandRule(['выбери'], ['~~п'], man.Choice))
-async def choose(message: Message) -> None:
+async def choose(message: Message, **_) -> None:
     async with ChoiceValidator(message) as validator:
         options = re.sub(r'^!выбери\s?', '', message.text).split('/') if message.text.find('/') != -1 else []
         validator.check_choice_options_specified(options)
@@ -313,7 +313,7 @@ async def choose(message: Message) -> None:
 
 
 @bp.on.message(CommandRule(['конверт'], ['~~п'], man.Converter))
-async def convert(message: Message) -> None:
+async def convert(message: Message, **_) -> None:
     async with ConvertValidator(message) as validator:
         validator.check_reply_message(message.reply_message)
         validator.check_reply_message_text(message.reply_message.text)
@@ -327,13 +327,13 @@ async def convert(message: Message) -> None:
 
 
 @bp.on.message(CommandRule(['таймер'], ['~~п'], man.Timer))
-async def set_timer(message: Message) -> None:
+async def set_timer(message: Message, **_) -> None:
     async with TimerValidator(message) as validator:
         await Timer(message, validator).set()
 
 
 @bp.on.message(CommandRule(['перешли'], ['~~п'], man.Attachments))
-async def forward_attachments(message: Message) -> None:
+async def forward_attachments(message: Message, **_) -> None:
     async with AttachmentForwardValidator(message) as validator:
         attachments = message.attachments
         validator.check_attachments(attachments)

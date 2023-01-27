@@ -4,6 +4,7 @@ import datetime
 
 from vkbottle.bot import Blueprint, Message
 
+import bot.templates as tpl
 from . import Options
 from bot.utils import PostgresConnection
 from bot.rules import CommandRule, CustomCommandRule
@@ -13,6 +14,7 @@ from bot.utils.files import download, upload
 from bot.utils.postgres import has_postgres_data
 from bot.manuals import customcommands as man
 from bot.models.customcommands import CustomCommand
+from bot.validators import BaseValidator
 from bot.validators.customcommands import *
 
 
@@ -141,25 +143,33 @@ async def view_custom_commands(message: Message, options: Options) -> None:
                 raise IncompatibleOptions(options)
 
 
-@bp.on.chat_message(CustomCommandRule())
-async def get_custom_command(message: Message, command: CustomCommand) -> None:
-    attachments = []
-    if command.document_id:
-        attachments.append(command.document_id)
-    if command.audio_id:
-        attachments.append(command.audio_id)
-    if command.photo_id:
-        attachments.append(command.photo_id)
-    await message.answer(command.message, ','.join(attachments))
-    async with PostgresConnection() as connection:
-        await connection.execute(f"""
-            UPDATE custom_commands SET times_used = times_used + 1 
-            WHERE chat_id = {message.peer_id} AND name = $1;
-        """, command.name)
+@bp.on.chat_message(CustomCommandRule(['~~п', '~~инфо'], man.CommandGetter))
+async def get_custom_command(message: Message, command: CustomCommand, options: Options) -> None:
+    async with BaseValidator(message):
+        match options:
+            case ['~~[default]']:
+                attachments = []
+                if command.document_id:
+                    attachments.append(command.document_id)
+                if command.audio_id:
+                    attachments.append(command.audio_id)
+                if command.photo_id:
+                    attachments.append(command.photo_id)
+                await message.answer(command.message, ','.join(attachments))
+                async with PostgresConnection() as connection:
+                    await connection.execute(f"""
+                        UPDATE custom_commands SET times_used = times_used + 1 
+                        WHERE chat_id = {message.peer_id} AND name = $1;
+                    """, command.name)
+            case ['~~инфо']:
+                user = (await message.ctx_api.users.get([command.creator_id], fields=['domain']))[0]
+                await message.answer(tpl.customcommands.format_information(command, user))
+            case _:
+                raise IncompatibleOptions(options)
 
 
 @bp.on.message(CommandRule(['делком'], ['~~п'], man.CommandDeletion))
-async def delete_custom_command(message: Message) -> None:
+async def delete_custom_command(message: Message, **_) -> None:
     async with DeletionValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
         await validator.check_availability(message.peer_id, message.from_id)
@@ -175,7 +185,7 @@ async def delete_custom_command(message: Message) -> None:
 
 
 @bp.on.message(CommandRule(['аддком'], ['~~п'], man.CommandCreation))
-async def add_custom_command(message: Message) -> None:
+async def add_custom_command(message: Message, **_) -> None:
     async with CreationValidator(message) as validator:
         cmd = await CommandCreation(message, validator).create()
         await message.answer(f"Команда '{cmd}' была успешно добавлена!")

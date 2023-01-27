@@ -17,20 +17,12 @@ __all__ = (
 )
 
 
-class CommandRule(ABCRule[Message]):
-    def __init__(
-            self,
-            commands: list[str],
-            options: Options,
-            manual: type[BaseManual],
-            prefix: str = '!'
-    ) -> None:
-        self.commands = commands
-        self.options = options
-        self.manual = manual
-        self.prefix = prefix
+class _BaseRule:
+    """Mixin class"""
 
-    def _get_options(self, text: str) -> tuple[list[str], list[str]]:
+    options: Options
+
+    def get_options(self, text: str) -> tuple[list[str], list[str]]:
         options = []
         for opt in re.findall(r'\s~~\w+', text):
             opt = opt.lstrip()
@@ -39,17 +31,23 @@ class CommandRule(ABCRule[Message]):
         incorrect_options = [opt for opt in options if opt not in self.options]
         return options, incorrect_options
 
+
+class CommandRule(ABCRule[Message], _BaseRule):
+    def __init__(self, commands: list[str], options: Options, manual: type[BaseManual], prefix: str = '!') -> None:
+        self.commands = commands
+        self.options = options
+        self.manual = manual
+        self.prefix = prefix
+
     async def check(self, event: Message) -> bool | dict[str, Options]:
         for command in self.commands:
             if not event.text.lower().startswith(self.prefix + command):
                 continue
-            options, incorrect_options = self._get_options(event.text)
+            options, incorrect_options = self.get_options(event.text)
             match options:
                 case ['~~п']:
                     await event.answer(self.manual.HELP)
                 case []:
-                    if not len(self.options) > 1:
-                        return True
                     return {'options': ['~~[default]']}
                 case _ if incorrect_options:
                     await event.answer(
@@ -82,20 +80,36 @@ class AdminRule(ABCRule[Message]):
         return True
 
 
-class CustomCommandRule(ABCRule[Message]):
-    def __init__(self, prefix: str = '!!') -> None:
+class CustomCommandRule(ABCRule[Message], _BaseRule):
+    def __init__(self, options: Options, manual: type[BaseManual], prefix: str = '!!') -> None:
+        self.options = options
+        self.manual = manual
         self.prefix = prefix
 
-    async def check(self, event: Message) -> bool | dict[str, CustomCommand]:
+    async def check(self, event: Message) -> bool | dict[str, CustomCommand | Options]:
         if not event.text.startswith(self.prefix):
             return False
         cmds = await get_custom_commands(event.peer_id)
         if not cmds:
             return False
-        request_cmd = event.text.partition(' ')[0].lstrip(self.prefix)
-        if request_cmd not in [cmd.name for cmd in cmds]:
+        command = re.match(fr"{self.prefix}\S+", event.text)
+        if command is None:
             return False
-        return {'command': [cmd for cmd in cmds if cmd.name == request_cmd][0]}
+        command = command[0].lstrip(self.prefix)
+        if command not in [cmd.name for cmd in cmds]:
+            return False
+        options, incorrect_options = self.get_options(event.text)
+        match options:
+            case ['~~п']:
+                await event.answer(self.manual.HELP)
+            case []:
+                return {'command': [cmd for cmd in cmds if cmd.name == command][0], 'options': ['~~[default]']}
+            case _ if incorrect_options:
+                await event.answer(
+                    self.manual.with_incorrect_options(incorrect_options)
+                )
+            case _ if not incorrect_options:
+                return {'command': [cmd for cmd in cmds if cmd.name == command][0], 'options': options}
 
 
 class EventRule(ABCRule[MessageEvent]):
