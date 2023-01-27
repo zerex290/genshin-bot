@@ -14,11 +14,51 @@ from bot.utils.files import download, upload
 from bot.utils.postgres import has_postgres_data
 from bot.manuals import customcommands as man
 from bot.models.customcommands import CustomCommand
-from bot.validators import BaseValidator
 from bot.validators.customcommands import *
 
 
 bp = Blueprint('UserCommands')
+
+
+class _BaseCommand:
+    """Mixin class"""
+
+    message: Message
+
+    async def get_document_id(self, cmd_name: str) -> str:
+        document_ids = []
+        for a in self.message.attachments:
+            document = a.doc
+            if not document:
+                continue
+            title = f"{cmd_name}.{document.ext}"
+            document = await download(document.url, name=document.title, ext=document.ext)
+            document_id = await upload(bp.api, 'document_messages', title, document, peer_id=self.message.peer_id)
+            os.remove(document)
+            if document_id is not None:
+                document_ids.append(document_id)
+        return ','.join(document_ids)
+
+    async def get_audio_id(self) -> str:
+        audio_ids = []
+        for attachment in self.message.attachments:
+            if not attachment.audio:
+                continue
+            audio_ids.append(f"audio{attachment.audio.owner_id}_{attachment.audio.id}")
+        return ','.join(audio_ids)
+
+    async def get_photo_id(self, cmd_name: str) -> str:
+        photo_ids = []
+        for attachment in self.message.attachments:
+            if not attachment.photo:
+                continue
+            urls = {size.height * size.width: size.url for size in attachment.photo.sizes}
+            photo = await download(urls[max(urls)], name=f"{cmd_name}_{self.message.peer_id}", ext='jpg')
+            photo_id = await upload(bp.api, 'photo_messages', photo)
+            os.remove(photo)
+            if photo_id is not None:
+                photo_ids.append(photo_id.rsplit('_', maxsplit=1)[0])
+        return ','.join(photo_ids)
 
 
 class CommandList:
@@ -50,45 +90,58 @@ class CommandList:
             await connection.execute(f"UPDATE chats SET ffa_commands = false WHERE chat_id = {self.chat_id};")
 
 
-class CommandCreation:
+class Command(_BaseCommand):
+    def __init__(self, message: Message, command: CustomCommand, validator: CommandValidator):
+        self.message = message
+        self.command = command
+        self.validator = validator
+
+    async def _update_database(self, msg: str, doc_id: str, audio_id: str, photo_id: str) -> None:
+        async with PostgresConnection() as connection:
+            await connection.execute(f"""
+                UPDATE custom_commands 
+                SET message = $1, document_id = '{doc_id}', audio_id = '{audio_id}', photo_id = '{photo_id}' 
+                WHERE name = $2 AND chat_id = {self.command.chat_id};
+            """, msg, self.command.name)
+
+    async def get(self) -> None:
+        attachments = []
+        if self.command.document_id:
+            attachments.append(self.command.document_id)
+        if self.command.audio_id:
+            attachments.append(self.command.audio_id)
+        if self.command.photo_id:
+            attachments.append(self.command.photo_id)
+        await self.message.answer(self.command.message, ','.join(attachments))
+        async with PostgresConnection() as connection:
+            await connection.execute(f"""
+                UPDATE custom_commands SET times_used = times_used + 1 
+                WHERE chat_id = {self.command.chat_id} AND name = $1;
+            """, self.command.name)
+
+    async def get_information(self) -> None:
+        user = (await self.message.ctx_api.users.get([self.command.creator_id], fields=['domain']))[0]
+        await self.message.answer(tpl.customcommands.format_information(self.command, user))
+
+    async def edit(self) -> None:
+        await self.validator.check_availability(self.message.ctx_api, self.command.chat_id, self.message.from_id)
+        msg = re.sub(fr"^!!{self.command.name}\s?|~~ред", '', self.message.text)
+        doc_id = await self.get_document_id(self.command.name)
+        audio_id = await self.get_audio_id()
+        photo_id = await self.get_photo_id(self.command.name)
+        self.validator.check_additions_specified([msg, doc_id, audio_id, photo_id])
+        msg = msg or self.command.message
+        doc_id = doc_id or self.command.document_id
+        audio_id = audio_id or self.command.audio_id
+        photo_id = photo_id or self.command.photo_id
+        self.validator.check_addition_quantity(doc_id, audio_id, photo_id)
+        await self._update_database(msg, doc_id, audio_id, photo_id)
+
+
+class CommandCreation(_BaseCommand):
     def __init__(self, message: Message, validator: CreationValidator) -> None:
         self.message = message
         self.validator = validator
-
-    async def _get_document_id(self, cmd_name: str) -> str:
-        document_ids = []
-        for a in self.message.attachments:
-            document = a.doc
-            if not document:
-                continue
-            title = f"{cmd_name}.{document.ext}"
-            document = await download(document.url, name=document.title, ext=document.ext)
-            document_id = await upload(bp.api, 'document_messages', title, document, peer_id=self.message.peer_id)
-            os.remove(document)
-            if document_id is not None:
-                document_ids.append(document_id)
-        return ','.join(document_ids)
-
-    async def _get_audio_id(self) -> str:
-        audio_ids = []
-        for attachment in self.message.attachments:
-            if not attachment.audio:
-                continue
-            audio_ids.append(f"audio{attachment.audio.owner_id}_{attachment.audio.id}")
-        return ','.join(audio_ids)
-
-    async def _get_photo_id(self, cmd_name: str) -> str:
-        photo_ids = []
-        for attachment in self.message.attachments:
-            if not attachment.photo:
-                continue
-            urls = {size.height * size.width: size.url for size in attachment.photo.sizes}
-            photo = await download(urls[max(urls)], name=f"{cmd_name}_{self.message.peer_id}", ext='jpg')
-            photo_id = await upload(bp.api, 'photo_messages', photo)
-            os.remove(photo)
-            if photo_id is not None:
-                photo_ids.append(photo_id.rsplit('_', maxsplit=1)[0])
-        return ','.join(photo_ids)
 
     async def _add_to_database(
             self, cmd_name: str, date_added: datetime.datetime,
@@ -104,17 +157,18 @@ class CommandCreation:
 
     async def create(self) -> str:
         self.validator.check_chat_allowed(self.message.peer_id)
-        await self.validator.check_availability(self.message.peer_id, self.message.from_id)
+        await self.validator.check_availability(self.message.ctx_api, self.message.peer_id, self.message.from_id)
         text = re.sub(r'^!аддком\s?', '', self.message.text).split(maxsplit=1)
         cmd_name = text[0] if text else ''
         self.validator.check_command_specified(cmd_name)
         await self.validator.check_command_new(cmd_name, self.message.peer_id)
         date_added = get_current_timestamp(3)
         msg = text[1] if len(text) > 1 else ''
-        doc_id = await self._get_document_id(cmd_name)
-        audio_id = await self._get_audio_id()
-        photo_id = await self._get_photo_id(cmd_name)
+        doc_id = await self.get_document_id(cmd_name)
+        audio_id = await self.get_audio_id()
+        photo_id = await self.get_photo_id(cmd_name)
         self.validator.check_additions_specified([msg, doc_id, audio_id, photo_id])
+        self.validator.check_addition_quantity(doc_id, audio_id, photo_id)
         await self._add_to_database(cmd_name, date_added, msg, doc_id, audio_id, photo_id)
         return cmd_name
 
@@ -143,27 +197,18 @@ async def view_custom_commands(message: Message, options: Options) -> None:
                 raise IncompatibleOptions(options)
 
 
-@bp.on.chat_message(CustomCommandRule(['~~п', '~~инфо'], man.CommandGetter))
+@bp.on.chat_message(CustomCommandRule(['~~п', '~~инфо', '~~ред'], man.Command))
 async def get_custom_command(message: Message, command: CustomCommand, options: Options) -> None:
-    async with BaseValidator(message):
+    async with CommandValidator(message) as validator:
+        custom_command = Command(message, command, validator)
         match options:
             case ['~~[default]']:
-                attachments = []
-                if command.document_id:
-                    attachments.append(command.document_id)
-                if command.audio_id:
-                    attachments.append(command.audio_id)
-                if command.photo_id:
-                    attachments.append(command.photo_id)
-                await message.answer(command.message, ','.join(attachments))
-                async with PostgresConnection() as connection:
-                    await connection.execute(f"""
-                        UPDATE custom_commands SET times_used = times_used + 1 
-                        WHERE chat_id = {message.peer_id} AND name = $1;
-                    """, command.name)
+                await custom_command.get()
             case ['~~инфо']:
-                user = (await message.ctx_api.users.get([command.creator_id], fields=['domain']))[0]
-                await message.answer(tpl.customcommands.format_information(command, user))
+                await custom_command.get_information()
+            case ['~~ред']:
+                await custom_command.edit()
+                await message.answer(f"Успешно отредактирована команда '{command.name}'!")
             case _:
                 raise IncompatibleOptions(options)
 
@@ -172,7 +217,7 @@ async def get_custom_command(message: Message, command: CustomCommand, options: 
 async def delete_custom_command(message: Message, **_) -> None:
     async with DeletionValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
-        await validator.check_availability(message.peer_id, message.from_id)
+        await validator.check_availability(message.ctx_api, message.peer_id, message.from_id)
         name = re.sub(r'^!делком\s?', '', message.text)
         validator.check_command_specified(name)
         await validator.check_command_exist(name, message.peer_id)

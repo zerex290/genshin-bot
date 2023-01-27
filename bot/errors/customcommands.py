@@ -11,6 +11,7 @@ __all__ = (
     'CommandAlreadyExist',
     'CommandNotExist',
     'AdditionsNotSpecified',
+    'AdditionQuantityOverflow'
 )
 
 
@@ -48,4 +49,8 @@ class CommandNotExist(GenshinBotException):
 
 
 class AdditionsNotSpecified(GenshinBotException):
-    _msg = 'Укажите сообщение и/или прикрепите медиафайл для создания команды!'
+    _msg = 'Укажите сообщение и/или прикрепите хотя бы 1 медиафайл!'
+
+
+class AdditionQuantityOverflow(GenshinBotException):
+    _msg = 'Превышено допустимое число хранимых в команде медиафайлов!'

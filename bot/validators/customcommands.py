@@ -10,34 +10,35 @@ from ..errors.customcommands import *
 __all__ = (
     'CreationValidator',
     'DeletionValidator',
-    'ViewValidator'
+    'ViewValidator',
+    'CommandValidator'
 )
 
 
-class CreationValidator(BaseValidator, ChatValidator):
-    async def check_availability(self, chat_id: int, user_id: int) -> None:
-        if not await _check_availability(self._message.ctx_api, chat_id, user_id):
-            raise AvailabilityError
-
-    @staticmethod
-    def check_command_specified(name: str) -> None:
-        if not name:
-            raise CommandNotSpecified
-
-    @staticmethod
-    async def check_command_new(name: str, chat_id: int) -> None:
-        if await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = $1 AND chat_id = {chat_id};", name):
-            raise CommandAlreadyExist(name)
+class _BaseCommandValidator:
+    """Mixin class"""
 
     @staticmethod
     def check_additions_specified(additions: list) -> None:
         if not any(additions):
             raise AdditionsNotSpecified
 
+    @staticmethod
+    def check_addition_quantity(doc_id: str, audio_id: str, photo_id: str) -> None:
+        additions = []
+        for addition in list(locals().copy().values())[:-1]:
+            if addition:
+                additions.extend(addition.split(','))
+        if len(additions) > 4:
+            raise AdditionQuantityOverflow
 
-class DeletionValidator(BaseValidator, ChatValidator):
-    async def check_availability(self, chat_id: int, user_id: int) -> None:
-        if not await _check_availability(self._message.ctx_api, chat_id, user_id):
+    @staticmethod
+    async def check_availability(api: API, chat_id: int, user_id: int) -> None:
+        conditions = [
+            await has_postgres_data(f"SELECT * FROM chats WHERE chat_id = {chat_id} and ffa_commands = true;"),
+            await _check_privileges(api, chat_id, user_id)
+        ]
+        if not any(conditions):
             raise AvailabilityError
 
     @staticmethod
@@ -45,6 +46,19 @@ class DeletionValidator(BaseValidator, ChatValidator):
         if not name:
             raise CommandNotSpecified
 
+
+class CommandValidator(BaseValidator, _BaseCommandValidator):
+    pass
+
+
+class CreationValidator(BaseValidator, ChatValidator, _BaseCommandValidator):
+    @staticmethod
+    async def check_command_new(name: str, chat_id: int) -> None:
+        if await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = $1 AND chat_id = {chat_id};", name):
+            raise CommandAlreadyExist(name)
+
+
+class DeletionValidator(BaseValidator, ChatValidator, _BaseCommandValidator):
     @staticmethod
     async def check_command_exist(name: str, chat_id: int):
         if not await has_postgres_data(f"SELECT * FROM custom_commands WHERE name = $1 AND chat_id = {chat_id};", name):
@@ -77,11 +91,3 @@ async def _check_privileges(api: API, chat_id: int, user_id: int) -> Optional[bo
         return False
     except VKAPIError[917]:
         raise BotPrivilegesError
-
-
-async def _check_availability(api: API, chat_id: int, user_id: int) -> bool:
-    conditions = [
-        await has_postgres_data(f"SELECT * FROM chats WHERE chat_id = {chat_id} and ffa_commands = true;"),
-        await _check_privileges(api, chat_id, user_id)
-    ]
-    return True if any(conditions) else False
