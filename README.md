@@ -21,7 +21,8 @@ can be downloaded from [YandexDisk](https://disk.yandex.ru/d/LPnj__Hr9pK8NA)
 
  1. Clone git repository to chosen directory:
 <code> git clone https://github.com/zerex290/genshin-bot </code>
- 2. Set environmental variables necessary for work:
+ 2. Install requirements: <code>pip install -r requirements.txt</code>
+ 3. Set environmental variables necessary for work:
     * **ADMINS**: <code>str</code> - admin ids separated by commas
     * **GROUP_TOKEN**: <code>str</code> - your group api access key
     * **GROUP_ID**: <code>int</code> - your group id *(e.g. -123456789)*
@@ -30,7 +31,7 @@ can be downloaded from [YandexDisk](https://disk.yandex.ru/d/LPnj__Hr9pK8NA)
     * **USER_ID**: <code>int</code> - id of user on which standalone app was registered
     * **DATABASE_ADDRESS**: <code>str</code> - address of your database for asyncpg
 *(e.g. postgres://user:pass@host:port/database)*
- 3. Download **Work Directory**
- 4. Extract **Work Directory** into current folder: <code>tar -xf environment.zip </code>
- 5. Run secondary script which will create postgresql tables: <code> python create_pg_tables.py </code>
- 6. Run main script: <code>python -m bot</code>
+ 4. Download **Work Directory**
+ 5. Extract **Work Directory** into current folder: <code>tar -xf environment.zip </code>
+ 6. Run secondary script which will create postgresql tables: <code> python create_pg_tables.py </code>
+ 7. Run main script: <code>python -m bot</code>
