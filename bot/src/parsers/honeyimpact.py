@@ -297,7 +297,7 @@ class WeaponParser:
                 _, name, rarity, atk, sub, value, affix, _ = weapon
                 href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
                 icon = f"{honeyimpact.URL}img/{href}.webp"
-                name = re.search(r'[\w\s:]+', await name.text())[0]
+                name = re.search(r'[\w\s:-]+', await name.text())[0]
                 rarity = int(re.search(r'\d', await rarity.text())[0])
                 if isinstance(sub, _AsyncHtmlElement):
                     sub = _format_stat(await sub.text())
@@ -330,7 +330,7 @@ class WeaponParser:
         ability = mdl.weapons.Ability(title, self.affix)
         return tpl.weapons.format_ability(ability)
 
-    async def get_progression(self) -> str:
+    async def get_progression(self) -> list[mdl.weapons.Progression]:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
         table = (await tree.xpath('//table[@class="genshin_table stat_table"]/tr'))
 
@@ -345,7 +345,7 @@ class WeaponParser:
                     (await row.xpath('./td[3]/text()'))[0]
                 )
             )
-        return tpl.weapons.format_progression(progressions)
+        return progressions
 
     async def get_refinement(self) -> str:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
@@ -395,7 +395,7 @@ class ArtifactParser:
                 icons, name, affix = artifact
                 href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
                 icon = f"{honeyimpact.URL}img/{href}.webp"
-                name = re.search(r'[\w\s:]+', await name.text())[0]
+                name = re.search(r'[\w\s:-]+', await name.text())[0]
                 affix = [
                     re.sub(r'<[^>]+>|[124]-Piece:\s?', '', (await span.xpath('./text()'))[0])
                     for span in await affix.xpath('//span')
@@ -444,26 +444,27 @@ class EnemyParser:
                 _, name, grade, drop = enemy
                 href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
                 icon = link.format(href)
-                name = re.search(r'[\w\s:]+', await name.text())[0]
+                name = re.search(r'[\w\s:-]+', await name.text())[0]
                 grade = Grade[(await grade.text()).upper()].value
                 if isinstance(drop, _AsyncHtmlElement):
                     drop = {
                         k: link.format(re.search(r'\w+\d+', v)[0])
                         for k, v in zip(await drop.xpath('//img/@alt'), await drop.xpath('//@href'))
                     }
+                else:
+                    drop = {}
                 enemies[e_types[i].value][name] = [href, icon, grade, drop]
         return enemies
 
-    async def get_information(self) -> str:
+    async def get_information(self) -> mdl.enemies.Information:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
         table = (await tree.xpath('//table[@class="genshin_table main_table"]'))[0]
 
         desc = ''.join(await table.xpath('.//td[text()="Description"]/following-sibling::td/text()'))
 
-        enemy = mdl.enemies.Information(self.name, self.type, self.grade, self.drop, desc)
-        return tpl.enemies.format_information(enemy)
+        return mdl.enemies.Information(self.name, self.type, self.grade, self.drop, desc)
 
-    async def get_progression(self) -> str:
+    async def get_progression(self) -> list[mdl.enemies.Progression]:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
         table = (await tree.xpath('//section[@id="Variant #1"]//table[@class="genshin_table stat_table"]/tr'))
 
@@ -486,7 +487,7 @@ class EnemyParser:
                     (await row.xpath('./td[13]/text()'))[0]
                 )
             )
-        return tpl.enemies.format_progression(progressions)
+        return progressions
 
 
 class BookParser:
@@ -582,7 +583,7 @@ class DomainParser:
                 _, name, monsters, rewards = domain
                 href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
                 icon = link.format(href)
-                name = re.search(r'[\w\s:]+', await name.text())[0]
+                name = re.search(r'[\w\s:-]+', await name.text())[0]
                 if isinstance(monsters, _AsyncHtmlElement):
                     monsters = [link.format(re.search(r'\w+\d+', m)[0]) for m in await monsters.xpath('//@href')]
                 else:
@@ -700,7 +701,7 @@ class BossMaterialParser:
             for boss_material in table:
                 _, name, _, _, used_by = boss_material
                 icon = link.format(re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0])
-                name = re.search(r'[\w\s]+', await name.text())[0]
+                name = re.search(r'[\w\s:-]+', await name.text())[0]
                 if isinstance(used_by, _AsyncHtmlElement):
                     used_by = [link.format(re.search(r'\w+\d+', ch)[0]) for ch in await used_by.xpath('//@href')]
                 else:

@@ -1,4 +1,5 @@
 import os
+import re
 from random import randint
 from typing import Literal
 
@@ -17,6 +18,9 @@ __all__ = (
     'ObjectImageGenerator',
     'AscensionImageGenerator',
     'DomainImageGenerator',
+    'WeaponProgressionImageGenerator',
+    'EnemyDropImageGenerator',
+    'EnemyProgressionImageGenerator'
 )
 
 
@@ -269,11 +273,130 @@ class DomainImageGenerator:
 
 
 class WeaponProgressionImageGenerator:
-    """To be added in next versions"""
-    def __init__(self, progression: list[mdl.weapons.Progression]) -> None:
+    def __init__(self, weapon_icon: str, progression: list[mdl.weapons.Progression]) -> None:
+        self.weapon_icon = weapon_icon
         self.progression = progression
+        self._cpx_h = 34
 
     async def generate(self) -> str:
         path = os.path.join(FILECACHE, f"weaponprog_{randint(0, 10000)}.png")
-        ...
+        gap = 8
+        with Image.open(get_template_path(__file__, 'weaponprog', 'weaponprog')) as template:
+            weapon = self._process_weapon(await download(self.weapon_icon, force=False))
+            template.alpha_composite(weapon, (428, self._cpx_h))
+            self._cpx_h += 160 + gap
+            for p in self.progression:
+                progrow = self._process_progrow(p)
+                template.alpha_composite(progrow, (34, self._cpx_h))
+                self._cpx_h += progrow.height + gap
+            template.save(path)
         return path
+
+    @staticmethod
+    def _process_weapon(weapon_path: str) -> Image.Image:
+        with (
+            Image.open(get_template_path(__file__, 'weaponprog', 'weapon')) as template,
+            Image.open(weapon_path) as weapon
+        ):
+            w, h = template.size
+            align_center(template, round_image(resize(weapon, (w - 12, h - 12)), 20))
+            return template
+
+    def _process_progrow(self, p: mdl.weapons.Progression) -> Image.Image:
+        with Image.open(get_template_path(__file__, 'weaponprog', 'progrow')) as progrow:
+            self._draw_progrow_text(ImageDraw.Draw(progrow), p)
+            return progrow
+
+    @staticmethod
+    def _draw_progrow_text(draw: ImageDraw.ImageDraw, p: mdl.weapons.Progression) -> None:
+        font = ImageFont.truetype(FONT, 30)
+        draw.text((42, 0), p.level, (255, 255, 255), font)
+        draw.text((198, 0), p.primary_stat_value, (255, 255, 255), font)
+        draw.text((384, 0), f"{p.secondary_stat_title}: {p.secondary_stat_value}", (255, 255, 255), font)
+
+
+class EnemyDropImageGenerator:
+    def __init__(self, enemy_icon: str, drop: dict[str, str]) -> None:
+        self.enemy_icon = enemy_icon
+        self.drop = drop
+        self._cpx_w = [306, 306, 306, 306]
+
+    async def generate(self) -> str:
+        path = os.path.join(FILECACHE, f"enemydrop_{randint(0, 10000)}.png")
+        with (
+            Image.open(get_template_path(__file__, 'enemydrop', 'enemydrop')) as template,
+            Image.open(await download(self.enemy_icon, force=False)) as enemy
+        ):
+            template.alpha_composite(round_image(resize(enemy, (256, 256)), 20), (34, 34))
+            await self._paste_drop(template)
+            template.crop((0, 0, max(self._cpx_w), template.height)).save(path)
+            return path
+
+    async def _paste_drop(self, template: Image.Image) -> None:
+        gap = 8
+        items = list(self.drop.values())
+        if not items:
+            self._cpx_w[0] += 34 - gap*2
+            return None
+        for d_num, d in enumerate(items):
+            drop = self._process_drop(await download(d, force=False))
+            row = d_num % 4
+            y = 34 + (drop.height + gap)*row
+            template.alpha_composite(drop, (self._cpx_w[row], y))
+            self._cpx_w[row] += drop.width + (gap if d != items[-1] else 34)
+
+    @staticmethod
+    def _process_drop(drop_path: str) -> Image.Image:
+        with (
+            Image.open(get_template_path(__file__, 'enemydrop', 'drop')) as template,
+            Image.open(drop_path) as drop
+        ):
+            align_center(template, round_image(resize(drop, template.size), 10))
+            return template
+
+
+class EnemyProgressionImageGenerator:
+    def __init__(self, enemy_icon: str, progression: list[mdl.enemies.Progression]) -> None:
+        self.enemy_icon = enemy_icon
+        self.progression = progression
+        self._cpx_h = [34, 34]
+
+    async def generate(self) -> str:
+        path = os.path.join(FILECACHE, f"enemyprog_{randint(0, 10000)}.png")
+        gap = 8
+        with Image.open(get_template_path(__file__, 'enemyprog', 'enemyprog')) as template:
+            for p_num, p in enumerate(self.progression):
+                col = p_num // 10
+                progrow = self._process_progrow(await download(self.enemy_icon, force=False), p)
+                template.alpha_composite(progrow, (34 + (progrow.width + gap*3)*col, self._cpx_h[col]))
+                self._cpx_h[p_num // 10] += progrow.height + gap
+            template.save(path)
+        return path
+
+    def _process_progrow(self, enemy_path: str, p: mdl.enemies.Progression) -> Image.Image:
+        with Image.open(get_template_path(__file__, 'enemyprog', 'progrow')) as template:
+            enemy = self._process_enemy(enemy_path)
+            template.alpha_composite(enemy, (0, 0))
+            self._draw_progrow_text(ImageDraw.Draw(template), p, enemy.width, template.height // 3)
+            return template
+
+    @staticmethod
+    def _draw_progrow_text(
+            draw: ImageDraw.ImageDraw, p: mdl.enemies.Progression, enemy_width: int, row_height: int
+    ) -> None:
+        font = ImageFont.truetype(FONT, 92)
+        draw.text((enemy_width + 4, 0), p.level, (255, 255, 255), font)
+        font = ImageFont.truetype(FONT, 30)
+        for v_num, v in enumerate(list(p.__dict__.values())[1:]):
+            x_pos = [362, 591, 830, 1084]
+            v = str(round(int(re.match(r'\d+', str(v))[0])))
+            draw.text((x_pos[v_num // 3], row_height * (v_num % 3)), v, (255, 255, 255), font)
+
+    @staticmethod
+    def _process_enemy(enemy_path: str) -> Image.Image:
+        with (
+            Image.open(get_template_path(__file__, 'enemyprog', 'enemy')) as template,
+            Image.open(enemy_path) as enemy
+        ):
+            align_center(template, round_image(resize(enemy, template.size), 10))
+            return template

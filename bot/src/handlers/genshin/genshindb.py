@@ -17,6 +17,7 @@ from bot.src.errors import IncompatibleOptions
 from bot.src.validators.genshindb import GenshinDBValidator
 from bot.src.manuals import genshindb as man
 from bot.src.imageprocessing.genshin.genshindb import *
+from bot.src.templates import honeyimpact as tpl
 
 
 bl = BotLabeler()
@@ -387,20 +388,20 @@ async def get_character(event: MessageEvent, payload: Payload) -> None:
 async def get_weapon(event: MessageEvent, payload: Payload) -> None:
     weapon = WeaponParser(payload['sect'], payload['obj'])
     buttons = {
-        'information': ('Основная информация', weapon.get_information),
-        'ability': ('Способность оружия', weapon.get_ability),
-        'progression': ('Прогрессия', weapon.get_progression),
-        'refinement': ('Пробуждение', weapon.get_refinement),
-        'story': ('История', weapon.get_story)
+        'information': 'Основная информация',
+        'ability': 'Способность оружия',
+        'progression': 'Прогрессия',
+        'refinement': 'Пробуждение',
+        'story': 'История'
     }
     kb = Keyboard(inline=True)
     apl = payload.copy()
 
     default = list(buttons)[0]
-    for data in buttons:
+    for data, label in buttons.items():
         if data != payload.get('data', default):
             apl['data'] = data
-            kb.add(Callback(buttons[data][0], apl.copy()))
+            kb.add(Callback(label, apl.copy()))
             kb.row()
     apl['type'] = f"{payload['type']}s"
     del apl['obj']
@@ -412,11 +413,27 @@ async def get_weapon(event: MessageEvent, payload: Payload) -> None:
         KeyboardButtonColor.POSITIVE
     )
 
-    await event.edit_message(
-        await buttons[payload.get('data', default)][1](),
-        attachment=await upload(bot.group.api, 'photo_messages', await download(weapon.icon, force=False)),
-        keyboard=kb.get_json()
-    )
+    message = None
+    attachment = None
+    match payload.get('data'):
+        case 'information':
+            message = await weapon.get_information()
+        case 'ability':
+            message = await weapon.get_ability()
+        case 'progression':
+            image = await WeaponProgressionImageGenerator(weapon.icon, await weapon.get_progression()).generate()
+            attachment = await upload(
+                bot.group.api,
+                'photo_messages',
+                image
+            )
+            os.remove(image)
+        case 'refinement':
+            message = await weapon.get_refinement()
+        case _:
+            message = await weapon.get_information()
+    attachment = attachment or await upload(bot.group.api, 'photo_messages', await download(weapon.icon, force=False))
+    await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
 
 
 @bl.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['artifact']))
@@ -446,17 +463,17 @@ async def get_artifact(event: MessageEvent, payload: Payload) -> None:
 async def get_enemy(event: MessageEvent, payload: Payload) -> None:
     enemy = EnemyParser(payload['sect'], payload['obj'])
     buttons = {
-        'information': ('Основная информация', enemy.get_information),
-        'progression': ('Прогрессия', enemy.get_progression)
+        'information': 'Основная информация',
+        'progression': 'Прогрессия'
     }
     kb = Keyboard(inline=True)
     apl = payload.copy()
 
     default = list(buttons)[0]
-    for data in buttons:
+    for data, label in buttons.items():
         if data != payload.get('data', default):
             apl['data'] = data
-            kb.add(Callback(buttons[data][0], apl.copy()))
+            kb.add(Callback(label, apl.copy()))
             kb.row()
     apl['type'] = f"{payload['type']}s"
     del apl['obj']
@@ -468,11 +485,27 @@ async def get_enemy(event: MessageEvent, payload: Payload) -> None:
         KeyboardButtonColor.POSITIVE
     )
 
-    await event.edit_message(
-        await buttons[payload.get('data', default)][1](),
-        attachment=await upload(bot.group.api, 'photo_messages', await download(enemy.icon, force=False)),
-        keyboard=kb.get_json()
-    )
+    message = None
+    match payload.get('data'):
+        case 'progression':
+            image = await EnemyProgressionImageGenerator(enemy.icon, await enemy.get_progression()).generate()
+            attachment = await upload(
+                bot.group.api,
+                'photo_messages',
+                image
+            )
+            os.remove(image)
+        case _:
+            information = await enemy.get_information()
+            message = tpl.enemies.format_information(information)
+            image = await EnemyDropImageGenerator(enemy.icon, information.drop).generate()
+            attachment = await upload(
+                bot.group.api,
+                'photo_messages',
+                image
+            )
+            os.remove(image)
+    await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
 
 
 @bl.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['book']))
