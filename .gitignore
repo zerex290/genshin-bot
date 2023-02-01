@@ -13,12 +13,6 @@ time_meter.py
 
 # External directories required for work
 environment.zip
-ascension/
-books/
-boss_materials/
 cache/
-daily_farm/
-db_appearance/
-dungeons/
+imageprocessing/
 logs/
-image_processing/

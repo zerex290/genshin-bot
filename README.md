@@ -33,5 +33,5 @@ can be downloaded from [YandexDisk](https://disk.yandex.ru/d/LPnj__Hr9pK8NA)
 *(e.g. postgres://user:pass@host:port/database)*
  4. Download **Work Directory**
  5. Extract **Work Directory** into current folder: <code>tar -xf environment.zip </code>
- 6. Run secondary script which will create postgresql tables: <code> python create_pg_tables.py </code>
+ 6. Run secondary script which will initialize postgresql database: <code> python initdb.py </code>
  7. Run main script: <code>python -m bot</code>
