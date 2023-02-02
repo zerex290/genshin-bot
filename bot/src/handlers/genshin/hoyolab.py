@@ -246,9 +246,9 @@ async def unlink_genshin_account(message: Message, **_) -> None:
         await message.answer('Ваш игровой аккаунт был успешно отвязан!')
 
 
-@bl.message(CommandRule(['заметки'], ['~~п', '~~у', '~~о'], man.Notes))
+@bl.message(CommandRule(['заметки'], ['~~п', '~~о'], man.Notes))
 async def get_notes(message: Message, options: Options) -> None:
-    async with HoYoLABValidator(message, 'Notes') as validator:
+    async with HoYoLABValidator(message) as validator:
         match options:
             case ['~~о']:
                 d_types = {'текст': 'long', 'пик': 'short'}
@@ -262,21 +262,12 @@ async def get_notes(message: Message, options: Options) -> None:
                     await validator.check_display_short(Notes.__name__.lower(), message.from_id)
                     await Notes.switch_to_long_display(message.from_id)
                 await message.answer('Способ отображения пользовательских заметок был успешно изменен!')
-            case ['~~у']:
-                validator.check_reply_message(message.reply_message)
-                account = await get_genshin_account_by_id(message.reply_message.from_id)
-                validator.check_account_exist(account, True)
-                user = await message.reply_message.get_user(fields='photo_200')
-                notes = await Notes(account, user).get()
-                if isinstance(notes, tuple):
-                    notes, attachment = notes
-                else:
-                    attachment = None
-                await message.answer(notes, attachment)
             case ['~~[default]']:
-                account = await get_genshin_account_by_id(message.from_id)
-                validator.check_account_exist(account)
-                user = await message.get_user(fields='photo_200')
+                for_other_user = message.reply_message is not None
+                msg = message.reply_message or message
+                account = await get_genshin_account_by_id(msg.from_id)
+                validator.check_account_exist(account, for_other_user)
+                user = await msg.get_user(fields='photo_200')
                 notes = await Notes(account, user).get()
                 if isinstance(notes, tuple):
                     notes, attachment = notes
@@ -287,9 +278,9 @@ async def get_notes(message: Message, options: Options) -> None:
                 raise IncompatibleOptions(options)
 
 
-@bl.message(CommandRule(['статы'], ['~~п', '~~у', '~~о'], man.Stats))
+@bl.message(CommandRule(['статы'], ['~~п', '~~о'], man.Stats))
 async def get_stats(message: Message, options: Options) -> None:
-    async with HoYoLABValidator(message, 'Stats') as validator:
+    async with HoYoLABValidator(message) as validator:
         match options:
             case['~~о']:
                 d_types = {'текст': 'long', 'пик': 'short'}
@@ -303,21 +294,12 @@ async def get_stats(message: Message, options: Options) -> None:
                     await validator.check_display_short(Stats.__name__.lower(), message.from_id)
                     await Stats.switch_to_long_display(message.from_id)
                 await message.answer('Способ отображения пользовательской статистики был успешно изменен!')
-            case ['~~у']:
-                validator.check_reply_message(message.reply_message)
-                account = await get_genshin_account_by_id(message.reply_message.from_id)
-                validator.check_account_exist(account, True)
-                user = await message.reply_message.get_user(fields='photo_200')
-                stats = await Stats(account, user).get()
-                if isinstance(stats, tuple):
-                    stats, attachment = stats
-                else:
-                    attachment = None
-                await message.answer(stats, attachment)
             case ['~~[default]']:
-                account = await get_genshin_account_by_id(message.from_id)
-                validator.check_account_exist(account)
-                user = await message.get_user(fields='photo_200')
+                for_other_user = message.reply_message is not None
+                msg = message.reply_message or message
+                account = await get_genshin_account_by_id(msg.from_id)
+                validator.check_account_exist(account, for_other_user)
+                user = await msg.get_user(fields='photo_200')
                 stats = await Stats(account, user).get()
                 if isinstance(stats, tuple):
                     stats, attachment = stats
@@ -330,7 +312,7 @@ async def get_stats(message: Message, options: Options) -> None:
 
 @bl.message(CommandRule(['награды'], ['~~п', '~~о'], man.Rewards))
 async def get_rewards(message: Message, options: Options) -> None:
-    async with HoYoLABValidator(message, 'Rewards') as validator:
+    async with HoYoLABValidator(message) as validator:
         match options:
             case['~~о']:
                 d_types = {'текст': 'long', 'пик': 'short'}
@@ -345,9 +327,11 @@ async def get_rewards(message: Message, options: Options) -> None:
                     await Rewards.switch_to_long_display(message.from_id)
                 await message.answer('Способ отображения пользовательских наград был успешно изменен!')
             case ['~~[default]']:
-                account = await get_genshin_account_by_id(message.from_id)
-                validator.check_account_exist(account)
-                user = await message.get_user(fields='photo_200')
+                for_other_user = message.reply_message is not None
+                msg = message.reply_message or message
+                account = await get_genshin_account_by_id(msg.from_id)
+                validator.check_account_exist(account, for_other_user)
+                user = await msg.get_user(fields='photo_200')
                 rewards = await Rewards(account, user).get()
                 if isinstance(rewards, tuple):
                     rewards, attachment = rewards
@@ -358,9 +342,11 @@ async def get_rewards(message: Message, options: Options) -> None:
 
 @bl.message(CommandRule(['пром'], ['~~п'], man.Codes))
 async def redeem_code(message: Message, **_) -> None:
-    async with CodeValidator(message, 'Redeem') as validator:
-        account = await get_genshin_account_by_id(message.from_id)
-        validator.check_account_exist(account)
+    async with CodeValidator(message) as validator:
+        for_other_user = message.reply_message is not None
+        msg = message.reply_message or message
+        account = await get_genshin_account_by_id(msg.from_id)
+        validator.check_account_exist(account, for_other_user)
         codes = message.text.removeprefix('!пром').strip().split()
         validator.check_code_specified(codes)
         await message.answer(await Codes(account, codes=codes).redeem())
@@ -394,9 +380,9 @@ async def manage_resin_notifications(message: Message, options: Options) -> None
                 raise IncompatibleOptions(options)
 
 
-@bl.message(CommandRule(['дневник'], ['~~п', '~~у', '~~о'], man.Diary))
+@bl.message(CommandRule(['дневник'], ['~~п', '~~о'], man.Diary))
 async def get_traveler_diary(message: Message, options: Options) -> None:
-    async with HoYoLABValidator(message, 'Diary') as validator:
+    async with HoYoLABValidator(message) as validator:
         match options:
             case['~~о']:
                 d_types = {'текст': 'long', 'пик': 'short'}
@@ -410,21 +396,12 @@ async def get_traveler_diary(message: Message, options: Options) -> None:
                     await validator.check_display_short(Diary.__name__.lower(), message.from_id)
                     await Diary.switch_to_long_display(message.from_id)
                 await message.answer('Способ отображения пользовательского дневника был успешно изменен!')
-            case ['~~у']:
-                validator.check_reply_message(message.reply_message)
-                account = await get_genshin_account_by_id(message.reply_message.from_id)
-                validator.check_account_exist(account, True)
-                user = await message.reply_message.get_user(fields='photo_200')
-                diary = await Diary(account, user).get()
-                if isinstance(diary, tuple):
-                    diary, attachment = diary
-                else:
-                    attachment = None
-                await message.answer(diary, attachment)
             case ['~~[default]']:
-                account = await get_genshin_account_by_id(message.from_id)
-                validator.check_account_exist(account)
-                user = await message.get_user(fields='photo_200')
+                for_other_user = message.reply_message is not None
+                msg = message.reply_message or message
+                account = await get_genshin_account_by_id(msg.from_id)
+                validator.check_account_exist(account, for_other_user)
+                user = await msg.get_user(fields='photo_200')
                 diary = await Diary(account, user).get()
                 if isinstance(diary, tuple):
                     diary, attachment = diary
@@ -435,28 +412,16 @@ async def get_traveler_diary(message: Message, options: Options) -> None:
                 raise IncompatibleOptions(options)
 
 
-@bl.message(CommandRule(['бездна'], ['~~п', '~~у'], man.SpiralAbyss))
-async def get_spiral_abyss(message: Message, options: Options) -> None:
-    async with SpiralAbyssValidator(message, 'SpiralAbyss') as validator:
-        match options:
-            case ['~~у']:
-                validator.check_reply_message(message.reply_message)
-                account = await get_genshin_account_by_id(message.reply_message.from_id)
-                validator.check_account_exist(account, True)
-                abyss = await SpiralAbyss(account, validator=validator).get()
-                if isinstance(abyss, tuple):
-                    abyss, attachment = abyss
-                else:
-                    attachment = None
-                await message.answer(abyss, attachment)
-            case ['~~[default]']:
-                account = await get_genshin_account_by_id(message.from_id)
-                validator.check_account_exist(account)
-                abyss = await SpiralAbyss(account, validator=validator).get()
-                if isinstance(abyss, tuple):
-                    abyss, attachment = abyss
-                else:
-                    attachment = None
-                await message.answer(abyss, attachment)
-            case _:
-                raise IncompatibleOptions(options)
+@bl.message(CommandRule(['бездна'], ['~~п'], man.SpiralAbyss))
+async def get_spiral_abyss(message: Message, **_) -> None:
+    async with SpiralAbyssValidator(message) as validator:
+        for_other_user = message.reply_message is not None
+        msg = message.reply_message or message
+        account = await get_genshin_account_by_id(msg.from_id)
+        validator.check_account_exist(account, for_other_user)
+        abyss = await SpiralAbyss(account, validator=validator).get()
+        if isinstance(abyss, tuple):
+            abyss, attachment = abyss
+        else:
+            attachment = None
+        await message.answer(abyss, attachment)

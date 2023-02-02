@@ -1,5 +1,3 @@
-from typing import Literal, TypeAlias
-
 from . import GenshinBotException
 
 
@@ -10,7 +8,6 @@ __all__ = (
     'InvalidAccountCookies',
     'AccountUnlinked',
     'AccountNotExist',
-    'ReplyMessageError',
     'DisplayAlreadyLong',
     'DisplayAlreadyShort',
     'IncorrectDisplayType',
@@ -22,9 +19,6 @@ __all__ = (
     'NotificationValueRangeInvalid',
     'SpiralAbyssLocked'
 )
-
-
-HoYoData: TypeAlias = Literal['Notes', 'Stats', 'Rewards', 'Redeem', 'Diary', 'SpiralAbyss']
 
 
 class AccountAlreadyLinked(GenshinBotException):
@@ -58,19 +52,6 @@ class AccountNotExist(GenshinBotException):
             self.__class__._msg = f"Игровой аккаунт указанного игрока не привязан к базе!\n{self._ARTICLE}"
         else:
             self.__class__._msg = f"Ваш игровой аккаунт не привязан к базе!\n{self._ARTICLE}"
-
-
-class ReplyMessageError(GenshinBotException):
-    def __init__(self, datatype: HoYoData) -> None:
-        datatypes = {
-            'Notes': 'просмотра его игровых заметок',
-            'Stats': 'просмотра его игровой статистики',
-            'Rewards': 'просмотра его игровых наград',
-            'Redeem': 'активации ему промокодов',
-            'Diary': 'просмотра его дневника путешественника',
-            'SpiralAbyss': 'просмотра его прогресса витой бездны'
-        }
-        self.__class__._msg = f"Не прикреплено сообщение другого игрока для {datatypes[datatype]}!"
 
 
 class DisplayAlreadyLong(GenshinBotException):
@@ -111,4 +92,4 @@ class NotificationValueRangeInvalid(GenshinBotException):
 
 
 class SpiralAbyssLocked(GenshinBotException):
-    _msg = 'Вы не можете воспользоваться данной командой, т.к. ваш прогресс витой бездны меньше 9 этажа!'
+    _msg = 'Использование данной команды недоступно для игроков с прогрессом витой бездны меньше 9 этажа!'

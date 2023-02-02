@@ -1,8 +1,5 @@
 from typing import Optional, Literal, TypeAlias
 
-from vkbottle.bot import Message
-from vkbottle_types.objects import MessagesForeignMessage
-
 from genshin.errors import GenshinException, InvalidCookies
 
 from . import BaseValidator, ChatValidatorMixin
@@ -66,20 +63,8 @@ class AccountUnlinkValidator(BaseValidator):
 
 
 class HoYoLABValidator(BaseValidator):
-    def __init__(
-            self,
-            message: Message,
-            datatype: HoYoData
-    ) -> None:
-        super().__init__(message)
-        self._datatype = datatype
-
-    def check_reply_message(self, reply_message: Optional[MessagesForeignMessage]) -> None:
-        if not reply_message:
-            raise ReplyMessageError(self._datatype)
-
     @staticmethod
-    def check_account_exist(account: Optional[dict[str, str | int]], for_other_user: bool = False) -> None:
+    def check_account_exist(account: Optional[dict[str, str | int]], for_other_user: bool) -> None:
         if not account:
             raise AccountNotExist(for_other_user)
 
@@ -101,9 +86,6 @@ class HoYoLABValidator(BaseValidator):
 
 
 class CodeValidator(HoYoLABValidator):
-    def check_reply_message(self, reply_message: Optional[MessagesForeignMessage]) -> None:
-        raise AttributeError('This method is unavailable!')
-
     @staticmethod
     def check_display_short(cls_name: str, user_id: int) -> None:
         raise AttributeError('This method is unavailable!')
