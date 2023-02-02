@@ -1,13 +1,11 @@
 import os
 from collections.abc import AsyncIterator
 from random import randint
-from typing import Optional
 
 from PIL import Image, ImageFont, ImageDraw
 
 from .. import FONT, align_center, resize, round_image, get_template_path
 from ...types.uncategorized import Weekday
-from ...parsers.honeyimpact import DailyFarmParser, TalentBookParser, BossMaterialParser
 from ...utils.files import download
 from ...models.honeyimpact.dailyfarm import Material, Consumer, Zone
 from ...models.honeyimpact.talentbooks import TalentBook
@@ -23,19 +21,19 @@ __all__ = (
 
 
 class DailyFarmImageGenerator:
-    def __init__(self, weekdays: list[int]) -> None:
+    def __init__(self, weekdays: list[int], zones: list[Zone]) -> None:
         self.weekdays = weekdays
+        self.zones = zones
         self._cpx_h = 102  #: zone.indent_v = 102
 
     async def generate(self) -> list[str]:
         paths = []
-        zones = await DailyFarmParser.get_zones()
         for weekday in self.weekdays:
             path = os.path.join(FILECACHE, f"dailyfarm_{randint(0, 10000)}.png")
             with Image.open(get_template_path(__file__, 'dailyfarm', 'dailyfarm')) as template:
                 draw = ImageDraw.Draw(template)
                 self._draw_weekday_text(draw, weekday)
-                for zone in zones:
+                for zone in self.zones:
                     await self._paste_zone(template, zone, weekday)
                     self._cpx_h += 48  #: 48 = 44 + 4 = zone.height + const
                     for c_num, c in enumerate([c for c in zone.consumers if weekday in c.weekdays and c.rarity > 3]):
@@ -93,15 +91,14 @@ class DailyFarmImageGenerator:
 
 
 class TalentBookImageGenerator:
-    def __init__(self) -> None:
+    def __init__(self, talent_books: list[TalentBook]) -> None:
+        self.talent_books = talent_books
         self._indent_x = 0
         self._cpx_h = [97, 97, 97]
         self._row = 0
-        self.talent_books: Optional[list[TalentBook]] = None
 
     async def generate(self) -> str:
         path = os.path.join(FILECACHE, f"talentbooks_{randint(0, 10000)}.png")
-        self.talent_books = await TalentBookParser.get_related_talent_books()
         with Image.open(get_template_path(__file__, 'talentbooks', 'talentbooks')) as template:
             for book in self.talent_books:
                 if Weekday.MONDAY in book.weekdays:
@@ -153,15 +150,14 @@ class TalentBookImageGenerator:
 
 
 class BossMaterialImageGenerator:
-    def __init__(self):
+    def __init__(self, bosses: list[Boss]):
+        self.bosses = bosses
         self._indent_x = 0
         self._cpx_h = 34
-        self.bosses: Optional[list[Boss]] = None
 
     async def generate(self) -> str:
         path = os.path.join(FILECACHE, f"bossmaterials_{randint(0, 10000)}.png")
         gap = 8
-        self.bosses = BossMaterialParser.get_related_bosses()
         with Image.open(get_template_path(__file__, 'bossmaterials', 'bossmaterials')) as template:
             for boss in self.bosses:
                 await self._paste_boss_info(template, boss, gap)

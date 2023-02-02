@@ -1,8 +1,13 @@
+from typing import Optional
+
 from ...models.honeyimpact import characters
 
 
-def format_information(character: characters.Information) -> str:
-    formatted_information = (
+def format_information(character: Optional[characters.Information]) -> str:
+    if character is None:
+        return 'Информация пока отсутствует!'
+
+    return (
         f"🖼Основная информация:\n"
         f"👤Персонаж: {character.name}\n"
         f"👑Титул: {character.title}\n"
@@ -16,54 +21,44 @@ def format_information(character: characters.Information) -> str:
         f"🔮Созвездие: {character.constellation}\n"
         f"📖Описание: {character.description}"
     )
-    return formatted_information
 
 
 def format_active_skills(
-        auto_attack: characters.Skill,
-        elemental_skill: characters.Skill,
-        alternative_sprint: characters.Skill,
-        elemental_burst: characters.Skill
+        auto_attack: Optional[characters.Skill] = None,
+        elemental_skill: Optional[characters.Skill] = None,
+        elemental_burst: Optional[characters.Skill] = None,
+        alternative_sprint: Optional[characters.Skill] = None
 ) -> str:
-    formatted_active_skills = (
-        f"♟Активные Навыки:\n"
-        f"• Авто-атака: {auto_attack.title} -- {auto_attack.description}\n"
-        f"• Элем. навык: {elemental_skill.title} -- {elemental_skill.description}\n"
-        f"• Доп. навык: {alternative_sprint.title} -- {alternative_sprint.description}\n"
+    if not any(locals().values()):
+        return 'Информация пока отсутствует'
+
+    formatted_active_skills = [
+        '♟Активные Навыки:',
+        f"• Авто-атака: {auto_attack.title} -- {auto_attack.description}",
+        f"• Элем. навык: {elemental_skill.title} -- {elemental_skill.description}",
         f"• Взрыв стихии: {elemental_burst.title} -- {elemental_burst.description}"
-    )
-    return formatted_active_skills
+    ]
+    if alternative_sprint is not None:
+        formatted_active_skills.append(f"• Доп. навык: {alternative_sprint.title} -- {alternative_sprint.description}")
+    return '\n'.join(formatted_active_skills)
 
 
-def format_passive_skills(
-        first_passive: characters.Skill,
-        second_passive: characters.Skill,
-        third_passive: characters.Skill
-) -> str:
-    formatted_passive_skills = (
-        f"🎳Пассивные навыки:\n"
-        f"• {first_passive.title}: {first_passive.description}\n"
-        f"• {second_passive.title}: {second_passive.description}\n"
-        f"• {third_passive.title}: {third_passive.description}"
-    )
-    return formatted_passive_skills
+def format_passive_skills(skills: list[characters.Skill]) -> str:
+    if not skills:
+        return 'Информация пока отсутствует!'
+
+    formatted_passive_skills = [f"🎳Пассивные навыки:"]
+    for skill in skills:
+        formatted_passive_skills.append(f"• {skill.title}: {skill.description}")
+    return '\n'.join(formatted_passive_skills)
 
 
-def format_constellations(
-        first_constellation: characters.Skill,
-        second_constellation: characters.Skill,
-        third_constellation: characters.Skill,
-        fourth_constellation: characters.Skill,
-        fifth_constellation: characters.Skill,
-        sixth_constellation: characters.Skill
-) -> str:
-    formatted_constellations = (
-        f"🎆Описание созвездий:\n"
-        f"❶ {first_constellation.title}: {first_constellation.description}\n"
-        f"❷ {second_constellation.title}: {second_constellation.description}\n"
-        f"❸ {third_constellation.title}: {third_constellation.description}\n"
-        f"❹ {fourth_constellation.title}: {fourth_constellation.description}\n"
-        f"❺ {fifth_constellation.title}: {fifth_constellation.description}\n"
-        f"❻ {sixth_constellation.title}: {sixth_constellation.description}"
-    )
-    return formatted_constellations
+def format_constellations(constellations: list[characters.Skill]) -> str:
+    if not constellations:
+        return 'Информация пока отсутствует!'
+
+    formatted_constellations = [f"🎆Описание созвездий:"]
+    indexes = ['❶', '❷', '❸', '❹', '❺', '❻']
+    for i, constellation in enumerate(constellations):
+        formatted_constellations.append(f"{indexes[i]} {constellation.title}: {constellation.description}")
+    return '\n'.join(formatted_constellations)

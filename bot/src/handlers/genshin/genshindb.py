@@ -1,6 +1,7 @@
 import os
 import re
 from typing import Optional
+from textwrap import shorten
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import BotLabeler, Message, MessageEvent
@@ -235,20 +236,20 @@ async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
     apl['type'] = pl_type
 
     tokens = [[]]
-    section_names = [[]]
+    section_paths = [[]]
     buttons = 0
     last = list(sections)[-1]
     for section, objects in sections.items():
         page = len(keyboards)
         if payload['cat'] == 'Персонажи':
-            section_name = os.path.join(section)
+            section_path = section
         else:
-            section_name = await download(objects[list(objects.keys())[-1]][1], force=False)  #: last object in section
+            section_path = await download(objects[list(objects.keys())[-1]][1], force=False)  #: last object in section
         tokens[page].append(section)
-        section_names[page].append(section_name)
+        section_paths[page].append(section_path)
         apl['sect'] = section
         apl['s_page'] = page
-        kb.add(Callback(section, apl.copy()))
+        kb.add(Callback(shorten(section, 40, placeholder='...'), apl.copy()))
         buttons += 1
         if buttons % 2 == 0 and section != last:
             kb.row()
@@ -266,7 +267,7 @@ async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
                 epl['s_page'] = page + 1
                 kb.add(Callback('Далее', epl.copy()), KeyboardButtonColor.PRIMARY)
                 tokens.append([])
-                section_names.append([])
+                section_paths.append([])
             keyboards.append(kb.get_json())
             kb = Keyboard(inline=True)
             buttons = 0
@@ -276,7 +277,7 @@ async def get_db_sections(event: MessageEvent, payload: Payload) -> None:
     if fetched_page is not None:
         attachment = fetched_page
     else:
-        section_path = await SectionImageGenerator(section_names[page], page + 1, payload['cat']).generate()
+        section_path = await SectionImageGenerator(section_paths[page], page + 1, payload['cat']).generate()
         attachment = await upload(bot.group.api, 'photo_messages', section_path)
         os.remove(section_path)
         await GenshinDB.push_page(payload['cat'], page, attachment, tokens[page])
@@ -301,7 +302,7 @@ async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
         object_urls[page].append(data[1])  #: object icon url
         apl['obj'] = obj
         apl['o_page'] = page
-        kb.add(Callback(obj, apl.copy()))
+        kb.add(Callback(shorten(obj, 40, placeholder='...'), apl.copy()))
         buttons += 1
         if buttons % 2 == 0 and buttons % 6 != 0 and obj != last:
             kb.row()
@@ -347,20 +348,20 @@ async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
 async def get_character(event: MessageEvent, payload: Payload) -> None:
     character = CharacterParser(payload['sect'], payload['obj'])
     buttons = {
-        'information': ('Основная информация', character.get_information),
-        'active_skills': ('Активные навыки', character.get_active_skills),
-        'passive_skills': ('Пассивные навыки', character.get_passive_skills),
-        'constellations': ('Созвездия', character.get_constellations),
-        'ascension': ('Возвышение', upload)
+        'information': 'Основная информация',
+        'active_skills': 'Активные навыки',
+        'passive_skills': 'Пассивные навыки',
+        'constellations': 'Созвездия',
+        'ascension': 'Возвышение'
     }
     kb = Keyboard(inline=True)
     apl = payload.copy()
 
     default = list(buttons)[0]
-    for data in buttons:
+    for data, label in buttons.items():
         if data != payload.get('data', default):
             apl['data'] = data
-            kb.add(Callback(buttons[data][0], apl.copy()))
+            kb.add(Callback(label, apl.copy()))
             kb.row()
     apl['type'] = f"{payload['type']}s"
     del apl['obj']
@@ -372,15 +373,22 @@ async def get_character(event: MessageEvent, payload: Payload) -> None:
         KeyboardButtonColor.POSITIVE
     )
 
-    if payload.get('data', default) != 'ascension':
-        attachment = await upload(bot.group.api, 'photo_messages', await download(character.icon, force=False))
-        message = await buttons[payload.get('data', default)][1]()
-    else:
-        ascension_path = await AscensionImageGenerator(character.name, await character.get_ascension()).generate()
-        attachment = await upload(bot.group.api, 'photo_messages', ascension_path)
-        os.remove(ascension_path)
-        message = f"🖼Материалы возвышения персонажа '{character.name}':"
-
+    attachment = None
+    match payload.get('data'):
+        case 'active_skills':
+            message = tpl.characters.format_active_skills(*(await character.get_active_skills()))
+        case 'passive_skills':
+            message = tpl.characters.format_passive_skills(await character.get_passive_skills())
+        case 'constellations':
+            message = tpl.characters.format_constellations(await character.get_constellations())
+        case 'ascension':
+            message = f"🖼Материалы возвышения персонажа '{character.name}':"
+            ascension = await AscensionImageGenerator(character.name, await character.get_ascension()).generate()
+            attachment = await upload(bot.group.api, 'photo_messages', ascension)
+            os.remove(ascension)
+        case _:
+            message = tpl.characters.format_information(await character.get_information())
+    attachment = attachment or await upload(bot.group.api, 'photo_messages', await download(character.icon, force=False))
     await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
 
 
@@ -416,22 +424,16 @@ async def get_weapon(event: MessageEvent, payload: Payload) -> None:
     message = None
     attachment = None
     match payload.get('data'):
-        case 'information':
-            message = await weapon.get_information()
         case 'ability':
-            message = await weapon.get_ability()
+            message = tpl.weapons.format_ability(await weapon.get_ability())
         case 'progression':
-            image = await WeaponProgressionImageGenerator(weapon.icon, await weapon.get_progression()).generate()
-            attachment = await upload(
-                bot.group.api,
-                'photo_messages',
-                image
-            )
-            os.remove(image)
+            progression = await WeaponProgressionImageGenerator(weapon.icon, await weapon.get_progression()).generate()
+            attachment = await upload(bot.group.api, 'photo_messages', progression)
+            os.remove(progression)
         case 'refinement':
-            message = await weapon.get_refinement()
+            message = tpl.weapons.format_refinement(await weapon.get_refinement())
         case _:
-            message = await weapon.get_information()
+            message = tpl.weapons.format_information(await weapon.get_information())
     attachment = attachment or await upload(bot.group.api, 'photo_messages', await download(weapon.icon, force=False))
     await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
 
@@ -453,7 +455,7 @@ async def get_artifact(event: MessageEvent, payload: Payload) -> None:
     )
 
     await event.edit_message(
-        await artifact.get_information(),
+        tpl.artifacts.format_information(await artifact.get_information()),
         attachment=await upload(bot.group.api, 'photo_messages', await download(artifact.icon, force=False)),
         keyboard=kb.get_json()
     )
@@ -488,23 +490,18 @@ async def get_enemy(event: MessageEvent, payload: Payload) -> None:
     message = None
     match payload.get('data'):
         case 'progression':
-            image = await EnemyProgressionImageGenerator(enemy.icon, await enemy.get_progression()).generate()
-            attachment = await upload(
-                bot.group.api,
-                'photo_messages',
-                image
-            )
-            os.remove(image)
+            progression = await EnemyProgressionImageGenerator(enemy.icon, await enemy.get_progression()).generate()
+            attachment = await upload(bot.group.api, 'photo_messages', progression)
+            os.remove(progression)
         case _:
             information = await enemy.get_information()
             message = tpl.enemies.format_information(information)
-            image = await EnemyDropImageGenerator(enemy.icon, information.drop).generate()
-            attachment = await upload(
-                bot.group.api,
-                'photo_messages',
-                image
-            )
-            os.remove(image)
+            if information is not None:
+                drop = await EnemyDropImageGenerator(enemy.icon, information.drop).generate()
+                attachment = await upload(bot.group.api, 'photo_messages', drop)
+                os.remove(drop)
+            else:
+                attachment = None
     await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
 
 
@@ -525,16 +522,12 @@ async def get_book(event: MessageEvent, payload: Payload) -> None:
     )
 
     icon = await upload(bot.group.api, 'photo_messages', await download(book.icon, force=False))
-    message = await book.get_information()
+    message = tpl.books.format_information(await book.get_information())
     book = await book.save()
     book_path, book_name = book, book.rsplit(os.sep, maxsplit=1)[1]
     doc = await upload(bot.group.api, 'document_messages', book_name, book_path, peer_id=event.peer_id)
     os.remove(book_path)
-    await event.edit_message(
-        message,
-        attachment=f"{icon},{doc}",
-        keyboard=kb.get_json()
-    )
+    await event.edit_message(message, attachment=f"{icon},{doc}", keyboard=kb.get_json())
 
 
 @bl.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['domain']))
@@ -553,11 +546,11 @@ async def get_domain(event: MessageEvent, payload: Payload) -> None:
         )
     )
 
-    image_path = await DomainImageGenerator(domain.icon, domain.monsters, domain.rewards).generate()
-    attachment = await upload(bot.group.api, 'photo_messages', image_path)
-    os.remove(image_path)
+    image = await DomainImageGenerator(domain.icon, domain.monsters, domain.rewards).generate()
+    attachment = await upload(bot.group.api, 'photo_messages', image)
+    os.remove(image)
     await event.edit_message(
-        await domain.get_information(),
+        tpl.domains.format_information(await domain.get_information()),
         attachment=attachment,
         keyboard=kb.get_json()
     )

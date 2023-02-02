@@ -1,8 +1,13 @@
+from typing import Optional
+
 from ...models.honeyimpact import weapons
 
 
-def format_information(weapon: weapons.Information) -> str:
-    formatted_information = (
+def format_information(weapon: Optional[weapons.Information]) -> str:
+    if weapon is None:
+        return 'Информация пока отсутствует!'
+
+    return (
         f"🖼Основная информация:\n"
         f"🔫Оружие: {weapon.name}\n"
         f"⚔Тип: {weapon.type}\n"
@@ -11,19 +16,23 @@ def format_information(weapon: weapons.Information) -> str:
         f"🔨{weapon.secondary_stat_title}: {weapon.secondary_stat_value}\n"
         f"📖Описание: {weapon.description}"
     )
-    return formatted_information
 
 
-def format_ability(ability: weapons.Ability) -> str:
-    formatted_ability = (
+def format_ability(ability: Optional[weapons.Ability]) -> str:
+    if ability is None:
+        return 'Информация пока отсутствует!'
+
+    return (
         f"📋Пассивная способность:\n"
         f"✨Название: {ability.title}\n"
         f"📖Описание: {ability.description}"
     )
-    return formatted_ability
 
 
 def format_refinement(refinements: list[weapons.Refinement]) -> str:
+    if not refinements:
+        return 'Информация пока отсутствует!'
+
     formatted_refinement = ['⚒Пробуждение оружия:']
     for r in refinements:
         formatted_refinement.append(
@@ -33,8 +42,4 @@ def format_refinement(refinements: list[weapons.Refinement]) -> str:
 
 
 def format_story(story: str) -> str:
-    formatted_story = (
-        f"📚История оружия:\n"
-        f"{story}"
-    )
-    return formatted_story
+    return 'Информация пока отсутствует!' if not story else f"📚История оружия:\n{story}"
