@@ -1,22 +1,25 @@
 from importlib import import_module
 from types import ModuleType
 
-from vkbottle import API, Bot, User
+from vkbottle import API, Bot, User, ErrorHandler
 from vkbottle.bot import BotLabeler
 
 from .dependencies import user
 from .dependencies import group
 
 
-__all__ = ('bot',)
+__all__ = (
+    'bot',
+    'error_handler'
+)
 
 
 class GenshinBot:
     _labeler = BotLabeler()
 
-    def __init__(self):
-        self.group = Bot(api=API(group.TOKEN), labeler=self._labeler)
-        self.user = User(api=API(user.TOKEN), labeler=self._labeler)
+    def __init__(self, err_handler: ErrorHandler):
+        self.group = Bot(api=API(group.TOKEN), labeler=self._labeler, error_handler=err_handler)
+        self.user = User(api=API(user.TOKEN), labeler=self._labeler, error_handler=err_handler)
 
     def load_labelers(self) -> 'GenshinBot':
         handlers: ModuleType = import_module('...handlers', __name__)
@@ -31,4 +34,5 @@ class GenshinBot:
         return self
 
 
-bot = GenshinBot()
+error_handler = ErrorHandler()
+bot = GenshinBot(error_handler)

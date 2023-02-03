@@ -11,6 +11,7 @@ from vkbottle import API, VKAPIError
 from vkbottle import PhotoMessageUploader, DocMessagesUploader, PhotoWallUploader, DocWallUploader, VideoUploader
 
 from ..utils import catch_aiohttp_errors
+from ..config import error_handler
 from ..config.dependencies.paths import FILECACHE, LOGS
 
 
@@ -72,6 +73,7 @@ async def upload(
     return attachment
 
 
+@error_handler.register_undefined_error_handler
 async def write_logs(error: Exception) -> None:
     dt = datetime.now()
     async with aiofiles.open(f"{LOGS}{os.sep}{dt.strftime('%B %Y')}.txt", 'a', encoding='utf-8') as log:

@@ -16,6 +16,7 @@ from .utils.postgres import has_postgres_data
 from .types.sankaku import MediaType, Rating, TagType
 from .templates.artposting import format_post_message, format_post_source
 from .models.hoyolab import GenshinAccount
+from .config.genshinbot import error_handler
 from .config.dependencies.group import ID
 
 
@@ -33,6 +34,7 @@ class ResinNotifier:
         self.api = api
 
     @cycle(hours=1)
+    @error_handler.catch
     async def notify(self) -> None:
         for user in await self._get_users():
             resin = await self._get_user_resin(await get_genshin_account_by_id(user['user_id']))
@@ -115,6 +117,7 @@ class PostManager:
         return ('genshin_impact',) if not self.THEMATIC else self.THEMATIC_TAGS
 
     @cycle(hours=2)
+    @error_handler.catch
     async def make_post(self, donut: bool = False):
         parser = SankakuParser(tags=self.tags, rating=Rating.E if donut else Rating.S)
         async for post in parser.iter_posts(self.MINIMUM_DONUT_FAV_COUNT if donut else self.MINIMUM_FAV_COUNT):
@@ -150,6 +153,7 @@ class PostManager:
 
 
 @cycle(hours=12)
+@error_handler.catch
 async def cache_genshindb_objects() -> None:
     json.dump(await CharacterParser.get_characters(), 'characters')
     json.dump(await WeaponParser.get_weapons(), 'weapons')
@@ -162,6 +166,7 @@ async def cache_genshindb_objects() -> None:
 
 
 @cycle()
+@error_handler.catch
 async def collect_login_bonus() -> None:
     time = get_current_timestamp(3)  #: Moscow time offset
 
@@ -181,6 +186,7 @@ async def collect_login_bonus() -> None:
 
 
 @cycle(hours=1)
+@error_handler.catch
 async def refresh_cookies() -> None:
     async with PostgresConnection() as connection:
         for account in await connection.fetch(f"SELECT * FROM genshin_accounts"):
