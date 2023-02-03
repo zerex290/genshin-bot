@@ -11,7 +11,7 @@ from vkbottle import API, VKAPIError
 from vkbottle import PhotoMessageUploader, DocMessagesUploader, PhotoWallUploader, DocWallUploader, VideoUploader
 
 from ..utils import catch_aiohttp_errors
-from ..config import error_handler
+from ..config.genshinbot import error_handler
 from ..config.dependencies.paths import FILECACHE, LOGS
 
 
