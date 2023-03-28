@@ -255,7 +255,7 @@ class WeaponParser:
                 _, name, rarity, atk, sub, value, affix, _ = weapon
                 href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
                 icon = f"{honeyimpact.URL}img/{href}.webp"
-                name = re.search(r'[\w\s:-]+', await name.text())[0]
+                name = re.search(r'[\w\s:?-]+', await name.text())[0]
                 rarity = int(re.search(r'\d', await rarity.text())[0])
                 if isinstance(sub, _AsyncHtmlElement):
                     sub = _format_stat(await sub.text())
@@ -350,7 +350,7 @@ class ArtifactParser:
                 icons, name, affix = artifact
                 href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
                 icon = f"{honeyimpact.URL}img/{href}.webp"
-                name = re.search(r'[\w\s:-]+', await name.text())[0]
+                name = re.search(r'[\w\s:?-]+', await name.text())[0]
                 affix = [
                     re.sub(r'<[^>]+>|[124]-Piece:\s?', '', (await span.xpath('./text()'))[0])
                     for span in await affix.xpath('//span')
@@ -532,7 +532,7 @@ class DomainParser:
                 _, name, monsters, rewards = domain
                 href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
                 icon = link.format(href)
-                name = re.search(r'[\w\s:-]+', await name.text())[0]
+                name = re.search(r'[\w\s:?-]+', await name.text())[0]
                 if isinstance(monsters, _AsyncHtmlElement):
                     monsters = [link.format(re.search(r'\w+\d+', m)[0]) for m in await monsters.xpath('//@href')]
                 else:
@@ -651,7 +651,7 @@ class BossMaterialParser:
             for boss_material in table:
                 _, name, _, _, used_by = boss_material
                 icon = link.format(re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0])
-                name = re.search(r'[\w\s:-]+', await name.text())[0]
+                name = re.search(r'[\w\s:?-]+', await name.text())[0]
                 if isinstance(used_by, _AsyncHtmlElement):
                     used_by = [link.format(re.search(r'\w+\d+', ch)[0]) for ch in await used_by.xpath('//@href')]
                 else:
