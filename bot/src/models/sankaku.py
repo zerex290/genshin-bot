@@ -79,6 +79,7 @@ class Post:
     redirect_to_signup: bool
 
     sequence: Any
+    generation_directives: Any
     video_duration: Any
     tags: list[Tag]
 

@@ -48,6 +48,8 @@ class Character(Enum):
     YAOYAO = 'Яо Яо'
     DEHYA = 'Дэхья'
     MIKA = 'Мика'
+    KAVEH = 'Кавех'
+    BAIZHUER = 'Бай Чжу'
 
     ALHAITHAM = 'Аль-Хайтам'
     ALHATHAM = 'Аль-Хайтам'

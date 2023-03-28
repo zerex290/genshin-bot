@@ -465,7 +465,7 @@ class BookParser:
         if tree is None:
             return None
         b_table = await tree.xpath(
-            '//label[@class="menu_item_text" and text()="Книги"]/following-sibling::div[1]//a'
+            '//label[@class="menu_item_text" and text()="Codex Series"][1]/following-sibling::div[1]/a'
         )
         for book in b_table:
             href = re.search(r'\w+\d+', (await book.xpath('./@href'))[0])[0]
@@ -578,7 +578,7 @@ class DailyFarmParser:
         for div in await elem.xpath('./div'):
             weekday = int(div.get('data-days'))
             for ep in await div.xpath('.//img/@src'):
-                icon = honeyimpact.URL + re.sub(r'_\d+.webp', '.webp', ep[1:])
+                icon = honeyimpact.URL + re.sub(r'_\d+.webp.+', '.webp', ep[1:])
                 materials.append(mdl.dailyfarm.Material(weekday, icon))
         return materials
 
