@@ -400,7 +400,7 @@ class EnemyParser:
                 _, name, grade, drop = enemy
                 href = re.search(r'\w+\d+', (await name.xpath('//@href'))[0])[0]
                 icon = link.format(href)
-                name = re.search(r'[\w\s:-]+', await name.text())[0]
+                name = re.search(r'[\w\s:?-]+', await name.text())[0]
                 grade = Grade[(await grade.text()).upper()].value
                 if isinstance(drop, _AsyncHtmlElement):
                     drop = {
