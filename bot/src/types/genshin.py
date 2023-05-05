@@ -50,6 +50,7 @@ class Character(Enum):
     MIKA = 'Мика'
     KAVEH = 'Кавех'
     BAIZHUER = 'Бай Чжу'
+    MOMOKA = 'Кирара'
 
     ALHAITHAM = 'Аль-Хайтам'
     ALHATHAM = 'Аль-Хайтам'

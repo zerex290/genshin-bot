@@ -22,6 +22,7 @@ class Tag:
     count: int
     post_count: int
     pool_count: int
+    series_count: int
     locale: str
     rating: Rating
     version: Optional[int]

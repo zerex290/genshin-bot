@@ -5,9 +5,6 @@ from typing import Optional
 
 from vkbottle import API, VKAPIError
 
-from genshin import complete_cookies
-from genshin.errors import CookieException
-
 from .parsers import *
 from .utils import PostgresConnection, GenshinClient, json, get_current_timestamp, find_forbidden_tags, cycle
 from .utils.files import download, upload
@@ -25,7 +22,6 @@ __all__ = (
     'PostManager',
     'cache_genshindb_objects',
     'collect_login_bonus',
-    'refresh_cookies'
 )
 
 
@@ -183,24 +179,3 @@ async def collect_login_bonus() -> None:
             async with GenshinClient(account, exc_catch=True) as client:
                 await client.claim_daily_reward(reward=False)
         await asyncio.sleep(24*3600 - time.minute*60)
-
-
-@cycle(hours=1)
-@error_handler.catch
-async def refresh_cookies() -> None:
-    async with PostgresConnection() as connection:
-        for account in await connection.fetch(f"SELECT * FROM genshin_accounts"):
-            account = GenshinAccount(**dict(account))
-            try:
-                cookies = await complete_cookies(
-                    {'account_id': account.account_id, 'cookie_token': account.cookie_token}
-                )
-                cols = []
-                for k, v in cookies.items():
-                    v = int(v) if (isinstance(v, int) or v.isnumeric()) else f"'{v}'"
-                    cols.append(f"{k} = {v}")
-                await connection.execute(f"""
-                    UPDATE genshin_accounts SET {', '.join(cols)} WHERE user_id = {account.user_id};
-                """)
-            except CookieException:
-                pass
