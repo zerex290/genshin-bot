@@ -224,7 +224,7 @@ async def get_section_objects(event: MessageEvent, payload: Payload) -> None:
         payload['type'] = payload['prev']
         del payload['prev']
         state = _RandomPictureState(*eval(payload['state']))
-        state.tags = (*state.tags, payload['tag'])
+        state.tags = [*state.tags, payload['tag']]
         attachments = await RandomPicture.get_attachments(*eval(repr(state)))
 
     keyboards = []
