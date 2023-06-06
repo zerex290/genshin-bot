@@ -19,7 +19,7 @@ def cycle(
         @wraps(func)
         async def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> None:
             while True:
-                await func(*args, **kwargs)
+                await func(*args, **kwargs)  # noqa
                 await asyncio.sleep(hours * 3600 + minutes * 60 + seconds)
         return wrapper
     return decorator

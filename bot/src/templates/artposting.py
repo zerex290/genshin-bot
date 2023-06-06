@@ -1,10 +1,12 @@
 import re
 
-from ..models.sankaku import TagType, Tag
+from sankaku.models import PostTag
+from sankaku.types import TagType
+
 from ..config.dependencies.group import SHORTNAME
 
 
-def format_post_message(donut: bool, tags: list[Tag]) -> str:
+def format_post_message(donut: bool, tags: list[PostTag]) -> str:
     match donut:
         case True:
             character = [_prettify_tag(tag.name_en) for tag in tags if tag.type == TagType.CHARACTER]

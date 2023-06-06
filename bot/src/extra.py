@@ -5,12 +5,14 @@ from typing import Optional
 
 from vkbottle import API, VKAPIError
 
+from sankaku import SankakuClient
+from sankaku.types import PostOrder, Rating, FileType, TagType
+
 from .parsers import *
-from .utils import PostgresConnection, GenshinClient, json, get_current_timestamp, find_forbidden_tags, cycle
+from .utils import PostgresConnection, GenshinClient, json, get_current_timestamp, cycle
 from .utils.files import download, upload
 from .utils.genshin import get_genshin_account_by_id
 from .utils.postgres import has_postgres_data
-from .types.sankaku import MediaType, Rating, TagType
 from .templates.artposting import format_post_message, format_post_source
 from .models.hoyolab import GenshinAccount
 from .config.genshinbot import error_handler
@@ -101,31 +103,28 @@ class ResinNotifier:
 
 class PostManager:
     THEMATIC: bool = False
-    THEMATIC_TAGS: tuple[str, ...] = ()
+    THEMATIC_TAGS: list[str] = []
     MINIMUM_DONUT_FAV_COUNT: int = 500
     MINIMUM_FAV_COUNT: int = 500
 
     def __init__(self, api: API) -> None:
         self.api = api
 
-    @property
-    def tags(self) -> tuple[str, ...]:
-        return ('genshin_impact',) if not self.THEMATIC else self.THEMATIC_TAGS
-
     @cycle(hours=2)
     @error_handler.catch
     async def make_post(self, donut: bool = False):
-        parser = SankakuParser(tags=self.tags, rating=Rating.E if donut else Rating.S)
-        async for post in parser.iter_posts(self.MINIMUM_DONUT_FAV_COUNT if donut else self.MINIMUM_FAV_COUNT):
-            if post.mediatype != MediaType.IMAGE:
+        async for post in SankakuClient().browse_posts(
+            order=PostOrder.RANDOM,
+            rating=Rating.EXPLICIT if donut else Rating.SAFE,
+            tags=self.THEMATIC_TAGS if self.THEMATIC else ["genshin_impact"]
+        ):
+            if post.file_type is not FileType.IMAGE:
                 continue
-            if donut and find_forbidden_tags(post, ('loli', 'shota', 'penis')):
-                continue
-            if len([tag for tag in post.tags if tag.type == TagType.CHARACTER]) > 2 and self.THEMATIC:
+            if len([tag for tag in post.tags if tag.type is TagType.CHARACTER]) > 2 and self.THEMATIC:
                 continue
             if await has_postgres_data(f"SELECT * FROM group_posts WHERE sankaku_post_id = {post.id};"):
                 continue
-            file = await download(post.file_url, name=str(post.id), ext=post.ext)
+            file = await download(post.file_url, name=str(post.id), ext=post.extension)
             if not file:
                 continue
             attachment = await upload(self.api, 'photo_wall', file)

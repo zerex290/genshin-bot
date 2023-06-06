@@ -3,14 +3,15 @@
 > implementation.
 
 ## Requirements
-* **python 3.10+**
-* **aiohttp**
-* **aiofiles**
-* **vkbottle**
-* **asyncpg**
-* **genshin**
-* **lxml**
-* **PIL**
+- **python 3.10+**
+- **aiohttp**
+- **aiofiles**
+- **vkbottle**
+- **asyncpg**
+- **genshin**
+- **lxml**
+- **PIL**
+- **sankaku**
 
 ## Installation
 > A few words about dependencies:

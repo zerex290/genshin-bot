@@ -44,7 +44,7 @@ def catch_hoyolab_errors(func: Callable[_P, Awaitable[_T]]) -> Callable[_P, Awai
     @wraps(func)
     async def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T | str:
         try:
-            return await func(*args, **kwargs)
+            return await func(*args, **kwargs)  # noqa
         except InvalidCookies:
             return 'Ошибка: указанные игровые данные больше недействительны!'
         except GenshinException as exc:

@@ -7,18 +7,18 @@ from typing import ClassVar
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import BotLabeler, Message, MessageEvent
 
+from sankaku import SankakuClient
+from sankaku.types import Rating, PostOrder, FileType
+
 from .base import RandomTag
 from bot.src import Options, Payload
 from bot.src.config import bot
-from bot.src.parsers import SankakuParser
 from bot.src.rules import CommandRule, EventRule
-from bot.src.utils import find_forbidden_tags
 from bot.src.utils.files import download, upload
 from bot.src.constants import tags as t
 from bot.src.errors import IncompatibleOptions
 from bot.src.validators.default import *
 from bot.src.manuals import default as man
-from bot.src.types.sankaku import MediaType, Rating
 
 
 bl = BotLabeler()
@@ -27,7 +27,7 @@ bl = BotLabeler()
 @dataclass()
 class _RandomPictureState:
     PSEUDONYMS: ClassVar[dict[str, str]] = {v: k for k, v in RandomTag.get_all_tags().items()}
-    tags: tuple[str, ...]
+    tags: list[str]
     nsfw: bool
     search_limit: int
     fav_count: int = 50
@@ -93,20 +93,23 @@ class RandomPicture:
         return kb.get_json()
 
     @staticmethod
-    async def get_attachments(tags: tuple[str, ...], nsfw: bool, search_limit: int, fav_count: int) -> str:
+    async def get_attachments(tags: list[str], nsfw: bool, search_limit: int, fav_count: int) -> str:
         attachments = []
         downloaded = []
-        rating = Rating.E if nsfw else Rating.S
-        async for post in SankakuParser(tags=tags, rating=rating).iter_posts(fav_count):
+        async for post in SankakuClient().browse_posts(
+            PostOrder.RANDOM,
+            rating=Rating.EXPLICIT if nsfw else Rating.SAFE,
+            tags=tags
+        ):
+            if post.fav_count < fav_count:
+                continue
             if len(attachments) >= search_limit:
                 break
             if post.id in downloaded:
                 continue
-            if post.mediatype != MediaType.IMAGE:
+            if post.file_type is not FileType.IMAGE:
                 continue
-            if nsfw and find_forbidden_tags(post, ('loli', 'shota')):
-                continue
-            picture = await download(post.sample_url, name=f"{post.id}_{random.randint(0, 10000)}", ext=post.ext)
+            picture = await download(post.sample_url, name=f"{post.id}_{random.randint(0, 10000)}", ext=post.extension)
             if not picture:
                 continue
             attachment = await upload(bot.group.api, 'photo_messages', picture)
@@ -146,11 +149,11 @@ class RandomPicture:
         return fav_count
 
     @staticmethod
-    def _get_tags(text: list[str]) -> tuple[str, ...]:
+    def _get_tags(text: list[str]) -> list[str]:
         if len(text) > 1:
-            return tuple(RandomTag.get_all_tags().get(tag, tag) for tag in text[1:])
+            return [RandomTag.get_all_tags().get(tag, tag) for tag in text[1:]]
         else:
-            return ()
+            return []
 
     @staticmethod
     def _compile_message(attachment_string: str) -> str:

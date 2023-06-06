@@ -13,7 +13,7 @@ def catch_aiohttp_errors(func: Callable[_P, Awaitable[_T]]) -> Callable[_P, Awai
     @wraps(func)
     async def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> Optional[_T]:
         try:
-            return await func(*args, **kwargs)
+            return await func(*args, **kwargs)  # noqa
         except (TimeoutError, ClientError):
             return None
     return wrapper
