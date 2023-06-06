@@ -67,7 +67,9 @@ GENSHIN_IMPACT = {
     'лайла': 'layla_(genshin_impact)',
     'аль-хайтам': 'alhaitham_(genshin_impact)',
     'дэхья': 'dehya_(genshin_impact)',
-    'мика': 'mika_(genshin_impact)'
+    'мика': 'mika_(genshin_impact)',
+    'кавех': 'kaveh_(genshin_impact)',
+    'кирара': 'kirara_(genshin_impact)'
 }
 
 ART_STYLE = {
