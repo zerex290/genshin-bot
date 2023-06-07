@@ -1,11 +1,12 @@
 import random
 import re
-from typing import Optional
+from typing import Optional, Dict
 from asyncio import sleep
 
 from vkbottle.bot import BotLabeler, Message
 
 from bot.src import Options
+from bot.src.config.dependencies.group import SHORTNAME
 from bot.src.rules import CommandRule
 from bot.src.utils import PostgresConnection
 from bot.src.utils.postgres import has_postgres_data
@@ -48,7 +49,7 @@ class Timer:
         self.validator = validator
 
     async def set(self) -> None:
-        text = self.message.text.removeprefix('!таймер')
+        text = re.sub('^!таймер', '', self.message.text)
         self.validator.check_timer_specified(text)
         time, note = (text.split('/')[0], text.split('/')[1]) if text.find('/') != -1 else (text, '')
         countdown = self._evaluate_time(time.lower())
@@ -75,7 +76,7 @@ class Timer:
 
 class RandomTag:
     @staticmethod
-    def get_all_tags() -> dict[str, str]:
+    def get_all_tags() -> Dict[str, str]:
         all_tags = {}
         all_tags.update(t.GENSHIN_IMPACT)
         all_tags.update(t.ART_STYLE)
@@ -87,7 +88,7 @@ class RandomTag:
         return all_tags
 
     @staticmethod
-    def get_all_tags_by_groups(options: Options) -> dict[str, str]:
+    def get_all_tags_by_groups(options: Options) -> Dict[str, str]:
         gathered_tags = {}
         tag_groups = {
             '~~г': t.GENSHIN_IMPACT,
@@ -105,7 +106,7 @@ class RandomTag:
         return gathered_tags
 
     @staticmethod
-    def get_randomized_tags(tags: dict[str, str]) -> str:
+    def get_randomized_tags(tags: Dict[str, str]) -> str:
         randomized_tags = []
         for _ in range(0, random.randint(1, len(tags) // 2)):
             if not tags:
@@ -119,7 +120,7 @@ class RandomTag:
 @bl.message(CommandRule(['команды'], ['~~п'], man.Guide))
 async def get_commands_article(message: Message, **_) -> None:
     msg = [
-        'Статья с подробным описанием всех команд: vk.com/@bot_genshin-commands',
+        f'Статья с подробным описанием всех команд: vk.com/{SHORTNAME}-commands',
         '\nОсновные команды:', '\n'.join(f"!{c}" for c in commands.MAIN),
         '\nКоманды по Геншину:', '\n'.join(f"!{c}" for c in commands.GENSHIN),
         '\nПользовательские команды:', '\n'.join(f"!{c}" for c in commands.CUSTOM), '!!<<триггер>>'
@@ -131,19 +132,18 @@ async def get_commands_article(message: Message, **_) -> None:
 async def manage_syntax_autocorrection(message: Message, options: Options) -> None:
     async with AutocorrectionValidator(message) as validator:
         autocorrection = Autocorrection(message.from_id)
-        match options:
-            case ['~~[default]']:
-                await message.answer(await autocorrection.get_status())
-            case ['~~выкл']:
-                await validator.check_autocorrection_enabled(message.from_id)
-                await autocorrection.turn_off()
-                await message.answer('Автокоррекция команд теперь выключена!')
-            case ['~~вкл']:
-                await validator.check_autocorrection_disabled(message.from_id)
-                await autocorrection.turn_on()
-                await message.answer('Автокоррекция команд теперь включена!')
-            case _:
-                raise IncompatibleOptions(options)
+        if options == ['~~[default]']:
+            await message.answer(await autocorrection.get_status())
+        elif options == ['~~выкл']:
+            await validator.check_autocorrection_enabled(message.from_id)
+            await autocorrection.turn_off()
+            await message.answer('Автокоррекция команд теперь выключена!')
+        elif options == ['~~вкл']:
+            await validator.check_autocorrection_disabled(message.from_id)
+            await autocorrection.turn_on()
+            await message.answer('Автокоррекция команд теперь включена!')
+        else:
+            raise IncompatibleOptions(options)
 
 
 @bl.message(CommandRule(['выбери'], ['~~п'], man.Choice))
@@ -188,10 +188,9 @@ async def forward_attachments(message: Message, **_) -> None:
 @bl.message(CommandRule(['рандомтег'], ['~~п', '~~г', '~~ср', '~~о', '~~у', '~~э', '~~т', '~~с'], man.RandomTag))
 async def get_random_tags(message: Message, options: Options) -> None:
     async with BaseValidator(message):
-        match options:
-            case ['~~[default]']:
-                await message.answer(RandomTag.get_randomized_tags(RandomTag.get_all_tags()))
-            case _ if '~~п' not in options:
-                await message.answer(RandomTag.get_randomized_tags(RandomTag.get_all_tags_by_groups(options)))
-            case _ if '~~п' in options:
-                raise IncompatibleOptions(options)
+        if options == ['~~[default]']:
+            await message.answer(RandomTag.get_randomized_tags(RandomTag.get_all_tags()))
+        elif '~~п' not in options:
+            await message.answer(RandomTag.get_randomized_tags(RandomTag.get_all_tags_by_groups(options)))
+        elif '~~п' in options:
+            raise IncompatibleOptions(options)

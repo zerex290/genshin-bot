@@ -1,7 +1,7 @@
 import os
 import re
 from random import randint
-from typing import Literal
+from typing import Literal, List, Dict
 
 from PIL import Image, ImageFont, ImageDraw
 from vkbottle_types.objects import GroupsGroupFull
@@ -45,7 +45,7 @@ class ImageGeneratorMixin:
 
 
 class MenuImageGenerator(ImageGeneratorMixin):
-    def __init__(self, categories: list[str], group: GroupsGroupFull) -> None:
+    def __init__(self, categories: List[str], group: GroupsGroupFull) -> None:
         self.categories = categories
         self.group = group
 
@@ -89,7 +89,7 @@ class MenuImageGenerator(ImageGeneratorMixin):
 
 
 class SectionImageGenerator(ImageGeneratorMixin):
-    def __init__(self, section_paths: list[str], page_num: int, category: str) -> None:
+    def __init__(self, section_paths: List[str], page_num: int, category: str) -> None:
         self.section_paths = section_paths
         self.page_num = page_num
         self.category = category
@@ -127,7 +127,7 @@ class SectionImageGenerator(ImageGeneratorMixin):
 
 
 class ObjectImageGenerator(ImageGeneratorMixin):
-    def __init__(self, object_urls: list[str], page_num: int, section: str) -> None:
+    def __init__(self, object_urls: List[str], page_num: int, section: str) -> None:
         self.object_urls = object_urls
         self.page_num = page_num
         self.section = section
@@ -215,7 +215,7 @@ class AscensionImageGenerator:
             self,
             template: Image.Image,
             material_type: Literal['lvl', 'talent'],
-            materials: list[mdl.characters.AscensionMaterial]
+            materials: List[mdl.characters.AscensionMaterial]
     ) -> None:
         w0, h0 = (225, 79) if material_type == 'lvl' else (550, 79)
         for i, m in enumerate(materials):
@@ -226,7 +226,7 @@ class AscensionImageGenerator:
 
 
 class DomainImageGenerator:
-    def __init__(self, cover_url: str, monsters: list[str], rewards: list[str]) -> None:
+    def __init__(self, cover_url: str, monsters: List[str], rewards: List[str]) -> None:
         self.cover_url = cover_url
         self.monsters = monsters
         self.rewards = rewards
@@ -265,7 +265,7 @@ class DomainImageGenerator:
             align_center(template, icon)
             return template
 
-    def _paste_icons(self, template: Image.Image, icons: list[Image.Image], indent_w: int, gap: int) -> None:
+    def _paste_icons(self, template: Image.Image, icons: List[Image.Image], indent_w: int, gap: int) -> None:
         for i, icon in enumerate(icons):
             x = indent_w + (icon.width + gap)*(i % 6)
             y = self._cpx_h + (icon.height + gap)*(i // 6)
@@ -273,7 +273,7 @@ class DomainImageGenerator:
 
 
 class WeaponProgressionImageGenerator:
-    def __init__(self, weapon_icon: str, progression: list[mdl.weapons.Progression]) -> None:
+    def __init__(self, weapon_icon: str, progression: List[mdl.weapons.Progression]) -> None:
         self.weapon_icon = weapon_icon
         self.progression = progression
         self._cpx_h = 34
@@ -316,7 +316,7 @@ class WeaponProgressionImageGenerator:
 
 
 class EnemyDropImageGenerator:
-    def __init__(self, enemy_icon: str, drop: dict[str, str]) -> None:
+    def __init__(self, enemy_icon: str, drop: Dict[str, str]) -> None:
         self.enemy_icon = enemy_icon
         self.drop = drop
         self._cpx_w = [306, 306, 306, 306]
@@ -356,7 +356,7 @@ class EnemyDropImageGenerator:
 
 
 class EnemyProgressionImageGenerator:
-    def __init__(self, enemy_icon: str, progression: list[mdl.enemies.Progression]) -> None:
+    def __init__(self, enemy_icon: str, progression: List[mdl.enemies.Progression]) -> None:
         self.enemy_icon = enemy_icon
         self.progression = progression
         self._cpx_h = [34, 34]

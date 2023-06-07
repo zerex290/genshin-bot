@@ -1,3 +1,6 @@
+from typing import List
+
+
 class GenshinBotException(Exception):
     _msg = ''
 
@@ -7,7 +10,7 @@ class GenshinBotException(Exception):
 
 
 class IncompatibleOptions(GenshinBotException):
-    def __init__(self, options: list[str]) -> None:
+    def __init__(self, options: List[str]) -> None:
         self.__class__._msg = f"Переданы несовместимые опции: {', '.join(options)}!"
 
 

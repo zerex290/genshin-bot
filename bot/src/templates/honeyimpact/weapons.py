@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from ...models.honeyimpact import weapons
 
@@ -29,7 +29,7 @@ def format_ability(ability: Optional[weapons.Ability]) -> str:
     )
 
 
-def format_refinement(refinements: list[weapons.Refinement]) -> str:
+def format_refinement(refinements: List[weapons.Refinement]) -> str:
     if not refinements:
         return 'Информация пока отсутствует!'
 

@@ -1,6 +1,9 @@
-SERVICE: list[str] = ['exec']
+from typing import List
 
-MAIN: list[str] = [
+
+SERVICE: List[str] = ['exec']
+
+MAIN: List[str] = [
     'команды',
     'автокоррект',
     'перешли',
@@ -11,7 +14,7 @@ MAIN: list[str] = [
     'рандомтег'
 ]
 
-GENSHIN: list[str] = [
+GENSHIN: List[str] = [
     'линк',
     'анлинк',
     'фарм',
@@ -27,7 +30,7 @@ GENSHIN: list[str] = [
     'бездна'
 ]
 
-CUSTOM: list[str] = [
+CUSTOM: List[str] = [
     'комы',
     'аддком',
     'делком'

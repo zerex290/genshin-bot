@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 
 @dataclass(frozen=True)
@@ -10,7 +11,7 @@ class Material:
 @dataclass(frozen=True)
 class Consumer:
     title: str
-    weekdays: list[int]
+    weekdays: List[int]
     icon: str
     rarity: int
 
@@ -18,5 +19,5 @@ class Consumer:
 @dataclass(frozen=True)
 class Zone:
     title: str
-    materials: list[Material]
-    consumers: list[Consumer]
+    materials: List[Material]
+    consumers: List[Consumer]

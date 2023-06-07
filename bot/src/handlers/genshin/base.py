@@ -20,18 +20,17 @@ bl = BotLabeler()
 @bl.message(CommandRule(['фарм'], ['~~п', '~~пн', '~~вт', '~~ср', '~~чт', '~~пт', '~~сб', '~~вс'], man.DailyMaterials))
 async def get_dailyfarm(message: Message, options: Options) -> None:
     async with BaseValidator(message):
-        match options:
-            case _ if '~~п' not in options:
-                attachments = []
-                weekdays = {'~~пн': 0, '~~вт': 1, '~~ср': 2, '~~чт': 3, '~~пт': 4, '~~сб': 5, '~~вс': 6}
-                weekdays = [weekdays.get(opt, datetime.now().weekday()) for opt in options]
-                materials = await DailyFarmImageGenerator(weekdays, await DailyFarmParser.get_zones()).generate()
-                for material in materials:
-                    attachments.append(await upload(bot.group.api, 'photo_messages', material))
-                    os.remove(material)
-                await message.answer(attachment=','.join(attachments))
-            case _ if '~~п' in options:
-                raise IncompatibleOptions(options)
+        if '~~п' not in options:
+            attachments = []
+            weekdays = {'~~пн': 0, '~~вт': 1, '~~ср': 2, '~~чт': 3, '~~пт': 4, '~~сб': 5, '~~вс': 6}
+            weekdays = [weekdays.get(opt, datetime.now().weekday()) for opt in options]
+            materials = await DailyFarmImageGenerator(weekdays, await DailyFarmParser.get_zones()).generate()
+            for material in materials:
+                attachments.append(await upload(bot.group.api, 'photo_messages', material))
+                os.remove(material)
+            await message.answer(attachment=','.join(attachments))
+        elif '~~п' in options:
+            raise IncompatibleOptions(options)
 
 
 @bl.message(CommandRule(['таланты'], ['~~п'], man.BossMaterials))

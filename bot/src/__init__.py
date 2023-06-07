@@ -1,5 +1,4 @@
-from typing import TypeAlias
-
+from typing import List, Dict, Union
 
 __all__ = (
     'Options',
@@ -7,5 +6,5 @@ __all__ = (
 )
 
 
-Options: TypeAlias = list[str]
-Payload: TypeAlias = dict[str, str | int]
+Options = List[str]
+Payload = Dict[str, Union[str, int]]

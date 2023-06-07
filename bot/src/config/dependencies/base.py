@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 
-ADMINS: list[int] = list(eval(os.getenv('ADMINS')))
+ADMINS: List[int] = [int(admin_id) for admin_id in os.getenv("ADMINS").split(",")]

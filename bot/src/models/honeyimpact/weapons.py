@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Union
 
 
 @dataclass(frozen=True)
@@ -9,7 +10,7 @@ class Information:
     primary_stat_title: str
     primary_stat_value: float
     secondary_stat_title: str
-    secondary_stat_value: int | float | str
+    secondary_stat_value: Union[int, float, str]
     description: str
 
 
@@ -21,11 +22,11 @@ class Ability:
 
 @dataclass(frozen=True)
 class Progression:
-    level: int | str
+    level: Union[int, str]
     primary_stat_title: str
-    primary_stat_value: int | float | str
+    primary_stat_value: Union[int, float, str]
     secondary_stat_title: str
-    secondary_stat_value: int | float | str
+    secondary_stat_value: Union[int, float, str]
 
 
 @dataclass(frozen=True)

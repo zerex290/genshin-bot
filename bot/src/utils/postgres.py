@@ -1,5 +1,3 @@
-from typing import Any
-
 import asyncpg
 
 from ..config.dependencies.postgres import DATABASE_ADDRESS
@@ -15,7 +13,7 @@ class PostgresConnection:
         return False
 
 
-async def has_postgres_data(query: str, *args: Any) -> bool:
+async def has_postgres_data(query: str, *args) -> bool:
     """
     :param query: Str query to postgresql database
     :param args: Query arguments

@@ -2,7 +2,7 @@ import random
 import os
 import re
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import List
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import BotLabeler, Message, MessageEvent
@@ -26,8 +26,8 @@ bl = BotLabeler()
 
 @dataclass()
 class _RandomPictureState:
-    PSEUDONYMS: ClassVar[dict[str, str]] = {v: k for k, v in RandomTag.get_all_tags().items()}
-    tags: list[str]
+    PSEUDONYMS = {v: k for k, v in RandomTag.get_all_tags().items()}
+    tags: List[str]
     nsfw: bool
     search_limit: int
     fav_count: int = 50
@@ -93,7 +93,7 @@ class RandomPicture:
         return kb.get_json()
 
     @staticmethod
-    async def get_attachments(tags: list[str], nsfw: bool, search_limit: int, fav_count: int) -> str:
+    async def get_attachments(tags: List[str], nsfw: bool, search_limit: int, fav_count: int) -> str:
         attachments = []
         downloaded = []
         async for post in SankakuClient().browse_posts(
@@ -149,7 +149,7 @@ class RandomPicture:
         return fav_count
 
     @staticmethod
-    def _get_tags(text: list[str]) -> list[str]:
+    def _get_tags(text: List[str]) -> List[str]:
         if len(text) > 1:
             return [RandomTag.get_all_tags().get(tag, tag) for tag in text[1:]]
         else:

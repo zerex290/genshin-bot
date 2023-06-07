@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Optional
+from typing import Optional, List, Tuple, Dict, Union
 from textwrap import shorten
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
@@ -69,7 +69,7 @@ class GenshinDB:
             return 'Список ваших шорткатов:\n' + '\n'.join(dict(s)['shortcut'] for s in shortcuts)
 
     @staticmethod
-    async def get_main_menu(user_id: int, group: GroupsGroupFull) -> dict[str, str, str]:
+    async def get_main_menu(user_id: int, group: GroupsGroupFull) -> Dict[str, str]:
         message = f"Доброго времени суток, {(await bot.group.api.users.get([user_id]))[0].first_name}!"
         menu_path = await MenuImageGenerator(list(GenshinDB.CATEGORIES.values()), group).generate()
         attachment = await upload(bot.group.api, 'photo_messages', menu_path)
@@ -92,7 +92,7 @@ class GenshinDB:
         )
 
     @staticmethod
-    async def fetch_page(name: str, page: int, token: list[str] | str) -> Optional[str]:
+    async def fetch_page(name: str, page: int, token: Union[List[str], str]) -> Optional[str]:
         """Fetch page from genshindb_pages.
 
         :param name: Category/section name
@@ -110,7 +110,7 @@ class GenshinDB:
             return attachment or await GenshinDB._delete_page(name, page)
 
     @staticmethod
-    async def push_page(name: str, page: int, photo_id: str, token: list[str] | str) -> None:
+    async def push_page(name: str, page: int, photo_id: str, token: Union[List[str], str]) -> None:
         """Push page to genshindb_pages.
 
         :param name: Category/section name
@@ -143,7 +143,7 @@ class GenshinDB:
         )
         return kb.get_json()
 
-    async def _parse_shortcut_data(self) -> tuple[MessagesKeyboard, str, str]:
+    async def _parse_shortcut_data(self) -> Tuple[MessagesKeyboard, str, str]:
         reply_msg = (
             await self.message.ctx_api.messages.get_by_conversation_message_id(
                 self.message.peer_id, [self.message.reply_message.conversation_message_id]
@@ -172,7 +172,7 @@ class GenshinDB:
                 );
             """, shortcut, msg)
 
-    async def _fetch_shortcut_from_db(self, shortcut: str) -> dict[str, str | int]:
+    async def _fetch_shortcut_from_db(self, shortcut: str) -> Dict[str, Union[str, int]]:
         async with PostgresConnection() as connection:
             shortcut = await connection.fetchrow(f"""
                 SELECT message, photo_id, keyboard FROM genshindb_shortcuts 
@@ -192,7 +192,7 @@ class GenshinDB:
             await connection.execute(f"DELETE FROM genshindb_pages WHERE name = '{name}' AND page = {page};")
 
     @staticmethod
-    def _process_token(token: list[str] | str) -> str:
+    def _process_token(token: Union[List[str], str]) -> str:
         return '/'.join(token) if isinstance(token, list) else token
 
 
@@ -200,19 +200,18 @@ class GenshinDB:
 async def get_genshin_database(message: Message, options: Options) -> None:
     async with GenshinDBValidator(message) as validator:
         genshin_db = GenshinDB(message, validator)
-        match options:
-            case ['~~[default]']:
-                await genshin_db.get()
-            case ['~~аш']:
-                shortcut = await genshin_db.add_shortcut()
-                await message.answer(f"Шорткат '{shortcut}' был успешно создан!")
-            case ['~~дш']:
-                shortcut = await genshin_db.delete_shortcut()
-                await message.answer(f"Шорткат '{shortcut}' был успешно удален!")
-            case ['~~ш']:
-                await message.answer(await genshin_db.get_user_shortcuts())
-            case _:
-                raise IncompatibleOptions(options)
+        if options == ['~~[default]']:
+            await genshin_db.get()
+        elif options == ['~~аш']:
+            shortcut = await genshin_db.add_shortcut()
+            await message.answer(f"Шорткат '{shortcut}' был успешно создан!")
+        elif options == ['~~дш']:
+            shortcut = await genshin_db.delete_shortcut()
+            await message.answer(f"Шорткат '{shortcut}' был успешно удален!")
+        elif options == ['~~ш']:
+            await message.answer(await genshin_db.get_user_shortcuts())
+        else:
+            raise IncompatibleOptions(options)
 
 
 @bl.raw_event('message_event', MessageEvent, EventRule(GenshinDB, ['menu']))
@@ -374,20 +373,20 @@ async def get_character(event: MessageEvent, payload: Payload) -> None:
     )
 
     attachment = None
-    match payload.get('data'):
-        case 'active_skills':
-            message = tpl.characters.format_active_skills(*(await character.get_active_skills()))
-        case 'passive_skills':
-            message = tpl.characters.format_passive_skills(await character.get_passive_skills())
-        case 'constellations':
-            message = tpl.characters.format_constellations(await character.get_constellations())
-        case 'ascension':
-            message = f"🖼Материалы возвышения персонажа '{character.name}':"
-            ascension = await AscensionImageGenerator(character.name, await character.get_ascension()).generate()
-            attachment = await upload(bot.group.api, 'photo_messages', ascension)
-            os.remove(ascension)
-        case _:
-            message = tpl.characters.format_information(await character.get_information())
+    pl_data = payload.get('data')
+    if pl_data == 'active_skills':
+        message = tpl.characters.format_active_skills(*(await character.get_active_skills()))
+    elif pl_data == 'passive_skills':
+        message = tpl.characters.format_passive_skills(await character.get_passive_skills())
+    elif pl_data == 'constellations':
+        message = tpl.characters.format_constellations(await character.get_constellations())
+    elif pl_data == 'ascension':
+        message = f"🖼Материалы возвышения персонажа '{character.name}':"
+        ascension = await AscensionImageGenerator(character.name, await character.get_ascension()).generate()
+        attachment = await upload(bot.group.api, 'photo_messages', ascension)
+        os.remove(ascension)
+    else:
+        message = tpl.characters.format_information(await character.get_information())
     attachment = attachment or await upload(bot.group.api, 'photo_messages', await download(character.icon, force=False))
     await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
 
@@ -423,17 +422,17 @@ async def get_weapon(event: MessageEvent, payload: Payload) -> None:
 
     message = None
     attachment = None
-    match payload.get('data'):
-        case 'ability':
-            message = tpl.weapons.format_ability(await weapon.get_ability())
-        case 'progression':
-            progression = await WeaponProgressionImageGenerator(weapon.icon, await weapon.get_progression()).generate()
-            attachment = await upload(bot.group.api, 'photo_messages', progression)
-            os.remove(progression)
-        case 'refinement':
-            message = tpl.weapons.format_refinement(await weapon.get_refinement())
-        case _:
-            message = tpl.weapons.format_information(await weapon.get_information())
+    pl_data = payload.get('data')
+    if pl_data == 'ability':
+        message = tpl.weapons.format_ability(await weapon.get_ability())
+    elif pl_data == 'progression':
+        progression = await WeaponProgressionImageGenerator(weapon.icon, await weapon.get_progression()).generate()
+        attachment = await upload(bot.group.api, 'photo_messages', progression)
+        os.remove(progression)
+    elif pl_data == 'refinement':
+        message = tpl.weapons.format_refinement(await weapon.get_refinement())
+    else:
+        message = tpl.weapons.format_information(await weapon.get_information())
     attachment = attachment or await upload(bot.group.api, 'photo_messages', await download(weapon.icon, force=False))
     await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
 
@@ -488,20 +487,19 @@ async def get_enemy(event: MessageEvent, payload: Payload) -> None:
     )
 
     message = None
-    match payload.get('data'):
-        case 'progression':
-            progression = await EnemyProgressionImageGenerator(enemy.icon, await enemy.get_progression()).generate()
-            attachment = await upload(bot.group.api, 'photo_messages', progression)
-            os.remove(progression)
-        case _:
-            information = await enemy.get_information()
-            message = tpl.enemies.format_information(information)
-            if information is not None:
-                drop = await EnemyDropImageGenerator(enemy.icon, information.drop).generate()
-                attachment = await upload(bot.group.api, 'photo_messages', drop)
-                os.remove(drop)
-            else:
-                attachment = None
+    if payload.get('data') == 'progression':
+        progression = await EnemyProgressionImageGenerator(enemy.icon, await enemy.get_progression()).generate()
+        attachment = await upload(bot.group.api, 'photo_messages', progression)
+        os.remove(progression)
+    else:
+        information = await enemy.get_information()
+        message = tpl.enemies.format_information(information)
+        if information is not None:
+            drop = await EnemyDropImageGenerator(enemy.icon, information.drop).generate()
+            attachment = await upload(bot.group.api, 'photo_messages', drop)
+            os.remove(drop)
+        else:
+            attachment = None
     await event.edit_message(message, attachment=attachment, keyboard=kb.get_json())
 
 

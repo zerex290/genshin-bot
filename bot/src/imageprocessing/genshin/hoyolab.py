@@ -1,8 +1,7 @@
 import os
-from typing import Optional
+from typing import Optional, Sequence
 from re import sub
 from random import randint
-from collections.abc import Sequence
 
 from PIL import Image, ImageFont, ImageDraw
 from genshin.models import Notes, Expedition  #: For notes

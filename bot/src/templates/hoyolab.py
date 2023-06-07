@@ -1,6 +1,6 @@
 import datetime
 import re
-from typing import Sequence, Literal, TypeAlias
+from typing import Sequence, Literal
 
 from vkbottle_types.objects import UsersUserFull
 
@@ -12,7 +12,7 @@ from ..types.genshin import Character, ElementSymbol, Region, ExplorationOfferin
 from ..types.uncategorized import IntMonth, Month
 
 
-_Display: TypeAlias = Literal['short', 'long']
+_Display = Literal['short', 'long']
 
 
 def format_notes(notes: Notes, user: UsersUserFull, display: _Display) -> str:
@@ -173,15 +173,13 @@ def _format_recovery_time(object_recovery_time: datetime.datetime) -> str:
         return '0 сек.'
 
     time = re.sub(r'\sday[s,]+\s', ':', str(object_recovery_time - current_time).split('.')[0]).split(':')
-    match len(time):
-        case 4:
-            return '{} д. {} ч. {} мин.'.format(*time[:-1])
-        case 3:
-            return '{} ч. {} мин.'.format(*time[:-1])
-        case 2:
-            return '{} мин. {} сек.'.format(*time)
-        case 1:
-            return '{} сек.'.format(*time)
+    tformats = {
+        4: '{} д. {} ч. {} мин.'.format(*time[:-1]),
+        3: '{} ч. {} мин.'.format(*time[:-1]),
+        2: '{} мин. {} сек.'.format(*time),
+        1: '{} сек.'.format(*time)
+    }
+    return tformats.get(len(time))
 
 
 def _format_abyss_character(ch: AbyssRankCharacter) -> str:

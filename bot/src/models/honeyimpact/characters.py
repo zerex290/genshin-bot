@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 
 @dataclass(frozen=True)
@@ -31,5 +32,5 @@ class AscensionMaterial:
 @dataclass(frozen=True)
 class Ascension:
     gacha_icon: str
-    lvl: list[AscensionMaterial]
-    talents: list[AscensionMaterial]
+    lvl: List[AscensionMaterial]
+    talents: List[AscensionMaterial]

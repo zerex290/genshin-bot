@@ -183,39 +183,37 @@ async def view_custom_commands(message: Message, options: Options) -> None:
     async with ViewValidator(message) as validator:
         validator.check_chat_allowed(message.peer_id)
         commands = CommandList(message.peer_id)
-        match options:
-            case ['~~[default]']:
-                await message.answer(await commands.get())
-            case ['~~с']:
-                await message.answer(await commands.get_status())
-            case ['~~общ']:
-                await validator.check_privileges(message.ctx_api, message.peer_id, message.from_id)
-                await validator.check_actions_restricted(message.peer_id)
-                await commands.make_public()
-                await message.answer('Манипуляции с пользовательскими командами теперь являются общедоступными!')
-            case ['~~огр']:
-                await validator.check_privileges(message.ctx_api, message.peer_id, message.from_id)
-                await validator.check_actions_public(message.peer_id)
-                await commands.make_restricted()
-                await message.answer('Манипуляции с пользовательскими командами теперь являются ограниченными!')
-            case _:
-                raise IncompatibleOptions(options)
+        if options == ['~~[default]']:
+            await message.answer(await commands.get())
+        elif options == ['~~с']:
+            await message.answer(await commands.get_status())
+        elif options == ['~~общ']:
+            await validator.check_privileges(message.ctx_api, message.peer_id, message.from_id)
+            await validator.check_actions_restricted(message.peer_id)
+            await commands.make_public()
+            await message.answer('Манипуляции с пользовательскими командами теперь являются общедоступными!')
+        elif options == ['~~огр']:
+            await validator.check_privileges(message.ctx_api, message.peer_id, message.from_id)
+            await validator.check_actions_public(message.peer_id)
+            await commands.make_restricted()
+            await message.answer('Манипуляции с пользовательскими командами теперь являются ограниченными!')
+        else:
+            raise IncompatibleOptions(options)
 
 
 @bl.chat_message(CustomCommandRule(['~~п', '~~инфо', '~~ред'], man.Command))
 async def get_custom_command(message: Message, command: mdl.CustomCommand, options: Options) -> None:
     async with CommandValidator(message) as validator:
         custom_command = Command(message, command, validator)
-        match options:
-            case ['~~[default]']:
-                await custom_command.get()
-            case ['~~инфо']:
-                await custom_command.get_information()
-            case ['~~ред']:
-                await custom_command.edit()
-                await message.answer(f"Успешно отредактирована команда '{command.name}'!")
-            case _:
-                raise IncompatibleOptions(options)
+        if options == ['~~[default]']:
+            await custom_command.get()
+        elif options == ['~~инфо']:
+            await custom_command.get_information()
+        elif options == ['~~ред']:
+            await custom_command.edit()
+            await message.answer(f"Успешно отредактирована команда '{command.name}'!")
+        else:
+            raise IncompatibleOptions(options)
 
 
 @bl.message(CommandRule(['делком'], ['~~п'], man.CommandDeletion))

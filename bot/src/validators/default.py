@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from re import Match
 
 from vkbottle import API
@@ -22,12 +22,12 @@ __all__ = (
 
 class ChoiceValidator(BaseValidator):
     @staticmethod
-    def check_options_specified(choice_options: list[str]) -> None:
+    def check_options_specified(choice_options: List[str]) -> None:
         if not choice_options:
             raise ChoiceOptionsNotSpecified
 
     @staticmethod
-    def check_options_syntax(choice_options: list[str]):
+    def check_options_syntax(choice_options: List[str]):
         if '' in choice_options:
             raise ChoiceOptionsSyntaxError
 
@@ -70,12 +70,12 @@ class TimerValidator(BaseValidator):
 
 class AttachmentForwardValidator(BaseValidator):
     @staticmethod
-    def check_attachments(attachments: Optional[list[MessagesMessageAttachment]]) -> None:
+    def check_attachments(attachments: Optional[List[MessagesMessageAttachment]]) -> None:
         if not attachments:
             raise AttachmentError
 
     @staticmethod
-    def check_attachment_response(response: list[str]) -> None:
+    def check_attachment_response(response: List[str]) -> None:
         if not response:
             raise AttachmentTypeError
 
@@ -99,7 +99,7 @@ class RandomPictureValidator(BaseValidator):
             raise FavCountRangeInvalid
 
     @staticmethod
-    def check_picture_quantity_specified(query: list[str]) -> None:
+    def check_picture_quantity_specified(query: List[str]) -> None:
         if not query or not query[0].isdigit():
             raise PictureQuantityNotSpecified
 
@@ -109,6 +109,6 @@ class RandomPictureValidator(BaseValidator):
             raise PictureQuantityOverflow
 
     @staticmethod
-    def check_tag_quantity(tags: list[str], is_interactive: bool) -> None:
+    def check_tag_quantity(tags: List[str], is_interactive: bool) -> None:
         if len(tags) > (2 if is_interactive else 3):
             raise TagQuantityOverflow(is_interactive)

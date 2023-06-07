@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from ...models.honeyimpact import characters
 
@@ -43,7 +43,7 @@ def format_active_skills(
     return '\n'.join(formatted_active_skills)
 
 
-def format_passive_skills(skills: list[characters.Skill]) -> str:
+def format_passive_skills(skills: List[characters.Skill]) -> str:
     if not skills:
         return 'Информация пока отсутствует!'
 
@@ -53,7 +53,7 @@ def format_passive_skills(skills: list[characters.Skill]) -> str:
     return '\n'.join(formatted_passive_skills)
 
 
-def format_constellations(constellations: list[characters.Skill]) -> str:
+def format_constellations(constellations: List[characters.Skill]) -> str:
     if not constellations:
         return 'Информация пока отсутствует!'
 

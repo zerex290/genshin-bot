@@ -2,7 +2,7 @@ from __future__ import annotations
 import asyncio
 import re
 import os
-from typing import Optional
+from typing import Optional, List, Union, Dict
 
 import aiohttp
 import aiofiles
@@ -46,7 +46,7 @@ class _AsyncHtmlElement:
     def __getattr__(self, attr):
         return getattr(self._element, attr)
 
-    async def xpath(self, expr: str, *args) -> list[_AsyncHtmlElement | str | float | int]:
+    async def xpath(self, expr: str, *args) -> List[Union[_AsyncHtmlElement, str, float, int]]:
         loop = asyncio.get_running_loop()
         if self._element is not None:
             return [
@@ -90,7 +90,7 @@ class CharacterParser:
         del self._data
 
     @classmethod
-    async def get_characters(cls) -> Optional[dict[str, dict]]:
+    async def get_characters(cls) -> Optional[Dict[str, dict]]:
         characters = {e.value: {} for e in Element}
 
         for endpoint in _ENDPOINTS[cls.__name__]:
@@ -145,7 +145,7 @@ class CharacterParser:
             asc_stat, birthdate, con, desc
         )
 
-    async def get_active_skills(self) -> list[mdl.characters.Skill]:
+    async def get_active_skills(self) -> List[mdl.characters.Skill]:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
         table = await tree.xpath('//section[@id="char_skills"]/*')
         if not table:
@@ -167,7 +167,7 @@ class CharacterParser:
             for skill in active_skills
         ]
 
-    async def get_passive_skills(self) -> list[mdl.characters.Skill]:
+    async def get_passive_skills(self) -> List[mdl.characters.Skill]:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
         table = await tree.xpath('//section[@id="char_skills"]/*')
         if not table:
@@ -182,7 +182,7 @@ class CharacterParser:
             for skill in table[:3]  #: Passive skills from 1 to 3
         ]
 
-    async def get_constellations(self) -> list[mdl.characters.Skill]:
+    async def get_constellations(self) -> List[mdl.characters.Skill]:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
         table = await tree.xpath('//section[@id="char_skills"]/*')
         if not table:
@@ -235,12 +235,12 @@ class WeaponParser:
         self.rarity: int = self._data[2]
         self.atk: float = self._data[3]
         self.sub: str = self._data[4]
-        self.value: int | float | str = self._data[5]
+        self.value: Union[int, float, str] = self._data[5]
         self.affix: str = self._data[6]
         del self._data
 
     @classmethod
-    async def get_weapons(cls) -> Optional[dict[str, dict]]:
+    async def get_weapons(cls) -> Optional[Dict[str, dict]]:
         weapons = {w.value: {} for w in WeaponType}
 
         for endpoint in _ENDPOINTS[cls.__name__]:
@@ -290,7 +290,7 @@ class WeaponParser:
         title = ''.join(await table.xpath('//td[text()="Weapon Affix"]/following-sibling::td/text()'))
         return mdl.weapons.Ability(title, self.affix)
 
-    async def get_progression(self) -> list[mdl.weapons.Progression]:
+    async def get_progression(self) -> List[mdl.weapons.Progression]:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
         table = (await tree.xpath('//table[@class="genshin_table stat_table"]/tr'))
 
@@ -305,7 +305,7 @@ class WeaponParser:
             for row in table  #: Returns empty list if not any progression information is presented
         ]
 
-    async def get_refinement(self) -> list[mdl.weapons.Refinement]:
+    async def get_refinement(self) -> List[mdl.weapons.Refinement]:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
         table = (await tree.xpath('//table[@class="genshin_table affix_table"]/tr'))
 
@@ -329,12 +329,12 @@ class ArtifactParser:
         self.name = name
         self.href: str = self._data[0]
         self.icon: str = self._data[1]
-        self.affix: list[str] = self._data[2]
+        self.affix: List[str] = self._data[2]
         self.variants: int = self._data[3]
         del self._data
 
     @classmethod
-    async def get_artifacts(cls) -> Optional[dict[str, dict]]:
+    async def get_artifacts(cls) -> Optional[Dict[str, dict]]:
         a_type = 'Набор артефактов'
         artifacts = {a_type: {}}
 
@@ -379,11 +379,11 @@ class EnemyParser:
         self.href: str = self._data[0]
         self.icon: str = self._data[1]
         self.grade: str = self._data[2]
-        self.drop: dict[str, str] = self._data[3]
+        self.drop: Dict[str, str] = self._data[3]
         del self._data
 
     @classmethod
-    async def get_enemies(cls) -> Optional[dict[str, dict]]:
+    async def get_enemies(cls) -> Optional[Dict[str, dict]]:
         e_types = list(EnemyType)
         enemies = {e.value: {} for e in EnemyType}
         link = honeyimpact.URL + 'img/{}.webp'
@@ -422,7 +422,7 @@ class EnemyParser:
         desc = ''.join(await table.xpath('.//td[text()="Description"]/following-sibling::td/text()'))
         return mdl.enemies.Information(self.name, self.type, self.grade, self.drop, desc)
 
-    async def get_progression(self) -> list[mdl.enemies.Progression]:
+    async def get_progression(self) -> List[mdl.enemies.Progression]:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL + self.href)
         table = (await tree.xpath('//section[@id="Variant #1"]//table[@class="genshin_table stat_table"]/tr'))
 
@@ -458,7 +458,7 @@ class BookParser:
         del self._data
 
     @classmethod
-    async def get_books(cls) -> Optional[dict[str, dict]]:
+    async def get_books(cls) -> Optional[Dict[str, dict]]:
         books = {}
 
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL)
@@ -510,12 +510,12 @@ class DomainParser:
         self.name = name
         self.href: str = self._data[0]
         self.icon: str = self._data[1]
-        self.monsters: list[str] = self._data[2]
-        self.rewards: list[str] = self._data[3]
+        self.monsters: List[str] = self._data[2]
+        self.rewards: List[str] = self._data[3]
         del self._data
 
     @classmethod
-    async def get_domains(cls) -> Optional[dict[str, dict]]:
+    async def get_domains(cls) -> Optional[Dict[str, dict]]:
         d_types = list(DomainType)
         domains = {d.value: {} for d in DomainType}
         link = honeyimpact.URL + 'img/{}.webp'
@@ -557,7 +557,7 @@ class DomainParser:
 
 class DailyFarmParser:
     @classmethod
-    async def get_zones(cls) -> Optional[list[mdl.dailyfarm.Zone]]:
+    async def get_zones(cls) -> Optional[List[mdl.dailyfarm.Zone]]:
         tree: Optional[_AsyncHtmlElement] = await _get_tree(honeyimpact.URL)
         if tree is None:
             return None
@@ -573,7 +573,7 @@ class DailyFarmParser:
         return [mdl.dailyfarm.Zone(**zone) for zone in zones]
 
     @staticmethod
-    async def _get_materials(elem: _AsyncHtmlElement) -> list[mdl.dailyfarm.Material]:
+    async def _get_materials(elem: _AsyncHtmlElement) -> List[mdl.dailyfarm.Material]:
         materials = []
         for div in await elem.xpath('./div'):
             weekday = int(div.get('data-days'))
@@ -593,7 +593,7 @@ class DailyFarmParser:
 
 class TalentBookParser:
     @classmethod
-    async def get_talent_books(cls) -> Optional[dict[str, list]]:
+    async def get_talent_books(cls) -> Optional[Dict[str, list]]:
         talent_books = {}
         link = honeyimpact.URL + 'img/{}.webp'
 
@@ -616,7 +616,7 @@ class TalentBookParser:
         return talent_books
 
     @staticmethod
-    async def get_related_talent_books() -> list[mdl.talentbooks.TalentBook]:
+    async def get_related_talent_books() -> List[mdl.talentbooks.TalentBook]:
         talent_books = json.load('talentbooks')
         materials = []
         for zone in await DailyFarmParser.get_zones():
@@ -636,7 +636,7 @@ class TalentBookParser:
 
 class BossMaterialParser:
     @classmethod
-    async def get_boss_materials(cls) -> Optional[dict[str, list]]:
+    async def get_boss_materials(cls) -> Optional[Dict[str, list]]:
         boss_materials = {}
         link = honeyimpact.URL + 'img/{}.webp'
 
@@ -660,9 +660,9 @@ class BossMaterialParser:
         return boss_materials
 
     @staticmethod
-    def get_related_bosses() -> list[mdl.bossmaterials.Boss]:
-        bosses: dict[str, list] = json.load('enemies')[EnemyType.BOSSES.value]
-        boss_materials: dict[str, list] = json.load('bossmaterials')
+    def get_related_bosses() -> List[mdl.bossmaterials.Boss]:
+        bosses: Dict[str, list] = json.load('enemies')[EnemyType.BOSSES.value]
+        boss_materials: Dict[str, list] = json.load('bossmaterials')
 
         related_bosses = []
         for boss, boss_data in bosses.items():
@@ -715,7 +715,7 @@ async def _get_tree(url: str) -> Optional[_AsyncHtmlElement]:
                 return _AsyncHtmlElement(await loop.run_in_executor(None, html.document_fromstring, text))
 
 
-async def _deserialize(text: str, anchor: str) -> list[list[_AsyncHtmlElement | str | float | int]]:
+async def _deserialize(text: str, anchor: str) -> List[List[Union[_AsyncHtmlElement, str, float, int]]]:
     """Function fetching and deserializing plain text array data
         from html <script>.
 

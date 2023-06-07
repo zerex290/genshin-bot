@@ -1,5 +1,4 @@
-from typing import Optional, TypeVar, ParamSpec
-from collections.abc import Callable, Awaitable
+from typing import Optional, TypeVar, Callable, Awaitable, Union
 from functools import wraps
 
 import genshin
@@ -10,7 +9,6 @@ from ..models.hoyolab import GenshinAccount
 
 
 _T = TypeVar('_T')
-_P = ParamSpec('_P')
 
 
 class GenshinClient:
@@ -40,11 +38,11 @@ async def get_genshin_account_by_id(user_id: int) -> Optional[GenshinAccount]:
         return GenshinAccount(**dict(account)) if account else None
 
 
-def catch_hoyolab_errors(func: Callable[_P, Awaitable[_T]]) -> Callable[_P, Awaitable[_T]]:
+def catch_hoyolab_errors(func: Callable[..., Awaitable[_T]]) -> Callable[..., Awaitable[_T]]:
     @wraps(func)
-    async def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T | str:
+    async def wrapper(*args, **kwargs) -> Union[_T, str]:
         try:
-            return await func(*args, **kwargs)  # noqa
+            return await func(*args, **kwargs)
         except InvalidCookies:
             return 'Ошибка: указанные игровые данные больше недействительны!'
         except GenshinException as exc:

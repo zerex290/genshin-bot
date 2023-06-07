@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Tuple
 
 from PIL import Image, ImageDraw, ImageChops
 
@@ -17,7 +18,7 @@ def align_center(bg_im: Image.Image, fg_im: Image.Image) -> None:
     return None
 
 
-def resize(im: Image.Image, new_size: tuple[int, int]) -> Image.Image:
+def resize(im: Image.Image, new_size: Tuple[int, int]) -> Image.Image:
     """Return resized image with keeping aspect ratio."""
     w0, h0 = im.size
     w1, h1 = new_size
@@ -65,7 +66,7 @@ def get_template_path(filename: str, template_dir: str, template_name: str) -> s
     suffix = '' if re.search(r'\.\w+$', template_name) else '.png'
     return os.path.join(
         IMAGEPROCESSING,
-        re.sub(r'\S+imageprocessing\S', '', filename).removesuffix('.py'),
+        re.sub(r'\S+imageprocessing\S|.py$', '', filename),
         template_dir,
         f"{template_name}{suffix}"
     )

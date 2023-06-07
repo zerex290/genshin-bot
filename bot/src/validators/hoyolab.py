@@ -1,4 +1,4 @@
-from typing import Optional, Literal, TypeAlias
+from typing import Optional, Literal, List, Dict, Union
 
 from genshin.errors import GenshinException, InvalidCookies
 
@@ -19,7 +19,7 @@ __all__ = (
 )
 
 
-HoYoData: TypeAlias = Literal['Notes', 'Stats', 'Rewards', 'Redeem', 'Diary', 'SpiralAbyss']
+HoYoData = Literal['Notes', 'Stats', 'Rewards', 'Redeem', 'Diary', 'SpiralAbyss']
 
 
 class AccountLinkValidator(BaseValidator):
@@ -29,12 +29,12 @@ class AccountLinkValidator(BaseValidator):
             raise AccountAlreadyLinked
 
     @staticmethod
-    def check_cookie_amount(cookies: list[str]) -> None:
+    def check_cookie_amount(cookies: List[str]) -> None:
         if not cookies or len(cookies) != 4:
             raise NotEnoughCookies
 
     @staticmethod
-    def check_cookie_syntax(cookies: list[str]) -> None:
+    def check_cookie_syntax(cookies: List[str]) -> None:
         try:
             cookies = {c.lower().split('=')[0] for c in cookies}
             assert {'ltuid', 'ltoken', 'uid', 'cookie_token'} == cookies
@@ -64,7 +64,7 @@ class AccountUnlinkValidator(BaseValidator):
 
 class HoYoLABValidator(BaseValidator):
     @staticmethod
-    def check_account_exist(account: Optional[dict[str, str | int]], for_other_user: bool) -> None:
+    def check_account_exist(account: Optional[Dict[str, Union[str, int]]], for_other_user: bool) -> None:
         if not account:
             raise AccountNotExist(for_other_user)
 
@@ -99,7 +99,7 @@ class CodeValidator(HoYoLABValidator):
         raise AttributeError('This method is unavailable!')
 
     @staticmethod
-    def check_code_specified(codes: list[str]) -> None:
+    def check_code_specified(codes: List[str]) -> None:
         if not codes:
             raise RedeemCodeNotSpecified
 

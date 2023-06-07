@@ -1,5 +1,5 @@
 import os
-from collections.abc import AsyncIterator
+from typing import AsyncIterator, List, Tuple
 from random import randint
 
 from PIL import Image, ImageFont, ImageDraw
@@ -21,12 +21,12 @@ __all__ = (
 
 
 class DailyFarmImageGenerator:
-    def __init__(self, weekdays: list[int], zones: list[Zone]) -> None:
+    def __init__(self, weekdays: List[int], zones: List[Zone]) -> None:
         self.weekdays = weekdays
         self.zones = zones
         self._cpx_h = 102  #: zone.indent_v = 102
 
-    async def generate(self) -> list[str]:
+    async def generate(self) -> List[str]:
         paths = []
         for weekday in self.weekdays:
             path = os.path.join(FILECACHE, f"dailyfarm_{randint(0, 10000)}.png")
@@ -51,7 +51,7 @@ class DailyFarmImageGenerator:
         draw.text((471, 39), weekdays[weekday], (255, 255, 255), font, 'ma')
 
     @staticmethod
-    async def _process_materials(materials: list[Material]) -> AsyncIterator[tuple[int, Image.Image]]:
+    async def _process_materials(materials: List[Material]) -> AsyncIterator[Tuple[int, Image.Image]]:
         for i, material in enumerate(materials):
             with (
                 Image.open(get_template_path(__file__, 'dailyfarm', 'material')) as template,
@@ -91,7 +91,7 @@ class DailyFarmImageGenerator:
 
 
 class TalentBookImageGenerator:
-    def __init__(self, talent_books: list[TalentBook]) -> None:
+    def __init__(self, talent_books: List[TalentBook]) -> None:
         self.talent_books = talent_books
         self._indent_x = 0
         self._cpx_h = [97, 97, 97]
@@ -150,7 +150,7 @@ class TalentBookImageGenerator:
 
 
 class BossMaterialImageGenerator:
-    def __init__(self, bosses: list[Boss]):
+    def __init__(self, bosses: List[Boss]):
         self.bosses = bosses
         self._indent_x = 0
         self._cpx_h = 34
@@ -195,7 +195,7 @@ class BossMaterialImageGenerator:
             align_center(template, round_image(resize(material, template.size), 10))
             return template
 
-    async def _paste_characters(self, template: Image.Image, icons: list[str], gap: int) -> None:
+    async def _paste_characters(self, template: Image.Image, icons: List[str], gap: int) -> None:
         for icon in icons:
             character = self._process_character(await download(icon, force=False))
             template.alpha_composite(character, (self._indent_x, self._cpx_h))

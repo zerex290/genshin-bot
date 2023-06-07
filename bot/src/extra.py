@@ -1,7 +1,7 @@
 import asyncio
 import os
 import random
-from typing import Optional
+from typing import Optional, Union, Dict, List
 
 from vkbottle import API, VKAPIError
 
@@ -55,7 +55,7 @@ class ResinNotifier:
                 await self._reset_notification_number(user['chat_id'], user['user_id'])
 
     @staticmethod
-    async def _get_users() -> list[dict[str, str | int]]:
+    async def _get_users() -> List[Dict[str, Union[str, int]]]:
         async with PostgresConnection() as connection:
             users = await connection.fetch('''
                 SELECT user_id, chat_id, notification_number, notification_value 
@@ -88,7 +88,7 @@ class ResinNotifier:
             """)
 
     @staticmethod
-    def _compile_message(user: dict[str, str | int], first_name: str, resin: int) -> str:
+    def _compile_message(user: Dict[str, Union[str, int]], first_name: str, resin: int) -> str:
         cases = {1: 'у', 2: 'ы', 3: 'ы', 4: 'ы'}  #: Used to write word "единица" in right cases
         message = '@id{} ({}), ваша смола достигла отметки в {} единиц{}, поспешите её потратить! ({}/3)'
         message = message.format(
@@ -103,7 +103,7 @@ class ResinNotifier:
 
 class PostManager:
     THEMATIC: bool = False
-    THEMATIC_TAGS: list[str] = []
+    THEMATIC_TAGS: List[str] = []
     MINIMUM_DONUT_FAV_COUNT: int = 500
     MINIMUM_FAV_COUNT: int = 500
 

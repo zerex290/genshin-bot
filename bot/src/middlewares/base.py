@@ -71,16 +71,16 @@ class ChatUserUpdateMiddleware(BaseMiddleware[Message], MiddlewareMixin):
         if not self.event.action or self.event.action.type not in ACTIONS:
             return None
         user_id = self.event.action.member_id
-        match self.event.action.type:
-            case MessagesMessageActionStatus.CHAT_KICK_USER:
-                async with PostgresConnection() as connection:
-                    await connection.execute(
-                        f"DELETE FROM users_in_chats WHERE chat_id = {chat_id} AND user_id = {user_id};"
-                    )
-            case _:
-                await self.insert_into_users(user_id)
-                async with PostgresConnection() as connection:
-                    await connection.execute(f"INSERT INTO users_in_chats VALUES ({user_id}, {chat_id});")
+        action_type = self.event.action.type
+        if action_type == MessagesMessageActionStatus.CHAT_KICK_USER:
+            async with PostgresConnection() as connection:
+                await connection.execute(
+                    f"DELETE FROM users_in_chats WHERE chat_id = {chat_id} AND user_id = {user_id};"
+                )
+        else:
+            await self.insert_into_users(user_id)
+            async with PostgresConnection() as connection:
+                await connection.execute(f"INSERT INTO users_in_chats VALUES ({user_id}, {chat_id});")
 
 
 class CommandGuesserMiddleware(BaseMiddleware[Message]):

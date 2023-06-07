@@ -1,7 +1,7 @@
 import traceback
 import os
 from datetime import datetime
-from typing import Optional, Literal, TypeAlias
+from typing import Optional, Literal
 from json.decoder import JSONDecodeError
 
 import aiohttp
@@ -15,7 +15,7 @@ from ..config.genshinbot import error_handler
 from ..config.dependencies.paths import FILECACHE, LOGS
 
 
-UploaderType: TypeAlias = Literal['photo_messages', 'document_messages', 'photo_wall', 'document_wall', 'video']
+UploaderType = Literal['photo_messages', 'document_messages', 'photo_wall', 'document_wall', 'video']
 
 
 @catch_aiohttp_errors
