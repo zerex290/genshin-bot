@@ -1,38 +1,110 @@
+# Внимание
+
+*Данный репозиторий был заброшен и более не поддерживается*.
+
+---
+
 # genshin-bot
-> **Asynchronous** bot for [Vk](https://vk.com/bot_genshin) with genshin related features and postgresql database
-> implementation.
 
-## Requirements
-- **python 3.10+**
-- **aiohttp**
-- **aiofiles**
-- **vkbottle**
-- **asyncpg**
-- **genshin**
-- **lxml**
-- **PIL**
-- **sankaku**
+*Асинхронный* бот для [VK](https://vk.com/bot_genshin) по игре Genshin Impact.
 
-## Installation
-> A few words about dependencies:
-> 1. <code>Vk</code>: bot requires as group as user for proper work
-> 2. <code>Postgresql</code>: bot requires postgresql database to store information
-> 3. <code>Work Directory</code>: bot requires access to specific directories which contains images or logs; 
-can be downloaded from [YandexDisk](https://disk.yandex.ru/d/LPnj__Hr9pK8NA)
+## Особенности
 
- 1. Clone git repository to chosen directory:
-<code> git clone https://github.com/zerex290/genshin-bot </code>
- 2. Install requirements: <code>pip install -r requirements.txt</code>
- 3. Set environmental variables necessary for work:
-    * **ADMINS**: <code>str</code> - admin ids separated by commas
-    * **GROUP_TOKEN**: <code>str</code> - your group api access key
-    * **GROUP_ID**: <code>int</code> - your group id *(e.g. -123456789)*
-    * **SHORTNAME**: <code>str</code> - your group shortname *(e.g. @my_group)*
-    * **USER_TOKEN**: <code>str</code> - token from vk standalone app
-    * **USER_ID**: <code>int</code> - id of user on which standalone app was registered
-    * **DATABASE_ADDRESS**: <code>str</code> - address of your database for asyncpg
-*(e.g. postgres://user:pass@host:port/database)*
- 4. Download **Work Directory**
- 5. Extract **Work Directory** into current folder: <code>tar -xf environment.zip </code>
- 6. Run secondary script which will initialize postgresql database: <code> python initdb.py </code>
- 7. Run main script: <code>python -m bot</code>
+- Интерактивная база данных по Genshin Impact прямо внутри бота;
+- Возможность поиска артов через сайт [SankakuComplex](https://beta.sankakucomplex.com);
+- Автоматическая публикация постов с артами по Genshin Impact в группу;
+- Поддержка PostgreSQL для хранения данных бота;
+- Логирование возможных ошибок при работе;
+- Генерация изображений из шаблонов;
+- Возможность добавления собственных команд без необходимости модифицировать код;
+- Возможность прямого взаимодействия с ботом и системой через команду `!exec`.
+
+---
+
+Описание команд бота (с примерами): https://vk.com/@bot_genshin-commands
+
+---
+
+## Зависимости
+
+- Python 3.10+
+- PostgreSQL
+- aiohttp
+- aiofiles
+- vkbottle
+- asyncpg
+- genshin
+- lxml
+- PIL
+- sankaku
+
+## Установка
+
+Необходимо клонировать гит-репозиторий в любую папку:
+
+```commandline
+git clone https://github.com/zerex290/genshin-bot
+```
+
+После этого нужно установить зависимости из файла `requirements.txt`:
+
+```commandline
+pip install -r requirements.txt
+```
+
+**Для корректной работы боту необходимо:**
+
+1. Установить необходимые переменные окружения.
+2. Создать и инициализировать базу данных.
+3. Сконфигурировать рабочее пространство бота.
+
+### Установка переменных окружения
+
+Необходимо установить следующие переменные окружения:
+
+- ADMINS: `str` - ID администраторов бота (разделенные запятыми);
+- GROUP_TOKEN: `str` - API-ключ группы, от лица которой будет работать бот;
+- GROUP_ID: `int` - ID группы, от лица которой будет работать бот (например, -123456789);
+- SHORTNAME: `str` - короткое имя группы, от лица которой будет работать бот (например, @mygroup);
+- USER_TOKEN: `str` - API-ключ приложения ВК (для автоматизации публикации постов в группу);
+- USER_ID: `id` - ID пользователя-владельца ВК приложения (и от имени которого будут публиковаться посты);
+- DATABASE_ADDRESS: `str` - адрес базы данных для asyncpg (например, postgres://user:pass@host:port/dbname).
+
+### Создание и инициализация базы данных
+
+Для того чтобы создать базу данных, необходимо во время сеанса `psql` написать:
+
+```sql
+CREATE DATABASE dbname;
+```
+
+После создания базы данных ее нужно проинициализировать:
+
+```commandline
+python initdb.py
+```
+
+### Конфигурирование рабочего пространства
+
+Для конфигурации необходимо скачать архив с файлами с [ЯндексДиск](https://disk.yandex.ru/d/LPnj__Hr9pK8NA).
+Архив необходимо скачивать в ту же директорию, в которую был клонирован репозиторий.
+
+После этого необходимо распаковать его:
+
+```commandline
+tar -xf environment.zip 
+```
+
+## Запуск бота
+
+Для того чтобы запустить бота на локальном устройстве или удаленном сервере,
+необходимо написать:
+
+```commandline
+python -m bot
+```
+
+## Дополнительная информация
+
+Все шаблоны, используемые для генерации изображений, можно получить, клонировав
+на собственный аккаунт проект в [Figma](https://www.figma.com/file/egZKJ5MaYPjLvnuLPslHXv/GenshinBot?type=design&node-id=0%3A1&t=4lkET2JluNKpRvXJ-1).
