@@ -6,7 +6,6 @@ from asyncio import sleep
 from vkbottle.bot import BotLabeler, Message
 
 from bot.src import Options
-from bot.src.config.dependencies.group import SHORTNAME
 from bot.src.rules import CommandRule
 from bot.src.utils import PostgresConnection
 from bot.src.utils.postgres import has_postgres_data
@@ -120,7 +119,7 @@ class RandomTag:
 @bl.message(CommandRule(['команды'], ['~~п'], man.Guide))
 async def get_commands_article(message: Message, **_) -> None:
     msg = [
-        f'Статья с подробным описанием всех команд: vk.com/{SHORTNAME}-commands',
+        f'Статья с подробным описанием всех команд: vk.com/@bot_genshin-commands',
         '\nОсновные команды:', '\n'.join(f"!{c}" for c in commands.MAIN),
         '\nКоманды по Геншину:', '\n'.join(f"!{c}" for c in commands.GENSHIN),
         '\nПользовательские команды:', '\n'.join(f"!{c}" for c in commands.CUSTOM), '!!<<триггер>>'
